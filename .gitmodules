@@ -1,0 +1,6 @@
+[submodule "external/sgp4"]
+	path = external/sgp4
+	url = https://github.com/dnwrnr/sgp4.git
+[submodule "external/libcorrect"]
+	path = external/libcorrect
+	url = https://github.com/quiet/libcorrect.git
