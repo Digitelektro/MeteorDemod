@@ -1,0 +1,297 @@
+#include "correlation.h"
+#include "packetparser.h"
+#include "reedsolomon.h"
+#include "viterbi.h"
+#include "pixelgeolocationcalculator.h"
+
+#include <iostream>
+#include <fstream>
+#include <ctime>
+#include <opencv2/imgcodecs.hpp>
+#include "spreadimage.h"
+
+#include "GIS/shapereader.h"
+#include "GIS/shaperenderer.h"
+#include "tlereader.h"
+#include "settings.h"
+
+struct ImageForSpread {
+    ImageForSpread(cv::Mat img, std::string fileNamebase)
+        : image(img)
+        , fileNameBase(fileNamebase) {
+    }
+
+    cv::Mat image;
+    std::string fileNameBase;
+};
+
+static const uint8_t PRAND[] = {
+    0xff, 0x48, 0x0e, 0xc0, 0x9a, 0x0d, 0x70, 0xbc, 0x8e, 0x2c, 0x93, 0xad, 0xa7,
+    0xb7, 0x46, 0xce, 0x5a, 0x97, 0x7d, 0xcc, 0x32, 0xa2, 0xbf, 0x3e, 0x0a,
+    0x10, 0xf1, 0x88, 0x94, 0xcd, 0xea, 0xb1, 0xfe, 0x90, 0x1d, 0x81, 0x34,
+    0x1a, 0xe1, 0x79, 0x1c, 0x59, 0x27, 0x5b, 0x4f, 0x6e, 0x8d, 0x9c, 0xb5,
+    0x2e, 0xfb, 0x98, 0x65, 0x45, 0x7e, 0x7c, 0x14, 0x21, 0xe3, 0x11, 0x29,
+    0x9b, 0xd5, 0x63, 0xfd, 0x20, 0x3b, 0x02, 0x68, 0x35, 0xc2, 0xf2, 0x38,
+    0xb2, 0x4e, 0xb6, 0x9e, 0xdd, 0x1b, 0x39, 0x6a, 0x5d, 0xf7, 0x30, 0xca,
+    0x8a, 0xfc, 0xf8, 0x28, 0x43, 0xc6, 0x22, 0x53, 0x37, 0xaa, 0xc7, 0xfa,
+    0x40, 0x76, 0x04, 0xd0, 0x6b, 0x85, 0xe4, 0x71, 0x64, 0x9d, 0x6d, 0x3d,
+    0xba, 0x36, 0x72, 0xd4, 0xbb, 0xee, 0x61, 0x95, 0x15, 0xf9, 0xf0, 0x50,
+    0x87, 0x8c, 0x44, 0xa6, 0x6f, 0x55, 0x8f, 0xf4, 0x80, 0xec, 0x09, 0xa0,
+    0xd7, 0x0b, 0xc8, 0xe2, 0xc9, 0x3a, 0xda, 0x7b, 0x74, 0x6c, 0xe5, 0xa9,
+    0x77, 0xdc, 0xc3, 0x2a, 0x2b, 0xf3, 0xe0, 0xa1, 0x0f, 0x18, 0x89, 0x4c,
+    0xde, 0xab, 0x1f, 0xe9, 0x01, 0xd8, 0x13, 0x41, 0xae, 0x17, 0x91, 0xc5,
+    0x92, 0x75, 0xb4, 0xf6, 0xe8, 0xd9, 0xcb, 0x52, 0xef, 0xb9, 0x86, 0x54,
+    0x57, 0xe7, 0xc1, 0x42, 0x1e, 0x31, 0x12, 0x99, 0xbd, 0x56, 0x3f, 0xd2,
+    0x03, 0xb0, 0x26, 0x83, 0x5c, 0x2f, 0x23, 0x8b, 0x24, 0xeb, 0x69, 0xed,
+    0xd1, 0xb3, 0x96, 0xa5, 0xdf, 0x73, 0x0c, 0xa8, 0xaf, 0xcf, 0x82, 0x84,
+    0x3c, 0x62, 0x25, 0x33, 0x7a, 0xac, 0x7f, 0xa4, 0x07, 0x60, 0x4d, 0x06,
+    0xb8, 0x5e, 0x47, 0x16, 0x49, 0xd6, 0xd3, 0xdb, 0xa3, 0x67, 0x2d, 0x4b,
+    0xbe, 0xe6, 0x19, 0x51, 0x5f, 0x9f, 0x05, 0x08, 0x78, 0xc4, 0x4a, 0x66,
+    0xf5, 0x58
+};
+
+static uint8_t dataTodecode[16384];
+static uint8_t viterbiResult[1024];
+static uint8_t decodedPacket[1024];
+static int rsResult[4];
+static int decodedPacketCounter = 0;
+static Correlation mCorrelation;
+static Viterbi mViterbi;
+static PacketParser mPacketParser;
+static ReedSolomon mReedSolomon;
+static Settings &mSettings = Settings::getInstance();
+
+int main(int argc, char *argv[])
+{
+    if(argc < 5) {
+        std::cout << "Invalid argument number, exiting..." << std::endl;
+        std::cout << mSettings.getHelp() << std::endl;
+        return  -1;
+    }
+
+    mSettings.parseArgs(argc, argv);
+
+    TleReader reader(mSettings.getTlePath());
+    TleReader::TLE tle;
+    reader.processFile();
+    if(!reader.getTLE("METEOR-M 2", tle)) {
+        std::cout << "TLE data not found in TLE file, exiting..." << std::endl;
+        return -1;
+    }
+
+    do {
+        std::ifstream binaryData (mSettings.getInputFilePath(), std::ifstream::binary);
+        if(!binaryData) {
+            std::cout << "Open file failed";
+            break;
+        }
+
+        binaryData.seekg (0, binaryData.end);
+        int64_t fileLength = binaryData.tellg();
+        binaryData.seekg (0, binaryData.beg);
+
+        uint8_t *softBits = new uint8_t[fileLength];
+        if(!softBits) {
+            std::cout << "Memory allocation failed" << std::endl;
+            break;
+        }
+
+        binaryData.read (reinterpret_cast<char*>(softBits),fileLength);
+
+        if(!binaryData) {
+            std::cout << "File read failed" << std::endl;
+            break;
+        }
+
+        mCorrelation.correlate(softBits, fileLength, [&softBits, fileLength](Correlation::CorellationResult correlationResult, Correlation::PhaseShift phaseShift) {
+            bool packetOk;
+            uint32_t processedBits = 0;
+            do {
+                if(fileLength - (correlationResult.pos + processedBits) < 16384) {
+                    return processedBits;
+                }
+
+                memcpy(dataTodecode, &softBits[correlationResult.pos + processedBits], 16384);
+
+                mCorrelation.rotateSoftIqInPlace(dataTodecode, 16384, phaseShift);
+
+                mViterbi.decodeSoft(dataTodecode, viterbiResult, 16384);
+
+                uint32_t last_sync_ = *reinterpret_cast<uint32_t *>(viterbiResult);
+
+                if (Correlation::countBits(last_sync_ ^ 0xE20330E5) < Correlation::countBits(last_sync_ ^ 0x1DFCCF1A)) {
+                    for (int j = 4; j < 1024; j++) {
+                        viterbiResult[j] = viterbiResult[j] ^ 0xFF;
+                    }
+                    last_sync_ = last_sync_ ^ 0xFFFFFFFF;
+                }
+
+                for (int j = 0; j < 1024-4; j++) {
+                    viterbiResult[j+4] = viterbiResult[j+4] ^ PRAND[j % 255];
+                }
+
+                for(int i = 0; i < 4; i++) {
+                    mReedSolomon.deinterleave(viterbiResult + 4, i , 4);
+                    rsResult[i] = mReedSolomon.decode(0);
+                    mReedSolomon.interleave(decodedPacket, i, 4);
+                }
+
+                std::cout << "Pos:" << (correlationResult.pos + processedBits) << " | Phase:" << phaseShift << " | synch:" << std::hex << last_sync_ << " | RS: (" << std::dec << rsResult[0] << ", " << rsResult[1] << ", " << rsResult[2] << ", "  << rsResult[3] << ")"  << "\t\t\r" << std::flush;
+
+                packetOk = (rsResult[0] != -1) && (rsResult[1] != -1) &&(rsResult[2] != -1) && (rsResult[3] != -1);
+
+                if(packetOk) {
+                    mPacketParser.parseFrame(decodedPacket, 892);
+                    decodedPacketCounter++;
+                    processedBits += 16384;
+                }
+            } while(packetOk);
+
+            return (processedBits > 0) ? processedBits-1 : 0;
+        });
+
+        delete[] softBits;
+
+        if(binaryData && binaryData.is_open()) {
+            binaryData.close();
+        }
+
+    } while (false);
+
+    std::cout << std::endl;
+    std::cout << "Decoded packets:" << decodedPacketCounter << std::endl;
+
+    if(decodedPacketCounter == 0) {
+        std::cout << "No data recevied, exiting..." << std::endl;
+    }
+
+    DateTime passStart;
+    const time_t now = time(nullptr);
+    tm today;
+#if defined(_MSC_VER)
+    gmtime_s(&today, &now);
+#else
+    gmtime_r(&now, &today);
+#endif
+
+    TimeSpan passFirstTime = mPacketParser.getFirstTimeStamp();
+    TimeSpan passLength = mPacketParser.getLastTimeStamp() - passFirstTime;
+
+    passStart.Initialise(1900 + today.tm_year, today.tm_mon + 1, today.tm_mday, passFirstTime.Hours()-3, passFirstTime.Minutes(), passFirstTime.Seconds(),passFirstTime.Microseconds());
+    std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute());
+
+    PixelGeolocationCalculator calc(tle, passStart, passLength, 55.4, -3.2);
+    calc.calcPixelCoordinates();
+    calc.save(mSettings.getOutputPath() + fileNameDate + ".gcp");
+
+    std::list<ImageForSpread> imagesToSpread;
+
+    if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel68Available()) {
+        cv::Mat threatedImage1 = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, true);
+        cv::Mat irImage = mPacketParser.getChannelImage(PacketParser::APID_68, true);
+
+        if(!ThreatImage::isNightPass(threatedImage1)) {
+            imagesToSpread.push_back(ImageForSpread(threatedImage1, "122_"));
+        } else {
+            std::cout << "Nigh pass, RGB image is skipped" << std::endl;
+        }
+
+        cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, true);
+        cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, true);
+        cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, true);
+
+        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
+        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
+        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
+
+        cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
+        cv::Mat thermalImage = ThreatImage::irToTemperature(irImage, thermalRef);
+        imagesToSpread.push_back(ImageForSpread(thermalImage, "thermal_"));
+
+        cv::bitwise_not(irImage, irImage);
+        irImage = ThreatImage::gamma(irImage, 1.8);
+        imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
+
+    } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel66Available()) {
+        cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_66, PacketParser::APID_65, PacketParser::APID_64, true);
+
+        if(!ThreatImage::isNightPass(threatedImage)) {
+            imagesToSpread.push_back(ImageForSpread(threatedImage, "123_"));
+        } else {
+            std::cout << "Nigh pass, RGB image is skipped" << std::endl;
+        }
+
+        mPacketParser.getChannelImage(PacketParser::APID_64, true);
+        mPacketParser.getChannelImage(PacketParser::APID_65, true);
+        mPacketParser.getChannelImage(PacketParser::APID_66, true);
+
+        cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, true);
+        cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, true);
+        cv::Mat ch66 = mPacketParser.getChannelImage(PacketParser::APID_68, true);
+
+        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
+        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
+        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_66.bmp", ch66);
+    } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available()) {
+        cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, true);
+
+        if(!ThreatImage::isNightPass(threatedImage)) {
+            imagesToSpread.push_back(ImageForSpread(threatedImage, "122_"));
+        } else {
+            std::cout << "Nigh pass, RGB image is skipped" << std::endl;
+        }
+
+        cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, true);
+        cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, true);
+
+        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
+        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
+    } else {
+        std::cout << "No usable channel data found!" << std::endl;
+        return 0;
+    }
+
+    SpreadImage spreadImage;
+
+    std::list<ImageForSpread>::const_iterator it;
+
+    int c = 1;
+    for(it = imagesToSpread.begin(); it != imagesToSpread.end(); ++it, c++) {
+        std::string fileName = (*it).fileNameBase + fileNameDate + ".bmp";
+
+        cv::Mat strechedImg = spreadImage.stretch((*it).image);
+
+        if(!strechedImg.empty()) {
+            cv::imwrite(mSettings.getOutputPath() + std::string("spread_") + fileName, strechedImg);
+        } else {
+            std::cout << "Failed to strech image";
+        }
+
+        cv::Mat mercator = spreadImage.mercatorProjection((*it).image, calc, [c, &imagesToSpread](float percent) {
+            std::cout << "Spreading mercator " << c << " of " << imagesToSpread.size() << " " << static_cast<int>(percent) << "%\t\t\r" << std::flush;
+        });
+        std::cout << std::endl;
+
+        if(!mercator.empty()) {
+            cv::imwrite(mSettings.getOutputPath() + std::string("mercator_") + fileName, mercator);
+        } else {
+            std::cout << "Failed to create mercator projection";
+        }
+
+        cv::Mat equidistant = spreadImage.equidistantProjection((*it).image, calc, [c, &imagesToSpread](float percent) {
+            std::cout << "Spreading equidistant " << c << " of " << imagesToSpread.size() << " " << static_cast<int>(percent) << "%\t\t\r" << std::flush;
+        });
+        std::cout << std::endl;
+
+        if(!equidistant.empty()) {
+            cv::imwrite(mSettings.getOutputPath() + std::string("equidistant_") + fileName, equidistant);
+        } else {
+            std::cout << "Failed to create equidistant projection";
+        }
+    }
+    return 0;
+}
+
+
+
+
