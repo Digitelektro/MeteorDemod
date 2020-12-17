@@ -21,7 +21,7 @@ OpenCV must be installed on the system. Required OpenCV modules: core, imgcodecs
 
 The other two dependencies can be downloaded from git with command:
 
-```bash git submodule update --init --recursive ``` 
+```git submodule update --init --recursive ``` 
 
 
 ## Build and install
@@ -30,8 +30,8 @@ For the development QT creator is used, but the qmake is maintained only for win
 CMAKE is the build system to compile the project. Tested on Windows and Linux(ubuntu, raspbian)
 
 ```
-git pull ...
-cd ...
+git clone https://github.com/Digitelektro/MeteorDemod.git
+cd MeteorDemod
 git submodule update --init --recursive
 mkdir build && cd build
 cmake ../
