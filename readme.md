@@ -41,9 +41,13 @@ sudo make install
 
 ## Usage
 Input parameters:
+
 -t --tle        Two-line element set (TLE) file for calculating overlays
+
 -i --input      Input *.S file
+
 -o --output     Optional, folder where generated files will be saved
+
 
 ## Development
 Master branch is for the latest stable version, beta branch for beta versions, development is ongoing on other branches.
