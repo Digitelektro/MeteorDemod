@@ -15,8 +15,8 @@ public:
     explicit SpreadImage(int earthRadius = 6378, int altitude = 825);
     cv::Mat stretch(const cv::Mat &image);
 
-    cv::Mat mercatorProjection(const cv::Mat &image, const PixelGeolocationCalculator geolocationCalculator, ProgressCallback progressCallback = nullptr);
-    cv::Mat equidistantProjection(const cv::Mat &image, const PixelGeolocationCalculator geolocationCalculator, ProgressCallback progressCallback = nullptr);
+    cv::Mat mercatorProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, ProgressCallback progressCallback = nullptr);
+    cv::Mat equidistantProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, ProgressCallback progressCallback = nullptr);
 
 private:
     void affineTransform(const cv::Mat& src, cv::Mat& dst, const cv::Point2f source[], const cv::Point2f destination[], int originX, int originY);
