@@ -7,7 +7,11 @@ project(Meteordemod LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-#add_compile_definitions( LIQUID_BUILD_CPLUSPLUS )
+if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+endif()
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
 
 ExternalProject_Add(sgp4
   #GIT_REPOSITORY    https://github.com/.....
@@ -15,6 +19,7 @@ ExternalProject_Add(sgp4
   SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/sgp4"
   BINARY_DIR        "${CMAKE_BINARY_DIR}/sgp4-build"
   INSTALL_COMMAND   cmake -E echo "Skipping install step."
+  CMAKE_ARGS        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
 ExternalProject_Add(libcorrect
@@ -23,6 +28,7 @@ ExternalProject_Add(libcorrect
   SOURCE_DIR        "${CMAKE_CURRENT_SOURCE_DIR}/external/libcorrect"
   BINARY_DIR        "${CMAKE_BINARY_DIR}/libcorrect-build"
   INSTALL_COMMAND   cmake -E echo "Skipping install step."
+  CMAKE_ARGS        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
 find_package(OpenCV REQUIRED PATHS "D:/Programozas/opencv/own_build/install/")
