@@ -4,6 +4,8 @@
 #include <map>
 #include <list>
 
+#include "DateTime.h"
+
 class Settings
 {
 private:
@@ -40,6 +42,8 @@ public:
 
     std::string getResourcesPath() const;
     std::string getOutputPath() const;
+
+    DateTime getPassDate() const;
 
 private:
     std::map<std::string, std::string> mArgs;

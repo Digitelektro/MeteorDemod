@@ -166,18 +166,11 @@ int main(int argc, char *argv[])
     }
 
     DateTime passStart;
-    const time_t now = time(nullptr);
-    tm today;
-#if defined(_MSC_VER)
-    gmtime_s(&today, &now);
-#else
-    gmtime_r(&now, &today);
-#endif
-
+    DateTime passDate = mSettings.getPassDate();
     TimeSpan passFirstTime = mPacketParser.getFirstTimeStamp();
     TimeSpan passLength = mPacketParser.getLastTimeStamp() - passFirstTime;
 
-    passStart.Initialise(1900 + today.tm_year, today.tm_mon + 1, today.tm_mday, passFirstTime.Hours()-3, passFirstTime.Minutes(), passFirstTime.Seconds(),passFirstTime.Microseconds());
+    passStart.Initialise(passDate.Year(), passDate.Month(), passDate.Day(), passFirstTime.Hours()-3, passFirstTime.Minutes(), passFirstTime.Seconds(),passFirstTime.Microseconds());
     std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute());
 
     PixelGeolocationCalculator calc(tle, passStart, passLength, 55.4, -3.2);
