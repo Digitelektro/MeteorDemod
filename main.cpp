@@ -163,6 +163,7 @@ int main(int argc, char *argv[])
 
     if(decodedPacketCounter == 0) {
         std::cout << "No data recevied, exiting..." << std::endl;
+        return 0;
     }
 
     DateTime passStart;
