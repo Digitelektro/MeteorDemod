@@ -1,7 +1,6 @@
 #include "settings.h"
 #include <sstream>
 #include <ctime>
-#include <sstream>
 #include <regex>
 
 #if defined(_MSC_VER)
@@ -20,6 +19,7 @@ Settings::Settings()
     mSettingsList.push_back(SettingsData("--input", "-i", "Input S file containing softbits"));
     mSettingsList.push_back(SettingsData("--output","-o", "Output folder where generated files will be placed"));
     mSettingsList.push_back(SettingsData("--date",  "-d", "Specify pass date, format should  be dd:mm:yyyy"));
+    mSettingsList.push_back(SettingsData("--format",  "-f", "Output image format (bmp, jpg)"));
 }
 
 void Settings::parseArgs(int argc, char **argv)
@@ -87,6 +87,24 @@ std::string Settings::getOutputPath() const
         return mArgs.at("--output");
     }
     return std::string("./");
+}
+
+std::string Settings::getOutputFormat() const
+{
+    std::string imgFormat;
+
+    imgFormat =  std::string("bmp");
+
+    if(mArgs.count("-f")) {
+        imgFormat = mArgs.at("-f");
+    }
+    if(mArgs.count("--format")) {
+        imgFormat =  mArgs.at("--format");
+    }
+
+    //Todo: validate format
+
+    return imgFormat;
 }
 
 DateTime Settings::getPassDate() const

@@ -42,6 +42,7 @@ public:
 
     std::string getResourcesPath() const;
     std::string getOutputPath() const;
+    std::string getOutputFormat() const;
 
     DateTime getPassDate() const;
 
