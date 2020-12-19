@@ -63,8 +63,8 @@ cv::Mat SpreadImage::stretch(const cv::Mat &image)
 
         cv::Mat scaledimageRight;
         cv::Mat scaledimageLeft;
-        cv::Mat imageRight = image(cv::Rect(imageHalfWidth + k - 1, 0, 1, imageHeight));
-        cv::Mat imageLeft = image(cv::Rect(imageHalfWidth - k, 0, 1, imageHeight));
+        const cv::Mat &imageRight = image(cv::Rect(imageHalfWidth + k - 1, 0, 1, imageHeight));
+        const cv::Mat &imageLeft = image(cv::Rect(imageHalfWidth - k, 0, 1, imageHeight));
 
         cv::resize(imageRight, scaledimageRight, cv::Size(DupPix, imageHeight));
         cv::resize(imageLeft, scaledimageLeft, cv::Size(DupPix, imageHeight));
