@@ -116,14 +116,18 @@ DateTime Settings::getPassDate() const
         return dateTime;
     }
 
-    std::regex dateTimeRegex("\\d{2}-\\d{2}-\\d{4}");
+    try {
+        std::regex dateTimeRegex("\\d{2}-\\d{2}-\\d{4}");
 
-    if(std::regex_search(dateTimeStr, dateTimeRegex)) {
-        std::replace( dateTimeStr.begin(), dateTimeStr.end(), '-', ' ');
-        std::istringstream( dateTimeStr ) >> day >> month >> year;
-        dateTime.Initialise(year, month, day, today.tm_hour, today.tm_min, today.tm_sec, 0);
-    } else {
-        std::cout << "Invalid given Date format, using today's date" << std::endl;
+        if(std::regex_search(dateTimeStr, dateTimeRegex)) {
+            std::replace( dateTimeStr.begin(), dateTimeStr.end(), '-', ' ');
+            std::istringstream( dateTimeStr ) >> day >> month >> year;
+            dateTime.Initialise(year, month, day, today.tm_hour, today.tm_min, today.tm_sec, 0);
+        } else {
+            std::cout << "Invalid given Date format, using today's date" << std::endl;
+        }
+    } catch (...) {
+        std::cout << "Extracting Date parameter is failed, regex might be not supported on yur system. GCC version >=4.9.2 is required. Using default Date" << std::endl;
     }
 
     return dateTime;
