@@ -199,6 +199,7 @@ int main(int argc, char *argv[])
         saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_122.bmp", threatedImage1);
 
         cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
         cv::Mat thermalImage = ThreatImage::irToTemperature(irImage, thermalRef);
@@ -228,6 +229,7 @@ int main(int argc, char *argv[])
         saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_66.bmp", ch66);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_123.bmp", threatedImage);
     } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available()) {
         cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, true);
 
@@ -242,6 +244,7 @@ int main(int argc, char *argv[])
 
         saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_122.bmp", threatedImage);
     } else {
         std::cout << "No usable channel data found!" << std::endl;
         return 0;
