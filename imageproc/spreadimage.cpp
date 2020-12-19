@@ -6,8 +6,8 @@
 
 SpreadImage::SpreadImage(int earthRadius, int altitude)
 {
-    earthRadius = mEarthRadius;
-    altitude = mAltitude;
+    mEarthRadius = earthRadius;
+    mAltitude = altitude;
 
     mTheta = 0.5 * SWATH / earthRadius;                                          // Maximum half-Angle subtended by Swath from Earth's centre
     mHalfChord = static_cast<int>(earthRadius * std::sin(mTheta));               // Maximum Length of chord subtended at Centre of Earth
