@@ -12,6 +12,12 @@
 #include <pwd.h>
 #endif
 
+Settings &Settings::getInstance()
+{
+    static Settings instance;
+    return instance;
+}
+
 Settings::Settings()
 {
     mSettingsList.push_back(SettingsData("--help",  "-h", "Print help"));

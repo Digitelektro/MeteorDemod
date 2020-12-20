@@ -22,10 +22,7 @@ private:
     };
 
 public:
-    static Settings& getInstance() {
-        static Settings instance;
-        return instance;
-    }
+    static Settings &getInstance();
 
 private:
     Settings();
