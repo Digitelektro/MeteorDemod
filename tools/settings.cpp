@@ -1,5 +1,7 @@
 #include "settings.h"
 #include <sstream>
+#include <ctime>
+#include <regex>
 
 #if defined(_MSC_VER)
 #include <Shlwapi.h>
@@ -10,11 +12,20 @@
 #include <pwd.h>
 #endif
 
+Settings &Settings::getInstance()
+{
+    static Settings instance;
+    return instance;
+}
+
 Settings::Settings()
 {
     mSettingsList.push_back(SettingsData("--help",  "-h", "Print help"));
     mSettingsList.push_back(SettingsData("--tle",   "-t", "TLE file required for pass calculation"));
     mSettingsList.push_back(SettingsData("--input", "-i", "Input S file containing softbits"));
+    mSettingsList.push_back(SettingsData("--output","-o", "Output folder where generated files will be placed"));
+    mSettingsList.push_back(SettingsData("--date",  "-d", "Specify pass date, format should  be dd:mm:yyyy"));
+    mSettingsList.push_back(SettingsData("--format",  "-f", "Output image format (bmp, jpg)"));
 }
 
 void Settings::parseArgs(int argc, char **argv)
@@ -82,4 +93,66 @@ std::string Settings::getOutputPath() const
         return mArgs.at("--output");
     }
     return std::string("./");
+}
+
+std::string Settings::getOutputFormat() const
+{
+    std::string imgFormat;
+
+    imgFormat =  std::string("bmp");
+
+    if(mArgs.count("-f")) {
+        imgFormat = mArgs.at("-f");
+    }
+    if(mArgs.count("--format")) {
+        imgFormat =  mArgs.at("--format");
+    }
+
+    //Todo: validate format
+
+    return imgFormat;
+}
+
+DateTime Settings::getPassDate() const
+{
+    int year, month, day;
+    std::string dateTimeStr;
+    DateTime dateTime(0);
+
+    if(mArgs.count("-d")) {
+        dateTimeStr = mArgs.at("-d");
+    }
+    if(mArgs.count("--date")) {
+        dateTimeStr =  mArgs.at("--date");
+    }
+
+    const time_t now = time(nullptr);
+    tm today;
+    #if defined(_MSC_VER)
+        gmtime_s(&today, &now);
+    #else
+        gmtime_r(&now, &today);
+    #endif
+
+    dateTime.Initialise(1900 + today.tm_year, today.tm_mon + 1, today.tm_mday, today.tm_hour, today.tm_min, today.tm_sec, 0);
+
+    if(dateTimeStr.empty()) {
+        return dateTime;
+    }
+
+    try {
+        std::regex dateTimeRegex("\\d{2}-\\d{2}-\\d{4}");
+
+        if(std::regex_search(dateTimeStr, dateTimeRegex)) {
+            std::replace( dateTimeStr.begin(), dateTimeStr.end(), '-', ' ');
+            std::istringstream( dateTimeStr ) >> day >> month >> year;
+            dateTime.Initialise(year, month, day, today.tm_hour, today.tm_min, today.tm_sec, 0);
+        } else {
+            std::cout << "Invalid given Date format, using today's date" << std::endl;
+        }
+    } catch (...) {
+        std::cout << "Extracting Date parameter is failed, regex might be not supported on yur system. GCC version >=4.9.2 is required. Using default Date" << std::endl;
+    }
+
+    return dateTime;
 }

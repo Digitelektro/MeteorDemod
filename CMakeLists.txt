@@ -13,6 +13,13 @@ endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.9.2")
+    message(FATAL_ERROR "Insufficient gcc version, minimum required: 4.9.2, provided: " + "${CMAKE_CXX_COMPILER_VERSION}")
+  endif()
+endif()
+
+
 ExternalProject_Add(sgp4
   #GIT_REPOSITORY    https://github.com/.....
   #GIT_TAG           master

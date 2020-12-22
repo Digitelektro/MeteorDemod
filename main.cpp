@@ -25,6 +25,8 @@ struct ImageForSpread {
     std::string fileNameBase;
 };
 
+void saveImage(const std::string fileName, const cv::Mat &image);
+
 static const uint8_t PRAND[] = {
     0xff, 0x48, 0x0e, 0xc0, 0x9a, 0x0d, 0x70, 0xbc, 0x8e, 0x2c, 0x93, 0xad, 0xa7,
     0xb7, 0x46, 0xce, 0x5a, 0x97, 0x7d, 0xcc, 0x32, 0xa2, 0xbf, 0x3e, 0x0a,
@@ -163,21 +165,15 @@ int main(int argc, char *argv[])
 
     if(decodedPacketCounter == 0) {
         std::cout << "No data recevied, exiting..." << std::endl;
+        return 0;
     }
 
     DateTime passStart;
-    const time_t now = time(nullptr);
-    tm today;
-#if defined(_MSC_VER)
-    gmtime_s(&today, &now);
-#else
-    gmtime_r(&now, &today);
-#endif
-
+    DateTime passDate = mSettings.getPassDate();
     TimeSpan passFirstTime = mPacketParser.getFirstTimeStamp();
     TimeSpan passLength = mPacketParser.getLastTimeStamp() - passFirstTime;
 
-    passStart.Initialise(1900 + today.tm_year, today.tm_mon + 1, today.tm_mday, passFirstTime.Hours()-3, passFirstTime.Minutes(), passFirstTime.Seconds(),passFirstTime.Microseconds());
+    passStart.Initialise(passDate.Year(), passDate.Month(), passDate.Day(), passFirstTime.Hours()-3, passFirstTime.Minutes(), passFirstTime.Seconds(),passFirstTime.Microseconds());
     std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute());
 
     PixelGeolocationCalculator calc(tle, passStart, passLength, 55.4, -3.2);
@@ -200,9 +196,10 @@ int main(int argc, char *argv[])
         cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, true);
         cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, true);
 
-        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
-        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
-        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_122.bmp", threatedImage1);
 
         cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
         cv::Mat thermalImage = ThreatImage::irToTemperature(irImage, thermalRef);
@@ -229,9 +226,10 @@ int main(int argc, char *argv[])
         cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, true);
         cv::Mat ch66 = mPacketParser.getChannelImage(PacketParser::APID_68, true);
 
-        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
-        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
-        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_66.bmp", ch66);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_66.bmp", ch66);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_123.bmp", threatedImage);
     } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available()) {
         cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, true);
 
@@ -244,8 +242,9 @@ int main(int argc, char *argv[])
         cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, true);
         cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, true);
 
-        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
-        cv::imwrite(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_122.bmp", threatedImage);
     } else {
         std::cout << "No usable channel data found!" << std::endl;
         return 0;
@@ -257,12 +256,12 @@ int main(int argc, char *argv[])
 
     int c = 1;
     for(it = imagesToSpread.begin(); it != imagesToSpread.end(); ++it, c++) {
-        std::string fileName = (*it).fileNameBase + fileNameDate + ".bmp";
+        std::string fileName = (*it).fileNameBase + fileNameDate + "." + mSettings.getOutputFormat();
 
         cv::Mat strechedImg = spreadImage.stretch((*it).image);
 
         if(!strechedImg.empty()) {
-            cv::imwrite(mSettings.getOutputPath() + std::string("spread_") + fileName, strechedImg);
+            saveImage(mSettings.getOutputPath() + std::string("spread_") + fileName, strechedImg);
         } else {
             std::cout << "Failed to strech image";
         }
@@ -273,7 +272,7 @@ int main(int argc, char *argv[])
         std::cout << std::endl;
 
         if(!mercator.empty()) {
-            cv::imwrite(mSettings.getOutputPath() + std::string("mercator_") + fileName, mercator);
+            saveImage(mSettings.getOutputPath() + std::string("mercator_") + fileName, mercator);
         } else {
             std::cout << "Failed to create mercator projection";
         }
@@ -284,7 +283,7 @@ int main(int argc, char *argv[])
         std::cout << std::endl;
 
         if(!equidistant.empty()) {
-            cv::imwrite(mSettings.getOutputPath() + std::string("equidistant_") + fileName, equidistant);
+            saveImage(mSettings.getOutputPath() + std::string("equidistant_") + fileName, equidistant);
         } else {
             std::cout << "Failed to create equidistant projection";
         }
@@ -292,6 +291,13 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-
+void saveImage(const std::string fileName, const cv::Mat &image)
+{
+    try {
+        cv::imwrite(fileName, image);
+    } catch (const cv::Exception& ex) {
+        std::cout << "Save image " << fileName << " failed. error: " << ex.what() << std::endl;
+    }
+}
 
 

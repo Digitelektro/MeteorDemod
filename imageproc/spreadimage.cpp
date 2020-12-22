@@ -6,8 +6,8 @@
 
 SpreadImage::SpreadImage(int earthRadius, int altitude)
 {
-    earthRadius = mEarthRadius;
-    altitude = mAltitude;
+    mEarthRadius = earthRadius;
+    mAltitude = altitude;
 
     mTheta = 0.5 * SWATH / earthRadius;                                          // Maximum half-Angle subtended by Swath from Earth's centre
     mHalfChord = static_cast<int>(earthRadius * std::sin(mTheta));               // Maximum Length of chord subtended at Centre of Earth
@@ -63,8 +63,8 @@ cv::Mat SpreadImage::stretch(const cv::Mat &image)
 
         cv::Mat scaledimageRight;
         cv::Mat scaledimageLeft;
-        cv::Mat imageRight = image(cv::Rect(imageHalfWidth + k - 1, 0, 1, imageHeight));
-        cv::Mat imageLeft = image(cv::Rect(imageHalfWidth - k, 0, 1, imageHeight));
+        const cv::Mat &imageRight = image(cv::Rect(imageHalfWidth + k - 1, 0, 1, imageHeight));
+        const cv::Mat &imageLeft = image(cv::Rect(imageHalfWidth - k, 0, 1, imageHeight));
 
         cv::resize(imageRight, scaledimageRight, cv::Size(DupPix, imageHeight));
         cv::resize(imageLeft, scaledimageLeft, cv::Size(DupPix, imageHeight));
@@ -78,7 +78,7 @@ cv::Mat SpreadImage::stretch(const cv::Mat &image)
     return strechedImage;
 }
 
-cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeolocationCalculator geolocationCalculator, ProgressCallback progressCallback)
+cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, ProgressCallback progressCallback)
 {
     double MinX = std::min(geolocationCalculator.getTopLeftMercator().x, std::min(geolocationCalculator.getTopRightMercator().x, std::min(geolocationCalculator.getBottomLeftMercator().x, geolocationCalculator.getBottomRightMercator().x)));
     double MinY = std::min(geolocationCalculator.getTopLeftMercator().y, std::min(geolocationCalculator.getTopRightMercator().y, std::min(geolocationCalculator.getBottomLeftMercator().y, geolocationCalculator.getBottomRightMercator().y)));
@@ -146,7 +146,7 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
     return newImage;
 }
 
-cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeolocationCalculator geolocationCalculator, ProgressCallback progressCallback)
+cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, ProgressCallback progressCallback)
 {
     double MinX = std::min(geolocationCalculator.getTopLeftEquidistant().x, std::min(geolocationCalculator.getTopRightEquidistant().x, std::min(geolocationCalculator.getBottomLeftEquidistant().x, geolocationCalculator.getBottomRightEquidistant().x)));
     double MinY = std::min(geolocationCalculator.getTopLeftEquidistant().y, std::min(geolocationCalculator.getTopRightEquidistant().y, std::min(geolocationCalculator.getBottomLeftEquidistant().y, geolocationCalculator.getBottomRightEquidistant().y)));
@@ -220,41 +220,35 @@ void SpreadImage::affineTransform(const cv::Mat& src, cv::Mat& dst, const cv::Po
     xOrg.at<double>(1,0) = source[0].y;
     xOrg.at<double>(2,0) = 1;
     xTrans = transform * xOrg;
-    int minX = static_cast<const int>(std::floor(xTrans.at<double>(0,0)));
-    int minY = static_cast<const int>(std::floor(xTrans.at<double>(1,0)));
-
-    //std::cout << xTrans << std::endl;
+    int x1 = static_cast<const int>(std::floor(xTrans.at<double>(0,0)));
+    int y1 = static_cast<const int>(std::floor(xTrans.at<double>(1,0)));
 
     xOrg.at<double>(0,0) = source[1].x;
+    xOrg.at<double>(1,0) = source[1].y;
+    xOrg.at<double>(2,0) = 1;
+    xTrans = transform * xOrg;
+    int x2 = static_cast<const int>(std::floor(xTrans.at<double>(0,0)));
+    int y2 = static_cast<const int>(std::floor(xTrans.at<double>(1,0)));
+
+
+    xOrg.at<double>(0,0) = source[2].x;
     xOrg.at<double>(1,0) = source[2].y;
     xOrg.at<double>(2,0) = 1;
     xTrans = transform * xOrg;
-    int maxX = static_cast<const int>(std::ceil(xTrans.at<double>(0,0)));
-    int maxY = static_cast<const int>(std::ceil(xTrans.at<double>(1,0)));
+    int x3 = static_cast<const int>(std::ceil(xTrans.at<double>(0,0)));
+    int y3 = static_cast<const int>(std::ceil(xTrans.at<double>(1,0)));
 
-    if(maxX < minX) {
-        int tmp = minX;
-        minX = maxX;
-        maxX = tmp;
-    }
+    int x4 = x3 + (x2-x1);
+    int y4 = y3 + (y2-y1);
 
-    if(maxY < minY) {
-        int tmp = minY;
-        minY = maxY;
-        maxY = tmp;
-    }
+    int minX = std::min(x1, std::min(x2, std::min(x3, x4)));
+    int minY = std::min(y1, std::min(y2, std::min(y3, y4)));
 
-    if(minX < 0) {
-        minX = 0;
-    }
+    int maxX = std::max(x1, std::max(x2, std::max(x3, x4)));
+    int maxY = std::max(y1, std::max(y2, std::max(y3, y4)));
 
-    if(minY < 0) {
-        minY = 0;
-    }
-
-
-    maxX += 10; //Should be available better solution than +10
-    maxY += 10;
+    maxX += 5; //Should be available better solution than + 5
+    maxY += 5;
 
     if(maxX >= dst.size().width) {
         maxX = dst.size().width-1;
@@ -264,7 +258,13 @@ void SpreadImage::affineTransform(const cv::Mat& src, cv::Mat& dst, const cv::Po
         maxY = dst.size().height-1;
     }
 
-    //std::cout << minX << " " << maxX << std::endl;
+    if(minX < 0) {
+        minX = 0;
+    }
+
+    if(minY < 0) {
+        minY = 0;
+    }
 
     cv::Mat inverseTransform;
     cv::invertAffineTransform(transform, inverseTransform);
@@ -287,11 +287,11 @@ void SpreadImage::affineTransform(const cv::Mat& src, cv::Mat& dst, const cv::Po
                 continue;
             }
 
-            // Make sure output boundary is not exceeded
-            /*if(x >= dst.size().width || y >= dst.size().height || x < 0 || y < 0)
+            // Make sure src boundary is not exceeded
+            if(srcX >= source[1].x || srcY >= source[2].y || srcX < source[0].x || srcY < source[0].y)
             {
                 continue;
-            }*/
+            }
 
             int y1 = static_cast<int>(floor(srcY));
             int y2 = y1+1;
