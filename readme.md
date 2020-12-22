@@ -30,8 +30,8 @@ For the development QT creator is used, but the qmake is maintained only for win
 CMAKE is the build system to compile the project. Tested on Windows and Linux(ubuntu, raspbian)
 
 ```
-git pull ...
-cd ...
+git pull https://github.com/Digitelektro/MeteorDemod.git
+cd MeteorDemod
 git submodule update --init --recursive
 mkdir build && cd build
 cmake ../
@@ -48,6 +48,10 @@ Input parameters:
 
 -o --output     Optional, folder where generated files will be saved
 
+-f --format     Optional, format of the output images (jpg, bmp, png), default: bmp
+
+-d --date       Optional, specify date for decoding older files (format: dd:mm:yyyy)
+
 
 ## Development
 Master branch is for the latest stable version, beta branch for beta versions, development is ongoing on other branches.
@@ -57,9 +61,10 @@ Master branch is for the latest stable version, beta branch for beta versions, d
  - Rain overlay
  - Composite output from multiple passes
  - Support dead Meteor M2 2 satellite (it may be required for future satellites)
- - More input parameters e.g.: to control generated output formats, set date to decode older files
- - JPEG output format
+ - More input parameters e.g.: ~~to control generated output formats, set date to decode older files~~
+ - ~~JPEG output format~~
  - Multithreading, faster image processing
+ - Wav file input
  
  
 ## Example Outputs
