@@ -20,6 +20,11 @@ GIS::ShapeRenderer::ShapeRenderer(const std::string shapeFile, const cv::Scalar 
 
 }
 
+void GIS::ShapeRenderer::addNumericFilter(const std::string name, int value)
+{
+    mfilter.insert(std::make_pair(name, value));
+}
+
 void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float yStart)
 {
     mShapeReader.load();
@@ -55,7 +60,55 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
             delete recordIterator;
         }
     } else if(mShapeReader.getShapeType() == ShapeReader::ShapeType::stPoint) {
+        ShapeReader::RecordIterator *recordIterator = mShapeReader.getRecordIterator();
 
+        if(mfilter.size() == 0) {
+            if(recordIterator) {
+                for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator)) {
+                    ShapeReader::Point point(*recordIterator);
+
+                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection(point.y, point.x, mEarthRadius + mAltitude);
+                    coordinate.x += -xStart;
+                    coordinate.y += -yStart;
+
+                    cv::drawMarker(src, cv::Point2d(coordinate.x, coordinate.y), mColor, cv::MARKER_TRIANGLE_UP, 20, 10);
+                }
+            }
+        } else {
+            const DbFileReader &dbFilereader = mShapeReader.getDbFilereader();
+            const std::vector<DbFileReader::Field> fieldAttributes = dbFilereader.getFieldAttributes();
+
+            if(recordIterator && mShapeReader.hasDbFile()) {
+                uint32_t i = 0;
+                for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator), ++i) {
+                    ShapeReader::Point point(*recordIterator);
+                    std::vector<std::string> fieldValues = dbFilereader.getFieldValues(i);
+
+                    for(size_t n = 0; n < fieldAttributes.size(); n++) {
+                        if(mfilter.count(fieldAttributes[n].fieldName) == 1) {
+                            int population = 0;
+
+                            try {
+                                population = std::stoi(fieldValues[n]);
+                            } catch (...) {
+                                continue;
+                            }
+
+                            if(population >= mfilter[fieldAttributes[n].fieldName]) {
+                                PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection(point.y, point.x, mEarthRadius + mAltitude);
+                                coordinate.x += -xStart;
+                                coordinate.y += -yStart;
+
+                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, mColor, CV_FILLED);
+                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, cv::Scalar(0,0,0), 2);
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -96,7 +149,55 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
             delete recordIterator;
         }
     } else if(mShapeReader.getShapeType() == ShapeReader::ShapeType::stPoint) {
+        ShapeReader::RecordIterator *recordIterator = mShapeReader.getRecordIterator();
 
+        if(mfilter.size() == 0) {
+            if(recordIterator) {
+                for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator)) {
+                    ShapeReader::Point point(*recordIterator);
+
+                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(point.y, point.x, xCenter, yCenter, mEarthRadius + mAltitude);
+                    coordinate.x += -xStart;
+                    coordinate.y += -yStart;
+
+                    cv::drawMarker(src, cv::Point2d(coordinate.x, coordinate.y), mColor, cv::MARKER_TRIANGLE_UP, 20, 10);
+                }
+            }
+        } else {
+            const DbFileReader &dbFilereader = mShapeReader.getDbFilereader();
+            const std::vector<DbFileReader::Field> fieldAttributes = dbFilereader.getFieldAttributes();
+
+            if(recordIterator && mShapeReader.hasDbFile()) {
+                uint32_t i = 0;
+                for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator), ++i) {
+                    ShapeReader::Point point(*recordIterator);
+                    std::vector<std::string> fieldValues = dbFilereader.getFieldValues(i);
+
+                    for(size_t n = 0; n < fieldAttributes.size(); n++) {
+                        if(mfilter.count(fieldAttributes[n].fieldName) == 1) {
+                            int population = 0;
+
+                            try {
+                                population = std::stoi(fieldValues[n]);
+                            } catch (...) {
+                                continue;
+                            }
+
+                            if(population >= mfilter[fieldAttributes[n].fieldName]) {
+                                PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(point.y, point.x, xCenter, yCenter, mEarthRadius + mAltitude);
+                                coordinate.x += -xStart;
+                                coordinate.y += -yStart;
+
+                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, mColor, CV_FILLED);
+                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, cv::Scalar(0,0,0), 2);
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

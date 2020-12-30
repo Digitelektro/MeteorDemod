@@ -139,9 +139,13 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
     GIS::ShapeRenderer graticules(settings.getResourcesPath() + "ShapeFiles/ne_110m_graticules_10.shp", {200, 200, 200});
     GIS::ShapeRenderer coastLines(settings.getResourcesPath() + "ShapeFiles/ne_50m_coastline.shp", {0, 128, 128});
     GIS::ShapeRenderer country(settings.getResourcesPath() + "ShapeFiles/ne_50m_admin_0_boundary_lines_land.shp", {200, 200, 200});
+	GIS::ShapeRenderer cities(settings.getResourcesPath() + "ShapeFiles/ne_50m_populated_places.shp", { 245, 66, 90 });
+	cities.addNumericFilter("ADM0CAP", 1);
+
     graticules.drawShapeMercator(newImage, xStart, yStart);
     coastLines.drawShapeMercator(newImage, xStart, yStart);
     country.drawShapeMercator(newImage, xStart, yStart);
+	cities.drawShapeMercator(newImage, xStart, yStart);
 
     return newImage;
 }
@@ -197,9 +201,13 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeol
     GIS::ShapeRenderer coastLines(settings.getResourcesPath() + "ShapeFiles/ne_50m_coastline.shp", {0, 128, 128});
     GIS::ShapeRenderer graticules(settings.getResourcesPath() + "ShapeFiles/ne_110m_graticules_10.shp", {200, 200, 200});
     GIS::ShapeRenderer country(settings.getResourcesPath() + "ShapeFiles/ne_50m_admin_0_boundary_lines_land.shp", {200, 200, 200});
+	GIS::ShapeRenderer cities(settings.getResourcesPath() + "ShapeFiles/ne_50m_populated_places.shp", { 245, 66, 90 });
+	cities.addNumericFilter("ADM0CAP", 1);
+
     coastLines.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
     graticules.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
     country.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
+	cities.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
 
     return newImage;
 }
