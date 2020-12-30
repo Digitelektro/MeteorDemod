@@ -54,7 +54,17 @@ void ShapeReader::load()
                 for(iterator.begin(); iterator != iterator.end(); ++iterator) {
                     std::cout << iterator.point.x << " " << iterator.point.y << std::endl;
                 }
+            } else if(it.recordHeader.shapeType == stMultiPoint) {
+                MultiPointIterator iterator(*mpBinaryData, it.mRecordPosition);
+
+                for(iterator.begin(); iterator != iterator.end(); ++iterator) {
+                    std::cout << iterator.point.x << " " << iterator.point.y << std::endl;
+                }
+            } else if(it.recordHeader.shapeType == stPoint) {
+                Point pt(*mpBinaryData, it.mRecordPosition);
+                std::cout << pt.x << " " << pt.y << std::endl;
             }
+
         }*/
 
     } while (false);

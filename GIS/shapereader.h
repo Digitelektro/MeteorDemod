@@ -158,7 +158,10 @@ public:
         int32_t shapeType;
     };
 
+    struct Point;   //Forward declaration
+
     class RecordIterator {
+        friend struct Point;
     public:
         RecordIterator(std::istream &inputStream)
             : mInputStream (inputStream){
@@ -218,6 +221,24 @@ public:
             size_t index = 0;
             buffer.valueAtIndex(index, x, LittleEndian);
             buffer.valueAtIndex(index, y, LittleEndian);
+        }
+
+        Point(std::istream &inputStream, int recordPosition ) {
+            size_t index = 0;
+            DataBuffer pointBuffer(16);
+            inputStream.seekg(recordPosition);
+            inputStream.read(reinterpret_cast<char*>(pointBuffer.buffer()), pointBuffer.size());
+            pointBuffer.valueAtIndex(index, x, LittleEndian);
+            pointBuffer.valueAtIndex(index, y, LittleEndian);
+        }
+
+        Point(const RecordIterator &recordIterator) {
+            size_t index = 0;
+            DataBuffer pointBuffer(16);
+            recordIterator.mInputStream.seekg(recordIterator.mRecordPosition+12);   //Recordpos + Recordheader
+            recordIterator.mInputStream.read(reinterpret_cast<char*>(pointBuffer.buffer()), pointBuffer.size());
+            pointBuffer.valueAtIndex(index, x, LittleEndian);
+            pointBuffer.valueAtIndex(index, y, LittleEndian);
         }
 
         double x;
