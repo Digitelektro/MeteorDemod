@@ -2,6 +2,9 @@
 #define DATABUFFER_H
 
 #include <vector>
+#include <stdint.h>
+#include <stddef.h>
+#include <string.h>
 
 template<size_t N>
 void byteswap_array(uint8_t (&bytes)[N]) {

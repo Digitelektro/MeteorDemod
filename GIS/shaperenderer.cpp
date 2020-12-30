@@ -99,7 +99,7 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                                 coordinate.x += -xStart;
                                 coordinate.y += -yStart;
 
-                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, mColor, CV_FILLED);
+                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, mColor, cv::FILLED);
                                 cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, cv::Scalar(0,0,0), 2);
                             }
 
@@ -188,7 +188,7 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                                 coordinate.x += -xStart;
                                 coordinate.y += -yStart;
 
-                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, mColor, CV_FILLED);
+                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, mColor, cv::FILLED);
                                 cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, cv::Scalar(0,0,0), 2);
                             }
 
