@@ -13,6 +13,7 @@ DEFINES += QT_DEPRECATED_WARNINGS LIQUID_BUILD_CPLUSPLUS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    GIS/dbfilereader.cpp \
     decoder/viterbi.cpp \
     main.cpp \
     GIS/shapereader.cpp \
@@ -24,11 +25,13 @@ SOURCES += \
     decoder/correlation.cpp \
     imageproc/spreadimage.cpp \
     imageproc/threatimage.cpp \
+    tools/databuffer.cpp \
     tools/pixelgeolocationcalculator.cpp \
     tools/settings.cpp \
     tools/tlereader.cpp \
     tools/matrix.cpp \
-    tools/vector.cpp
+    tools/vector.cpp \
+    tools/databuffer.cpp
 
 
 # Default rules for deployment.
@@ -37,6 +40,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
+    GIS/dbfilereader.h \
     GIS/shapereader.h \
     GIS/shaperenderer.h \
     decoder/viterbi.h \
@@ -47,11 +51,13 @@ HEADERS += \
     decoder/reedsolomon.h \
     imageproc/spreadimage.h \
     imageproc/threatimage.h \
+    tools/databuffer.h \
     tools/pixelgeolocationcalculator.h \
     tools/settings.h \
     tools/matrix.h \
     tools/tlereader.h \
-    tools/vector.h
+    tools/vector.h \
+    tools/databuffer.h
 
 INCLUDEPATH +=  ../../opencv/own_build/install/include
 INCLUDEPATH +=  ./decoder

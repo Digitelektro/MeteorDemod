@@ -73,10 +73,14 @@ add_executable(meteordemod
     tools/vector.h
     tools/pixelgeolocationcalculator.cpp
     tools/pixelgeolocationcalculator.h
+    tools/databuffer.cpp
+    tools/databuffer.h
     GIS/shapereader.cpp
     GIS/shapereader.h
     GIS/shaperenderer.cpp
     GIS/shaperenderer.h
+    GIS/dbfilereader.cpp
+    GIS/dbfilereader.h
 )
 
 include_directories(
