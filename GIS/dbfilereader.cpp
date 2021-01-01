@@ -129,7 +129,7 @@ std::vector<std::string> DbFileReader::getFieldValues(uint32_t record) const
 
             mpBinaryData->read(mRecordBuffer.data(), it->fieldLength);
 
-            attributeValues.emplace_back(std::string(mRecordBuffer.data(), it->fieldLength));
+            attributeValues.emplace_back(trim(std::string(mRecordBuffer.data(), it->fieldLength)));
         }
 
     } while(false);

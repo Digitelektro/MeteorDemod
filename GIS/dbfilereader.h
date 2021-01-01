@@ -90,6 +90,20 @@ public:
     }
 
 private:
+    std::string trim(const std::string &str) const {
+        size_t pos = str.length();
+        for (std::string::const_reverse_iterator rit=str.rbegin(); rit!=str.rend(); ++rit, --pos) {
+            if(*rit != ' ')
+                break;
+        }
+
+        if(pos > 0 && pos != str.length()) {
+            return str.substr(0, pos);
+        }
+        return str;
+    }
+
+private:
     std::string mFilePath;
     std::ifstream *mpBinaryData;
     Header mFileHeader;
