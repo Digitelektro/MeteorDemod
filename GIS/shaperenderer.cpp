@@ -25,6 +25,11 @@ void GIS::ShapeRenderer::addNumericFilter(const std::string name, int value)
     mfilter.insert(std::make_pair(name, value));
 }
 
+void GIS::ShapeRenderer::setTextFieldName(const std::string &name)
+{
+    mTextFieldName = name;
+}
+
 void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float yStart)
 {
     mShapeReader.load();
@@ -84,10 +89,16 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                     ShapeReader::Point point(*recordIterator);
                     std::vector<std::string> fieldValues = dbFilereader.getFieldValues(i);
 
+                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection(point.y, point.x, mEarthRadius + mAltitude);
+                    coordinate.x += -xStart;
+                    coordinate.y += -yStart;
+
+                    bool drawName = false;
+                    size_t namePos = 0;
+
                     for(size_t n = 0; n < fieldAttributes.size(); n++) {
                         if(mfilter.count(fieldAttributes[n].fieldName) == 1) {
                             int population = 0;
-
                             try {
                                 population = std::stoi(fieldValues[n]);
                             } catch (...) {
@@ -95,16 +106,23 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                             }
 
                             if(population >= mfilter[fieldAttributes[n].fieldName]) {
-                                PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection(point.y, point.x, mEarthRadius + mAltitude);
-                                coordinate.x += -xStart;
-                                coordinate.y += -yStart;
-
                                 cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, mColor, cv::FILLED);
-                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, cv::Scalar(0,0,0), 2);
-                            }
+                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, cv::Scalar(0,0,0), 1);
 
-                            break;
+                                drawName = true;
+                            }
                         }
+
+                        if(std::string(fieldAttributes[n].fieldName) == mTextFieldName) {
+                            namePos = n;
+                        }
+                    }
+
+                    if(drawName) {
+                        int baseLine;
+                        cv::Size size = cv::getTextSize(fieldValues[namePos], cv::FONT_ITALIC, 2, 5, &baseLine);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, 2, cv::Scalar(0,0,0), 5, cv::LINE_AA);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, 2, mColor, 4, cv::LINE_AA);
                     }
                 }
             }
@@ -173,10 +191,16 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                     ShapeReader::Point point(*recordIterator);
                     std::vector<std::string> fieldValues = dbFilereader.getFieldValues(i);
 
+                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(point.y, point.x, xCenter, yCenter, mEarthRadius + mAltitude);
+                    coordinate.x += -xStart;
+                    coordinate.y += -yStart;
+
+                    bool drawName = false;
+                    size_t namePos = 0;
+
                     for(size_t n = 0; n < fieldAttributes.size(); n++) {
                         if(mfilter.count(fieldAttributes[n].fieldName) == 1) {
                             int population = 0;
-
                             try {
                                 population = std::stoi(fieldValues[n]);
                             } catch (...) {
@@ -184,16 +208,23 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                             }
 
                             if(population >= mfilter[fieldAttributes[n].fieldName]) {
-                                PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(point.y, point.x, xCenter, yCenter, mEarthRadius + mAltitude);
-                                coordinate.x += -xStart;
-                                coordinate.y += -yStart;
-
                                 cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, mColor, cv::FILLED);
-                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, cv::Scalar(0,0,0), 2);
-                            }
+                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, cv::Scalar(0,0,0), 1);
 
-                            break;
+                                drawName = true;
+                            }
                         }
+
+                        if(std::string(fieldAttributes[n].fieldName) == mTextFieldName) {
+                            namePos = n;
+                        }
+                    }
+
+                    if(drawName) {
+                        int baseLine;
+                        cv::Size size = cv::getTextSize(fieldValues[namePos], cv::FONT_ITALIC, 2, 5, &baseLine);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, 2, cv::Scalar(0,0,0), 5, cv::LINE_AA);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, 2, mColor, 4, cv::LINE_AA);
                     }
                 }
             }

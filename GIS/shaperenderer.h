@@ -14,7 +14,9 @@ public:
     ShapeRenderer(const ShapeReader &shapeReader, const cv::Scalar &color, int earthRadius = 6378, int altitude = 825);
     ShapeRenderer(const std::string shapeFile, const cv::Scalar &color, int earthRadius = 6378, int altitude = 825);
 
+    //Todo: these should be more generic
     void addNumericFilter(const std::string name, int value);
+    void setTextFieldName(const std::string &name);
 
     void drawShapeMercator(cv::Mat &src, float xStart, float yStart);
     void drawShapeEquidistant(cv::Mat &src, float xStart, float yStart, float xCenter, float yCenter);
@@ -28,6 +30,7 @@ private:
     int mEarthRadius;
     int mAltitude;
     std::map<std::string, int> mfilter;
+    std::string mTextFieldName;
 };
 
 } //namespace GIS
