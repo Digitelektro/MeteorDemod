@@ -5,7 +5,6 @@ namespace GIS {
 
 DbFileReader::DbFileReader(const std::string &filePath)
     : mFilePath(filePath)
-    , mpBinaryData(nullptr)
     , mIsLoaded(false)
     , mLargestRecordSize(0)
 {
@@ -14,11 +13,8 @@ DbFileReader::DbFileReader(const std::string &filePath)
 
 DbFileReader::~DbFileReader()
 {
-    if(mpBinaryData) {
-        if(mpBinaryData && mpBinaryData->is_open()) {
-            mpBinaryData->close();
-        }
-        delete mpBinaryData;
+    if(mBinaryData.is_open()) {
+        mBinaryData.close();
     }
 }
 
@@ -35,24 +31,24 @@ bool DbFileReader::load()
         mFilePath.replace(pos, 3, "dbf");
     }
 
-    mpBinaryData = new std::ifstream(mFilePath, std::ifstream::binary);
+    mBinaryData.open(mFilePath, std::ifstream::binary);
 
     do {
-        if(!mpBinaryData && mpBinaryData->is_open()) {
+        if(!mBinaryData.is_open()) {
             success = false;
             break;
         }
 
         DataBuffer headerBuffer(Header::size());
-        mpBinaryData->read(reinterpret_cast<char*>(headerBuffer.buffer()), headerBuffer.size());
+        mBinaryData.read(reinterpret_cast<char*>(headerBuffer.buffer()), headerBuffer.size());
         mFileHeader = Header(headerBuffer);
 
         Field field;
         DataBuffer fieldDescriptorBuffer(Field::size());
         do {
-            mpBinaryData->read(reinterpret_cast<char*>(fieldDescriptorBuffer.buffer()), fieldDescriptorBuffer.size());
+            mBinaryData.read(reinterpret_cast<char*>(fieldDescriptorBuffer.buffer()), fieldDescriptorBuffer.size());
 
-            if(mpBinaryData->fail()) {
+            if(mBinaryData.fail()) {
                 success = false;
                 break;
             }
@@ -103,7 +99,7 @@ std::vector<std::string> DbFileReader::getFieldValues(uint32_t record) const
             break;
         }
 
-        if(!mpBinaryData && mpBinaryData->is_open()) {
+        if(!mBinaryData.is_open()) {
             break;
         }
 
@@ -111,13 +107,13 @@ std::vector<std::string> DbFileReader::getFieldValues(uint32_t record) const
             break;
         }
 
-        mpBinaryData->seekg(mFileHeader.headerSize + record * mFileHeader.recordSize);
+        mBinaryData.seekg(mFileHeader.headerSize + record * mFileHeader.recordSize);
 
-        if(mpBinaryData->fail()) {
+        if(mBinaryData.fail()) {
             break;
         }
 
-        mpBinaryData->read(&isRecordDeleted, 1);
+        mBinaryData.read(&isRecordDeleted, 1);
 
         if(isRecordDeleted == '*') {
             std::cout << "Record " << record << " is deleted" << std::endl;
@@ -127,7 +123,7 @@ std::vector<std::string> DbFileReader::getFieldValues(uint32_t record) const
         std::vector<Field>::const_iterator it = mFields.begin();
         for(it = mFields.begin(); it != mFields.end(); ++it) {
 
-            mpBinaryData->read(mRecordBuffer.data(), it->fieldLength);
+            mBinaryData.read(mRecordBuffer.data(), it->fieldLength);
 
             attributeValues.emplace_back(trim(std::string(mRecordBuffer.data(), it->fieldLength)));
         }

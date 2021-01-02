@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
 #include "databuffer.h"
 
 namespace GIS {
@@ -76,6 +77,9 @@ public:
     DbFileReader(const std::string &filePath);
     ~DbFileReader();
 
+    DbFileReader(const DbFileReader&) = delete;
+    DbFileReader &operator = (const DbFileReader&) = delete;
+
 public:
     bool load();
     void test();
@@ -105,7 +109,7 @@ private:
 
 private:
     std::string mFilePath;
-    std::ifstream *mpBinaryData;
+    mutable std::ifstream mBinaryData;
     Header mFileHeader;
     bool mIsLoaded;
     uint16_t mLargestRecordSize;

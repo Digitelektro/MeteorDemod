@@ -100,7 +100,7 @@ public:
     class RecordIterator {
         friend struct Point;
     public:
-        RecordIterator(std::istream &inputStream)
+        RecordIterator(std::ifstream &inputStream)
             : mInputStream (inputStream){
 
         }
@@ -143,7 +143,7 @@ public:
         RecordHeader recordHeader;
         int mRecordPosition;
     protected:
-        std::istream &mInputStream;
+        std::ifstream &mInputStream;
     };
 
     struct Point
@@ -227,7 +227,7 @@ public:
 
     class PolyLineIterator {
     public:
-        PolyLineIterator(std::istream &inputStream, int recordPosition)
+        PolyLineIterator(std::ifstream &inputStream, int recordPosition)
             : mInputStream (inputStream)
             , mRecordPosition(recordPosition)
             , mNumberOfPoint (0){
@@ -285,7 +285,7 @@ public:
         Point point;
 
     protected:
-        std::istream &mInputStream;
+        std::ifstream &mInputStream;
         const int mRecordPosition;
         int mNumberOfPoint;
         PolyLineHeader mPolyLineHeader;
@@ -293,7 +293,7 @@ public:
 
     class MultiPointIterator {
     public:
-        MultiPointIterator(std::istream &inputStream, int recordPosition)
+        MultiPointIterator(std::ifstream &inputStream, int recordPosition)
             : mInputStream (inputStream)
             , mRecordPosition(recordPosition)
             , mNumberOfPoint (0){
@@ -347,7 +347,7 @@ public:
         Point point;
 
     protected:
-        std::istream &mInputStream;
+        std::ifstream &mInputStream;
         const int mRecordPosition;
         int mNumberOfPoint;
         MultiPointHeader mMultiPointHeader;
@@ -357,6 +357,11 @@ public:
 public:
     ShapeReader(const std::string &shapeFile);
     ~ShapeReader();
+
+    ShapeReader(const ShapeReader&) = delete;
+    ShapeReader &operator = (const ShapeReader&) = delete;
+
+public:
 
     bool load();
 
@@ -368,22 +373,22 @@ public:
         }
     }
 
-    RecordIterator *getRecordIterator() const {
+    RecordIterator *getRecordIterator() {
         if(mLoaded) {
-            return new RecordIterator(*mpBinaryData);
+            return new RecordIterator(mBinaryData);
         }
         return nullptr;
     }
-    PolyLineIterator *getPolyLineIterator(const RecordIterator &recordIterator) const {
+    PolyLineIterator *getPolyLineIterator(const RecordIterator &recordIterator) {
         if(mLoaded) {
-            return new PolyLineIterator(*mpBinaryData, recordIterator.mRecordPosition);
+            return new PolyLineIterator(mBinaryData, recordIterator.mRecordPosition);
         }
         return nullptr;
     }
 
-    MultiPointIterator *getMultiPointIterator(const RecordIterator &recordIterator) const {
+    MultiPointIterator *getMultiPointIterator(const RecordIterator &recordIterator) {
         if(mLoaded) {
-            return new MultiPointIterator(*mpBinaryData, recordIterator.mRecordPosition);
+            return new MultiPointIterator(mBinaryData, recordIterator.mRecordPosition);
         }
         return nullptr;
     }
@@ -398,7 +403,7 @@ public:
 
 private:
     std::string mFilePath;
-    std::istream *mpBinaryData;
+    std::ifstream mBinaryData;
     ShapeHeader mShapeHeader;
     bool mLoaded;
     DbFileReader mDbFileReader;

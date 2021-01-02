@@ -6,7 +6,6 @@ namespace GIS {
 
 ShapeReader::ShapeReader(const std::string &shapeFile)
     : mFilePath(shapeFile)
-    , mpBinaryData(nullptr)
     , mLoaded(false)
     , mDbFileReader(shapeFile)
     , mHasDbFile(false)
@@ -16,12 +15,8 @@ ShapeReader::ShapeReader(const std::string &shapeFile)
 
 ShapeReader::~ShapeReader()
 {
-    if(mpBinaryData) {
-        std::ifstream *streamreader = dynamic_cast<std::ifstream*>(mpBinaryData);
-        if(streamreader && streamreader->is_open()) {
-            streamreader->close();
-        }
-        delete mpBinaryData;
+    if(mBinaryData.is_open()) {
+        mBinaryData.close();
     }
 }
 
@@ -33,18 +28,18 @@ bool ShapeReader::load()
         return success;
     }
 
-    mpBinaryData = new std::ifstream(mFilePath, std::ifstream::binary);
+    mBinaryData.open(mFilePath, std::ifstream::binary);
 
     do {
-        if(!mpBinaryData) {
+        if(!mBinaryData.is_open()) {
             success = false;
             break;
         }
 
         DataBuffer headerBuffer(100);
-        mpBinaryData->read(reinterpret_cast<char*>(headerBuffer.buffer()), headerBuffer.size());
+        mBinaryData.read(reinterpret_cast<char*>(headerBuffer.buffer()), headerBuffer.size());
 
-        if(mpBinaryData->fail()) {
+        if(mBinaryData.fail()) {
             success = false;
             break;
         }
@@ -53,7 +48,7 @@ bool ShapeReader::load()
 
         mLoaded = true;
 
-        RecordIterator it(*mpBinaryData);
+        RecordIterator it(mBinaryData);
 
         //Test
         /*for(it.begin(); it != it.end(); ++it) {

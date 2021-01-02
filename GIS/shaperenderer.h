@@ -8,11 +8,13 @@
 
 namespace GIS {
 
-class ShapeRenderer
+class ShapeRenderer : public ShapeReader
 {
 public:
-    ShapeRenderer(const ShapeReader &shapeReader, const cv::Scalar &color, int earthRadius = 6378, int altitude = 825);
     ShapeRenderer(const std::string shapeFile, const cv::Scalar &color, int earthRadius = 6378, int altitude = 825);
+
+    ShapeRenderer(const ShapeRenderer&) = delete;
+    ShapeRenderer &operator = (const ShapeRenderer&) = delete;
 
     //Todo: these should be more generic
     void addNumericFilter(const std::string name, int value);
@@ -25,7 +27,6 @@ private:
     bool equidistantCheck(float x, float y, float centerLongitude, float centerLatitude);
 
 private:
-    ShapeReader mShapeReader;
     cv::Scalar mColor;
     int mEarthRadius;
     int mAltitude;

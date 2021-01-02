@@ -2,17 +2,9 @@
 #include <vector>
 #include "pixelgeolocationcalculator.h"
 
-GIS::ShapeRenderer::ShapeRenderer(const ShapeReader &shapeReader, const cv::Scalar &color, int earthRadius, int altitude)
-    : mShapeReader(shapeReader)
-    , mColor(color)
-    , mEarthRadius(earthRadius)
-    , mAltitude(altitude)
-{
-
-}
 
 GIS::ShapeRenderer::ShapeRenderer(const std::string shapeFile, const cv::Scalar &color, int earthRadius, int altitude)
-    : mShapeReader(shapeFile)
+    : ShapeReader(shapeFile)
     , mColor(color)
     , mEarthRadius(earthRadius)
     , mAltitude(altitude)
@@ -32,14 +24,16 @@ void GIS::ShapeRenderer::setTextFieldName(const std::string &name)
 
 void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float yStart)
 {
-    mShapeReader.load();
+    if(!load()) {
+        return;
+    }
 
-    if(mShapeReader.getShapeType() == ShapeReader::ShapeType::stPolyline) {
-        ShapeReader::RecordIterator *recordIterator = mShapeReader.getRecordIterator();
+    if(getShapeType() == ShapeReader::ShapeType::stPolyline) {
+        ShapeReader::RecordIterator *recordIterator = getRecordIterator();
 
         if(recordIterator) {
             for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator)) {
-                ShapeReader::PolyLineIterator *polyLineIterator = mShapeReader.getPolyLineIterator(*recordIterator);
+                ShapeReader::PolyLineIterator *polyLineIterator = getPolyLineIterator(*recordIterator);
 
                 if(polyLineIterator) {
                     std::vector<cv::Point> polyLines;
@@ -64,8 +58,8 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
 
             delete recordIterator;
         }
-    } else if(mShapeReader.getShapeType() == ShapeReader::ShapeType::stPoint) {
-        ShapeReader::RecordIterator *recordIterator = mShapeReader.getRecordIterator();
+    } else if(getShapeType() == ShapeReader::ShapeType::stPoint) {
+        ShapeReader::RecordIterator *recordIterator = getRecordIterator();
 
         if(mfilter.size() == 0) {
             if(recordIterator) {
@@ -80,10 +74,10 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                 }
             }
         } else {
-            const DbFileReader &dbFilereader = mShapeReader.getDbFilereader();
+            const DbFileReader &dbFilereader = getDbFilereader();
             const std::vector<DbFileReader::Field> fieldAttributes = dbFilereader.getFieldAttributes();
 
-            if(recordIterator && mShapeReader.hasDbFile()) {
+            if(recordIterator && hasDbFile()) {
                 uint32_t i = 0;
                 for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator), ++i) {
                     ShapeReader::Point point(*recordIterator);
@@ -132,14 +126,16 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
 
 void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float yStart, float xCenter, float yCenter)
 {
-    mShapeReader.load();
+    if(!load()) {
+        return;
+    }
 
-    if(mShapeReader.getShapeType() == ShapeReader::ShapeType::stPolyline) {
-        ShapeReader::RecordIterator *recordIterator = mShapeReader.getRecordIterator();
+    if(getShapeType() == ShapeReader::ShapeType::stPolyline) {
+        ShapeReader::RecordIterator *recordIterator = getRecordIterator();
 
         if(recordIterator) {
             for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator)) {
-                ShapeReader::PolyLineIterator *polyLineIterator = mShapeReader.getPolyLineIterator(*recordIterator);
+                ShapeReader::PolyLineIterator *polyLineIterator = getPolyLineIterator(*recordIterator);
 
                 if(polyLineIterator) {
                     std::vector<cv::Point> polyLines;
@@ -166,8 +162,8 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
 
             delete recordIterator;
         }
-    } else if(mShapeReader.getShapeType() == ShapeReader::ShapeType::stPoint) {
-        ShapeReader::RecordIterator *recordIterator = mShapeReader.getRecordIterator();
+    } else if(getShapeType() == ShapeReader::ShapeType::stPoint) {
+        ShapeReader::RecordIterator *recordIterator = getRecordIterator();
 
         if(mfilter.size() == 0) {
             if(recordIterator) {
@@ -182,10 +178,10 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                 }
             }
         } else {
-            const DbFileReader &dbFilereader = mShapeReader.getDbFilereader();
+            const DbFileReader &dbFilereader = getDbFilereader();
             const std::vector<DbFileReader::Field> fieldAttributes = dbFilereader.getFieldAttributes();
 
-            if(recordIterator && mShapeReader.hasDbFile()) {
+            if(recordIterator && hasDbFile()) {
                 uint32_t i = 0;
                 for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator), ++i) {
                     ShapeReader::Point point(*recordIterator);
