@@ -80,6 +80,9 @@ cv::Mat SpreadImage::stretch(const cv::Mat &image)
 
 cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, ProgressCallback progressCallback)
 {
+    cv::Point2f srcTri[3];
+    cv::Point2f dstTri[3];
+
     double MinX = std::min(geolocationCalculator.getTopLeftMercator().x, std::min(geolocationCalculator.getTopRightMercator().x, std::min(geolocationCalculator.getBottomLeftMercator().x, geolocationCalculator.getBottomRightMercator().x)));
     double MinY = std::min(geolocationCalculator.getTopLeftMercator().y, std::min(geolocationCalculator.getTopRightMercator().y, std::min(geolocationCalculator.getBottomLeftMercator().y, geolocationCalculator.getBottomRightMercator().y)));
     double MaxX = std::max(geolocationCalculator.getTopLeftMercator().x, std::max(geolocationCalculator.getTopRightMercator().x, std::max(geolocationCalculator.getBottomLeftMercator().x, geolocationCalculator.getBottomRightMercator().x)));
@@ -96,8 +99,6 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
     //cv::Mat newImage(height, width, image.type());
     cv::Mat newImage = cv::Mat::zeros(height, width, image.type());
 
-    PixelGeolocationCalculator::CartesianCoordinateF p1, p2, p3;
-
     for (int y = 0; y < imageWithGeorefHeight - 10; y += 10)
     {
         if(progressCallback) {
@@ -105,12 +106,9 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
         }
         for (int x = 0; x < image.size().width - 10; x += 10)
         {
-            p1 = geolocationCalculator.getMercatorAt(x, y);
-            p2 = geolocationCalculator.getMercatorAt(x + 10, y);
-            p3 = geolocationCalculator.getMercatorAt(x, y + 10);
-
-            cv::Point2f srcTri[3];
-            cv::Point2f dstTri[3];
+            const PixelGeolocationCalculator::CartesianCoordinateF &p1 = geolocationCalculator.getMercatorAt(x, y);
+            const PixelGeolocationCalculator::CartesianCoordinateF &p2 = geolocationCalculator.getMercatorAt(x + 10, y);
+            const PixelGeolocationCalculator::CartesianCoordinateF &p3 = geolocationCalculator.getMercatorAt(x, y + 10);
 
             //test
             /*srcTri[0] = cv::Point2f( 0, 0 );
@@ -139,15 +137,23 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
     GIS::ShapeRenderer graticules(settings.getResourcesPath() + "ShapeFiles/ne_110m_graticules_10.shp", {200, 200, 200});
     GIS::ShapeRenderer coastLines(settings.getResourcesPath() + "ShapeFiles/ne_50m_coastline.shp", {0, 128, 128});
     GIS::ShapeRenderer country(settings.getResourcesPath() + "ShapeFiles/ne_50m_admin_0_boundary_lines_land.shp", {200, 200, 200});
+    GIS::ShapeRenderer cities(settings.getResourcesPath() + "ShapeFiles/ne_50m_populated_places.shp", {245, 66, 90});
+    cities.addNumericFilter("ADM0CAP", 1);
+    cities.setTextFieldName("NAME");
+
     graticules.drawShapeMercator(newImage, xStart, yStart);
     coastLines.drawShapeMercator(newImage, xStart, yStart);
     country.drawShapeMercator(newImage, xStart, yStart);
+    cities.drawShapeMercator(newImage, xStart, yStart);
 
     return newImage;
 }
 
 cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, ProgressCallback progressCallback)
 {
+    cv::Point2f srcTri[3];
+    cv::Point2f dstTri[3];
+
     double MinX = std::min(geolocationCalculator.getTopLeftEquidistant().x, std::min(geolocationCalculator.getTopRightEquidistant().x, std::min(geolocationCalculator.getBottomLeftEquidistant().x, geolocationCalculator.getBottomRightEquidistant().x)));
     double MinY = std::min(geolocationCalculator.getTopLeftEquidistant().y, std::min(geolocationCalculator.getTopRightEquidistant().y, std::min(geolocationCalculator.getBottomLeftEquidistant().y, geolocationCalculator.getBottomRightEquidistant().y)));
     double MaxX = std::max(geolocationCalculator.getTopLeftEquidistant().x, std::max(geolocationCalculator.getTopRightEquidistant().x, std::max(geolocationCalculator.getBottomLeftEquidistant().x, geolocationCalculator.getBottomRightEquidistant().x)));
@@ -163,8 +169,6 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeol
 
     cv::Mat newImage = cv::Mat::zeros(height, width, image.type());
 
-    PixelGeolocationCalculator::CartesianCoordinateF p1, p2, p3;
-
     for (int y = 0; y < imageWithGeorefHeight - 10; y += 10)
     {
         if(progressCallback) {
@@ -172,12 +176,9 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeol
         }
         for (int x = 0; x < image.size().width - 10; x += 10)
         {
-            p1 = geolocationCalculator.getEquidistantAt(x, y);
-            p2 = geolocationCalculator.getEquidistantAt(x + 10, y);
-            p3 = geolocationCalculator.getEquidistantAt(x, y + 10);
-
-            cv::Point2f srcTri[3];
-            cv::Point2f dstTri[3];
+            const PixelGeolocationCalculator::CartesianCoordinateF &p1 = geolocationCalculator.getEquidistantAt(x, y);
+            const PixelGeolocationCalculator::CartesianCoordinateF &p2 = geolocationCalculator.getEquidistantAt(x + 10, y);
+            const PixelGeolocationCalculator::CartesianCoordinateF &p3 = geolocationCalculator.getEquidistantAt(x, y + 10);
 
             srcTri[0] = cv::Point2f( x, y );
             srcTri[1] = cv::Point2f( x + 10, y );
@@ -197,9 +198,14 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeol
     GIS::ShapeRenderer coastLines(settings.getResourcesPath() + "ShapeFiles/ne_50m_coastline.shp", {0, 128, 128});
     GIS::ShapeRenderer graticules(settings.getResourcesPath() + "ShapeFiles/ne_110m_graticules_10.shp", {200, 200, 200});
     GIS::ShapeRenderer country(settings.getResourcesPath() + "ShapeFiles/ne_50m_admin_0_boundary_lines_land.shp", {200, 200, 200});
+    GIS::ShapeRenderer cities(settings.getResourcesPath() + "ShapeFiles/ne_50m_populated_places.shp", {115, 73, 31});
+    cities.addNumericFilter("ADM0CAP", 1);
+    cities.setTextFieldName("NAME");
+
     coastLines.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
     graticules.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
     country.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
+    cities.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
 
     return newImage;
 }

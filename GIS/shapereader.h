@@ -5,73 +5,10 @@
 #include <iostream>
 #include <vector>
 #include <iterator>
+#include "databuffer.h"
+#include "dbfilereader.h"
 
 namespace GIS {
-
-template<size_t N>
-void byteswap_array(uint8_t (&bytes)[N]) {
-  // Optimize this with a platform-specific API as desired.
-  for (uint8_t *p = bytes, *end = bytes + N - 1; p < end; ++p, --end) {
-    uint8_t tmp = *p;
-    *p = *end;
-    *end = tmp;
-  }
-}
-
-template<typename T>
-T byteswap(T value) {
-  byteswap_array(*reinterpret_cast<uint8_t (*)[sizeof(value)]>(&value));
-  return value;
-}
-
-enum Endianness {
-    BigEndian,
-    LittleEndian
-};
-
-class DataBuffer {
-public:
-    DataBuffer(size_t size)
-        : mBuffer(size) {
-    }
-    virtual ~DataBuffer() {}
-
-public:
-    template <typename T>
-    bool valueAtIndex(size_t &index, T &result, Endianness endiannes) const {
-        if(mBuffer.size() < (index + sizeof(T))) {
-            return false;
-        }
-
-        const T *p = reinterpret_cast<const T*>(&(mBuffer[index]));
-
-        if(endiannes == BigEndian) {
-            result = byteswap(*p);
-        } else {
-            result = *p;
-        }
-
-        index += sizeof(T);
-
-        return true;
-    }
-
-public:
-    size_t size() const {
-        return  mBuffer.size();
-    }
-
-    uint8_t *buffer() {
-        return mBuffer.data();
-    }
-
-    const uint8_t *constBuffer() const {
-        return mBuffer.data();
-    }
-
-protected:
-    std::vector<uint8_t> mBuffer;
-};
 
 class ShapeReader
 {
@@ -158,9 +95,12 @@ public:
         int32_t shapeType;
     };
 
+    struct Point;   //Forward declaration
+
     class RecordIterator {
+        friend struct Point;
     public:
-        RecordIterator(std::istream &inputStream)
+        RecordIterator(std::ifstream &inputStream)
             : mInputStream (inputStream){
 
         }
@@ -203,7 +143,7 @@ public:
         RecordHeader recordHeader;
         int mRecordPosition;
     protected:
-        std::istream &mInputStream;
+        std::ifstream &mInputStream;
     };
 
     struct Point
@@ -218,6 +158,24 @@ public:
             size_t index = 0;
             buffer.valueAtIndex(index, x, LittleEndian);
             buffer.valueAtIndex(index, y, LittleEndian);
+        }
+
+        Point(std::istream &inputStream, int recordPosition ) {
+            size_t index = 0;
+            DataBuffer pointBuffer(16);
+            inputStream.seekg(recordPosition);
+            inputStream.read(reinterpret_cast<char*>(pointBuffer.buffer()), pointBuffer.size());
+            pointBuffer.valueAtIndex(index, x, LittleEndian);
+            pointBuffer.valueAtIndex(index, y, LittleEndian);
+        }
+
+        Point(const RecordIterator &recordIterator) {
+            size_t index = 0;
+            DataBuffer pointBuffer(16);
+            recordIterator.mInputStream.seekg(recordIterator.mRecordPosition+12);   //Recordpos + Recordheader
+            recordIterator.mInputStream.read(reinterpret_cast<char*>(pointBuffer.buffer()), pointBuffer.size());
+            pointBuffer.valueAtIndex(index, x, LittleEndian);
+            pointBuffer.valueAtIndex(index, y, LittleEndian);
         }
 
         double x;
@@ -269,7 +227,7 @@ public:
 
     class PolyLineIterator {
     public:
-        PolyLineIterator(std::istream &inputStream, int recordPosition)
+        PolyLineIterator(std::ifstream &inputStream, int recordPosition)
             : mInputStream (inputStream)
             , mRecordPosition(recordPosition)
             , mNumberOfPoint (0){
@@ -327,7 +285,7 @@ public:
         Point point;
 
     protected:
-        std::istream &mInputStream;
+        std::ifstream &mInputStream;
         const int mRecordPosition;
         int mNumberOfPoint;
         PolyLineHeader mPolyLineHeader;
@@ -335,7 +293,7 @@ public:
 
     class MultiPointIterator {
     public:
-        MultiPointIterator(std::istream &inputStream, int recordPosition)
+        MultiPointIterator(std::ifstream &inputStream, int recordPosition)
             : mInputStream (inputStream)
             , mRecordPosition(recordPosition)
             , mNumberOfPoint (0){
@@ -389,7 +347,7 @@ public:
         Point point;
 
     protected:
-        std::istream &mInputStream;
+        std::ifstream &mInputStream;
         const int mRecordPosition;
         int mNumberOfPoint;
         MultiPointHeader mMultiPointHeader;
@@ -400,7 +358,12 @@ public:
     ShapeReader(const std::string &shapeFile);
     ~ShapeReader();
 
-    void load();
+    ShapeReader(const ShapeReader&) = delete;
+    ShapeReader &operator = (const ShapeReader&) = delete;
+
+public:
+
+    bool load();
 
     ShapeType getShapeType() const {
         if(mLoaded) {
@@ -410,31 +373,41 @@ public:
         }
     }
 
-    RecordIterator *getRecordIterator() const {
+    RecordIterator *getRecordIterator() {
         if(mLoaded) {
-            return new RecordIterator(*mpBinaryData);
+            return new RecordIterator(mBinaryData);
         }
         return nullptr;
     }
-    PolyLineIterator *getPolyLineIterator(const RecordIterator &recordIterator) const {
+    PolyLineIterator *getPolyLineIterator(const RecordIterator &recordIterator) {
         if(mLoaded) {
-            return new PolyLineIterator(*mpBinaryData, recordIterator.mRecordPosition);
+            return new PolyLineIterator(mBinaryData, recordIterator.mRecordPosition);
         }
         return nullptr;
     }
 
-    MultiPointIterator *getMultiPointIterator(const RecordIterator &recordIterator) const {
+    MultiPointIterator *getMultiPointIterator(const RecordIterator &recordIterator) {
         if(mLoaded) {
-            return new MultiPointIterator(*mpBinaryData, recordIterator.mRecordPosition);
+            return new MultiPointIterator(mBinaryData, recordIterator.mRecordPosition);
         }
         return nullptr;
+    }
+
+    const DbFileReader &getDbFilereader() const {
+        return mDbFileReader;
+    }
+
+    bool hasDbFile() const {
+        return mHasDbFile;
     }
 
 private:
     std::string mFilePath;
-    std::istream *mpBinaryData;
+    std::ifstream mBinaryData;
     ShapeHeader mShapeHeader;
     bool mLoaded;
+    DbFileReader mDbFileReader;
+    bool mHasDbFile;
 };
 
 }//namespace GIS
