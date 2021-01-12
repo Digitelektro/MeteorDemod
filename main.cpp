@@ -72,6 +72,7 @@ int main(int argc, char *argv[])
     }
 
     mSettings.parseArgs(argc, argv);
+    mSettings.parseIni(mSettings.getResourcesPath() + "settings.ini");
 
     TleReader reader(mSettings.getTlePath());
     TleReader::TLE tle;
@@ -176,15 +177,15 @@ int main(int argc, char *argv[])
     passStart.Initialise(passDate.Year(), passDate.Month(), passDate.Day(), passFirstTime.Hours()-3, passFirstTime.Minutes(), passFirstTime.Seconds(),passFirstTime.Microseconds());
     std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute());
 
-    PixelGeolocationCalculator calc(tle, passStart, passLength, 55.4, -3.2);
+    PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getM2Alfa() / 2.0f, mSettings.getM2Delta());
     calc.calcPixelCoordinates();
     calc.save(mSettings.getOutputPath() + fileNameDate + ".gcp");
 
     std::list<ImageForSpread> imagesToSpread;
 
     if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel68Available()) {
-        cv::Mat threatedImage1 = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, true);
-        cv::Mat irImage = mPacketParser.getChannelImage(PacketParser::APID_68, true);
+        cv::Mat threatedImage1 = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
+        cv::Mat irImage = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
 
         if(!ThreatImage::isNightPass(threatedImage1)) {
             imagesToSpread.push_back(ImageForSpread(threatedImage1, "122_"));
@@ -192,9 +193,9 @@ int main(int argc, char *argv[])
             std::cout << "Nigh pass, RGB image is skipped" << std::endl;
         }
 
-        cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, true);
-        cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, true);
-        cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, true);
+        cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
+        cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
+        cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
 
         saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
@@ -210,7 +211,7 @@ int main(int argc, char *argv[])
         imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
 
     } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel66Available()) {
-        cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_66, PacketParser::APID_65, PacketParser::APID_64, true);
+        cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_66, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
 
         if(!ThreatImage::isNightPass(threatedImage)) {
             imagesToSpread.push_back(ImageForSpread(threatedImage, "123_"));
@@ -218,20 +219,20 @@ int main(int argc, char *argv[])
             std::cout << "Nigh pass, RGB image is skipped" << std::endl;
         }
 
-        mPacketParser.getChannelImage(PacketParser::APID_64, true);
-        mPacketParser.getChannelImage(PacketParser::APID_65, true);
-        mPacketParser.getChannelImage(PacketParser::APID_66, true);
+        mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
+        mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
+        mPacketParser.getChannelImage(PacketParser::APID_66, mSettings.fillBackLines());
 
-        cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, true);
-        cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, true);
-        cv::Mat ch66 = mPacketParser.getChannelImage(PacketParser::APID_68, true);
+        cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
+        cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
+        cv::Mat ch66 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
 
         saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_66.bmp", ch66);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_123.bmp", threatedImage);
     } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available()) {
-        cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, true);
+        cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
 
         if(!ThreatImage::isNightPass(threatedImage)) {
             imagesToSpread.push_back(ImageForSpread(threatedImage, "122_"));
@@ -239,8 +240,8 @@ int main(int argc, char *argv[])
             std::cout << "Nigh pass, RGB image is skipped" << std::endl;
         }
 
-        cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, true);
-        cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, true);
+        cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
+        cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
 
         saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
@@ -258,34 +259,40 @@ int main(int argc, char *argv[])
     for(it = imagesToSpread.begin(); it != imagesToSpread.end(); ++it, c++) {
         std::string fileName = (*it).fileNameBase + fileNameDate + "." + mSettings.getOutputFormat();
 
-        cv::Mat strechedImg = spreadImage.stretch((*it).image);
+        if(mSettings.spreadImage()) {
+            cv::Mat strechedImg = spreadImage.stretch((*it).image);
 
-        if(!strechedImg.empty()) {
-            saveImage(mSettings.getOutputPath() + std::string("spread_") + fileName, strechedImg);
-        } else {
-            std::cout << "Failed to strech image";
+            if(!strechedImg.empty()) {
+                saveImage(mSettings.getOutputPath() + std::string("spread_") + fileName, strechedImg);
+            } else {
+                std::cout << "Failed to strech image" << std::endl;
+            }
         }
 
-        cv::Mat mercator = spreadImage.mercatorProjection((*it).image, calc, [c, &imagesToSpread](float percent) {
-            std::cout << "Spreading mercator " << c << " of " << imagesToSpread.size() << " " << static_cast<int>(percent) << "%\t\t\r" << std::flush;
-        });
-        std::cout << std::endl;
+        if(mSettings.mercatorProjection()) {
+            cv::Mat mercator = spreadImage.mercatorProjection((*it).image, calc, [c, &imagesToSpread](float percent) {
+                std::cout << "Spreading mercator " << c << " of " << imagesToSpread.size() << " " << static_cast<int>(percent) << "%\t\t\r" << std::flush;
+            });
+            std::cout << std::endl;
 
-        if(!mercator.empty()) {
-            saveImage(mSettings.getOutputPath() + std::string("mercator_") + fileName, mercator);
-        } else {
-            std::cout << "Failed to create mercator projection";
+            if(!mercator.empty()) {
+                saveImage(mSettings.getOutputPath() + std::string("mercator_") + fileName, mercator);
+            } else {
+                std::cout << "Failed to create mercator projection" << std::endl;
+            }
         }
 
-        cv::Mat equidistant = spreadImage.equidistantProjection((*it).image, calc, [c, &imagesToSpread](float percent) {
-            std::cout << "Spreading equidistant " << c << " of " << imagesToSpread.size() << " " << static_cast<int>(percent) << "%\t\t\r" << std::flush;
-        });
-        std::cout << std::endl;
+        if(mSettings.equadistantProjection()) {
+            cv::Mat equidistant = spreadImage.equidistantProjection((*it).image, calc, [c, &imagesToSpread](float percent) {
+                std::cout << "Spreading equidistant " << c << " of " << imagesToSpread.size() << " " << static_cast<int>(percent) << "%\t\t\r" << std::flush;
+            });
+            std::cout << std::endl;
 
-        if(!equidistant.empty()) {
-            saveImage(mSettings.getOutputPath() + std::string("equidistant_") + fileName, equidistant);
-        } else {
-            std::cout << "Failed to create equidistant projection";
+            if(!equidistant.empty()) {
+                saveImage(mSettings.getOutputPath() + std::string("equidistant_") + fileName, equidistant);
+            } else {
+                std::cout << "Failed to create equidistant projection" << std::endl;
+            }
         }
     }
     return 0;
@@ -293,8 +300,12 @@ int main(int argc, char *argv[])
 
 void saveImage(const std::string fileName, const cv::Mat &image)
 {
+    std::vector<int> compression_params;
+    compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
+    compression_params.push_back(mSettings.getJpegQuality());
+
     try {
-        cv::imwrite(fileName, image);
+        cv::imwrite(fileName, image, compression_params);
     } catch (const cv::Exception& ex) {
         std::cout << "Save image " << fileName << " failed. error: " << ex.what() << std::endl;
     }
