@@ -44,9 +44,10 @@ void Settings::parseIni(const std::string &path)
 
     ini::extract(mIniParser.sections["Program"]["AzimuthalEquidistantProjection"], mEquidistantProjection, true);
     ini::extract(mIniParser.sections["Program"]["MercatorProjection"], mMercatorProjection, true);
+    ini::extract(mIniParser.sections["Program"]["SpreadImage"], mSpreadImage, true);
     ini::extract(mIniParser.sections["Program"]["JpgQuality"], mJpegQuality, 90);
     ini::extract(mIniParser.sections["Program"]["AlfaM2"], mAlfaM2, 110.8f);
-    ini::extract(mIniParser.sections["Program"]["DeltaM2"], DeltaM2, 3.2f);
+    ini::extract(mIniParser.sections["Program"]["DeltaM2"], DeltaM2, -3.2f);
 
     ini::extract(mIniParser.sections["Treatment"]["FillBlackLines"], mFillBackLines, true);
 
@@ -78,6 +79,8 @@ void Settings::parseIni(const std::string &path)
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["FileName"], mShapePopulatedPlacesFile);
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["Color"], mShapePopulatedPlacesColor, HTMLColor());
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["Thickness"], mShapePopulatedPlacesThickness, 5);
+    ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["FontScale"], mShapePopulatedPlacesFontScale, 2);
+    ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["PointRadius"], mShapePopulatedPlacesPointradius, 10);
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["FilterColumnName"], mShapePopulatedPlacesFilterColumnName, std::string("ADM0CAP"));
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["NumericFilter"], mShapePopulatedPlacesNumbericFilter, 1);
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["TextColumnName"], mShapePopulatedPlacesTextColumnName, std::string("NAME"));

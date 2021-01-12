@@ -99,10 +99,11 @@ public: //getters
     int getJpegQuality() const { return mJpegQuality; }
     float getM2Alfa() const { return mAlfaM2; }
     float getM2Delta() const { return DeltaM2; }
-    bool EquadistantProjection() const { return mEquidistantProjection; }
-    bool MercatorProjection() const { return mMercatorProjection; }
+    bool equadistantProjection() const { return mEquidistantProjection; }
+    bool mercatorProjection() const { return mMercatorProjection; }
+    bool spreadImage() const { return mSpreadImage; }
 
-    bool FillBackLines() const { return mFillBackLines; }
+    bool fillBackLines() const { return mFillBackLines; }
 
     const std::string &getWaterMarkPlace() const { return mWaterMarkPlace; }
     const HTMLColor &getWaterMarkColor() const { return mWaterMarkColor; }
@@ -132,6 +133,8 @@ public: //getters
     const std::string &getShapePopulatedPlacesFile() const { return mShapePopulatedPlacesFile; }
     const HTMLColor &getShapePopulatedPlacesColor() const { return mShapePopulatedPlacesColor; }
     int getShapePopulatedPlacesThickness() const { return mShapePopulatedPlacesThickness; }
+    int getShapePopulatedPlacesFontScale() const { return mShapePopulatedPlacesFontScale; }
+    int getShapePopulatedPlacesPointradius() const { return mShapePopulatedPlacesPointradius; }
     const std::string &getShapePopulatedPlacesFilterColumnName() const { return mShapePopulatedPlacesFilterColumnName; }
     int getShapePopulatedPlacesNumbericFilter() const { return mShapePopulatedPlacesNumbericFilter; }
     const std::string &getShapePopulatedPlacesTextColumnName() const { return mShapePopulatedPlacesTextColumnName; }
@@ -147,6 +150,7 @@ private:
     float DeltaM2;
     bool mEquidistantProjection;
     bool mMercatorProjection;
+    bool mSpreadImage;
 
     //ini section: Treatment
     bool mFillBackLines;
@@ -185,6 +189,8 @@ private:
     std::string mShapePopulatedPlacesFile;
     HTMLColor mShapePopulatedPlacesColor;
     int mShapePopulatedPlacesThickness;
+    int mShapePopulatedPlacesFontScale;
+    int mShapePopulatedPlacesPointradius;
     std::string mShapePopulatedPlacesFilterColumnName;
     int mShapePopulatedPlacesNumbericFilter;
     std::string mShapePopulatedPlacesTextColumnName;
