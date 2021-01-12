@@ -1,5 +1,6 @@
 #include "settings.h"
 #include <sstream>
+#include <fstream>
 #include <ctime>
 #include <regex>
 
@@ -33,6 +34,53 @@ void Settings::parseArgs(int argc, char **argv)
     for(int i = 1; i < (argc-1); i+=2) {
         mArgs.insert(std::make_pair(argv[i], argv[i+1]));
     }
+}
+
+void Settings::parseIni(const std::string &path)
+{
+    std::ifstream ifStream(path);
+    mIniParser.parse(ifStream);
+    //mIniParser.generate(std::cout);
+
+    ini::extract(mIniParser.sections["Program"]["AzimuthalEquidistantProjection"], mEquidistantProjection, true);
+    ini::extract(mIniParser.sections["Program"]["MercatorProjection"], mMercatorProjection, true);
+    ini::extract(mIniParser.sections["Program"]["JpgQuality"], mJpegQuality, 90);
+    ini::extract(mIniParser.sections["Program"]["AlfaM2"], mAlfaM2, 110.8f);
+    ini::extract(mIniParser.sections["Program"]["DeltaM2"], DeltaM2, 3.2f);
+
+    ini::extract(mIniParser.sections["Treatment"]["FillBlackLines"], mFillBackLines, true);
+
+    ini::extract(mIniParser.sections["Watermark"]["Place"], mWaterMarkPlace, std::string("top_center"));
+    ini::extract(mIniParser.sections["Watermark"]["Color"], mWaterMarkColor, HTMLColor());
+    ini::extract(mIniParser.sections["Watermark"]["Size"], mWaterMarkSize, 5);
+    ini::extract(mIniParser.sections["Watermark"]["Text"], mWaterMarkText, std::string());
+
+    ini::extract(mIniParser.sections["ReceiverLocation"]["Draw"], mDrawreceiver, false);
+    ini::extract(mIniParser.sections["ReceiverLocation"]["Latitude"], mReceiveLatitude, 0.0f);
+    ini::extract(mIniParser.sections["ReceiverLocation"]["Longitude"], mReceiveLongitude, 0.0f);
+    ini::extract(mIniParser.sections["ReceiverLocation"]["Color"], mReceiveColor, HTMLColor());
+    ini::extract(mIniParser.sections["ReceiverLocation"]["Size"], mReceiveSize, 5);
+    ini::extract(mIniParser.sections["ReceiverLocation"]["Thickness"], mReceiveThickness, 5);
+    ini::extract(mIniParser.sections["ReceiverLocation"]["MarkType"], mReceiveMarkType);
+
+    ini::extract(mIniParser.sections["ShapeFileGraticules"]["FileName"], mShapeGraticulesFile);
+    ini::extract(mIniParser.sections["ShapeFileGraticules"]["Color"], mShapeGraticulesColor, HTMLColor());
+    ini::extract(mIniParser.sections["ShapeFileGraticules"]["Thickness"], mShapeGraticulesThickness, 5);
+
+    ini::extract(mIniParser.sections["ShapeFileCoastLines"]["FileName"], mShapeCoastLinesFile);
+    ini::extract(mIniParser.sections["ShapeFileCoastLines"]["Color"], mShapeCoastLinesColor, HTMLColor());
+    ini::extract(mIniParser.sections["ShapeFileCoastLines"]["Thickness"], mShapeCoastLinesThickness, 5);
+
+    ini::extract(mIniParser.sections["ShapeFileBoundaryLines"]["FileName"], mShapeBoundaryLinesFile);
+    ini::extract(mIniParser.sections["ShapeFileBoundaryLines"]["Color"], mShapeBoundaryLinesColor, HTMLColor());
+    ini::extract(mIniParser.sections["ShapeFileBoundaryLines"]["Thickness"], mShapeBoundaryLinesThickness, 5);
+
+    ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["FileName"], mShapePopulatedPlacesFile);
+    ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["Color"], mShapePopulatedPlacesColor, HTMLColor());
+    ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["Thickness"], mShapePopulatedPlacesThickness, 5);
+    ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["FilterColumnName"], mShapePopulatedPlacesFilterColumnName, std::string("ADM0CAP"));
+    ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["NumericFilter"], mShapePopulatedPlacesNumbericFilter, 1);
+    ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["TextColumnName"], mShapePopulatedPlacesTextColumnName, std::string("NAME"));
 }
 
 std::string Settings::getHelp() const

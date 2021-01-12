@@ -26,6 +26,7 @@ SOURCES += \
     imageproc/spreadimage.cpp \
     imageproc/threatimage.cpp \
     tools/databuffer.cpp \
+    tools/iniparser.cpp \
     tools/pixelgeolocationcalculator.cpp \
     tools/settings.cpp \
     tools/tlereader.cpp \
@@ -52,6 +53,7 @@ HEADERS += \
     imageproc/spreadimage.h \
     imageproc/threatimage.h \
     tools/databuffer.h \
+    tools/iniparser.h \
     tools/pixelgeolocationcalculator.h \
     tools/settings.h \
     tools/matrix.h \

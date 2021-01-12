@@ -75,6 +75,8 @@ add_executable(meteordemod
     tools/pixelgeolocationcalculator.h
     tools/databuffer.cpp
     tools/databuffer.h
+    tools/iniparser.cpp
+    tools/iniparser.h
     GIS/shapereader.cpp
     GIS/shapereader.h
     GIS/shaperenderer.cpp
