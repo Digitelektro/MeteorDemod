@@ -153,6 +153,8 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
     cities.setThickness(settings.getShapePopulatedPlacesThickness());
     cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
     cities.drawShapeMercator(newImage, xStart, yStart);
+
+    return newImage;
 }
 
 cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, ProgressCallback progressCallback)
