@@ -57,12 +57,12 @@ void Settings::parseIni(const std::string &path)
     ini::extract(mIniParser.sections["Watermark"]["Text"], mWaterMarkText, std::string());
 
     ini::extract(mIniParser.sections["ReceiverLocation"]["Draw"], mDrawreceiver, false);
-    ini::extract(mIniParser.sections["ReceiverLocation"]["Latitude"], mReceiveLatitude, 0.0f);
-    ini::extract(mIniParser.sections["ReceiverLocation"]["Longitude"], mReceiveLongitude, 0.0f);
-    ini::extract(mIniParser.sections["ReceiverLocation"]["Color"], mReceiveColor, HTMLColor());
-    ini::extract(mIniParser.sections["ReceiverLocation"]["Size"], mReceiveSize, 5);
-    ini::extract(mIniParser.sections["ReceiverLocation"]["Thickness"], mReceiveThickness, 5);
-    ini::extract(mIniParser.sections["ReceiverLocation"]["MarkType"], mReceiveMarkType);
+    ini::extract(mIniParser.sections["ReceiverLocation"]["Latitude"], mReceiverLatitude, 0.0f);
+    ini::extract(mIniParser.sections["ReceiverLocation"]["Longitude"], mReceiverLongitude, 0.0f);
+    ini::extract(mIniParser.sections["ReceiverLocation"]["Color"], mReceiverColor, HTMLColor());
+    ini::extract(mIniParser.sections["ReceiverLocation"]["Size"], mReceiverSize, 5);
+    ini::extract(mIniParser.sections["ReceiverLocation"]["Thickness"], mReceiverThickness, 5);
+    ini::extract(mIniParser.sections["ReceiverLocation"]["MarkType"], mReceiverMarkType);
 
     ini::extract(mIniParser.sections["ShapeFileGraticules"]["FileName"], mShapeGraticulesFile);
     ini::extract(mIniParser.sections["ShapeFileGraticules"]["Color"], mShapeGraticulesColor, HTMLColor());

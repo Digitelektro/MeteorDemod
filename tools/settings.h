@@ -111,12 +111,12 @@ public: //getters
     const std::string &getWaterMarkText() const { return mWaterMarkText; }
 
     bool drawReceiver() const { return mDrawreceiver; }
-    float getReceiveLatitude() const { return mReceiveLatitude; }
-    float getReceiveLongitude() const { return mReceiveLongitude; }
-    const HTMLColor &getReceiveColor() const { return mReceiveColor; }
-    int getReceiveSize() const { return mReceiveSize; }
-    int getReceiveThickness() const { return mReceiveThickness; }
-    const std::string &getReceiveMarkType() const { return mReceiveMarkType; }
+    float getReceiverLatitude() const { return mReceiverLatitude; }
+    float getReceiverLongitude() const { return mReceiverLongitude; }
+    const HTMLColor &getReceiverColor() const { return mReceiverColor; }
+    int getReceiverSize() const { return mReceiverSize; }
+    int getReceiverThickness() const { return mReceiverThickness; }
+    const std::string &getReceiverMarkType() const { return mReceiverMarkType; }
 
     const std::string &getShapeGraticulesFile() const { return mShapeGraticulesFile; }
     const HTMLColor &getShapeGraticulesColor() const { return mShapeGraticulesColor; }
@@ -163,12 +163,12 @@ private:
 
     //ini section: ReceiverLocation
     bool mDrawreceiver;
-    float mReceiveLatitude;
-    float mReceiveLongitude;
-    HTMLColor mReceiveColor;
-    int mReceiveSize;
-    int mReceiveThickness;
-    std::string mReceiveMarkType;
+    float mReceiverLatitude;
+    float mReceiverLongitude;
+    HTMLColor mReceiverColor;
+    int mReceiverSize;
+    int mReceiverThickness;
+    std::string mReceiverMarkType;
 
     //ini section: ShapeFileGraticules
     std::string mShapeGraticulesFile;
