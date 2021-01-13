@@ -4,6 +4,16 @@
 
 #include <cmath>
 
+std::map<std::string, cv::MarkerTypes> SpreadImage::MarkerLookup {
+    { "STAR", cv::MARKER_STAR },
+    { "CROSS", cv::MARKER_CROSS },
+    { "SQUARE", cv::MARKER_SQUARE },
+    { "DIAMOND", cv::MARKER_DIAMOND },
+    { "TRIANGLE_UP", cv::MARKER_TRIANGLE_UP },
+    { "TRIANGLE_DOWN", cv::MARKER_TRIANGLE_DOWN },
+    { "TILTED_CROSS", cv::MARKER_TILTED_CROSS }
+};
+
 SpreadImage::SpreadImage(int earthRadius, int altitude)
 {
     mEarthRadius = earthRadius;
@@ -154,6 +164,14 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
     cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
     cities.drawShapeMercator(newImage, xStart, yStart);
 
+    if(settings.drawReceiver()) {
+        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection(settings.getReceiverLatitude(), settings.getReceiverLongitude(), mEarthRadius + mAltitude);
+        coordinate.x -= xStart;
+        coordinate.y -= yStart;
+        cv::drawMarker(newImage, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(0, 0, 0), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness() + 1);
+        cv::drawMarker(newImage, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(settings.getReceiverColor().B, settings.getReceiverColor().G, settings.getReceiverColor().R), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness());
+    }
+
     return newImage;
 }
 
@@ -223,6 +241,14 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeol
     cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
     cities.setTextFieldName(settings.getShapePopulatedPlacesTextColumnName());
     cities.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
+
+    if(settings.drawReceiver()) {
+        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(settings.getReceiverLatitude(), settings.getReceiverLongitude(), centerLatitude, centerLongitude, mEarthRadius + mAltitude);
+        coordinate.x -= xStart;
+        coordinate.y -= yStart;
+        cv::drawMarker(newImage, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(0, 0, 0), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness() + 1);
+        cv::drawMarker(newImage, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(settings.getReceiverColor().B, settings.getReceiverColor().G, settings.getReceiverColor().R), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness());
+    }
 
     return newImage;
 }
@@ -397,4 +423,13 @@ void SpreadImage::projectiveTransform(const cv::Mat& src, cv::Mat& dst, const cv
 
         }
     }
+}
+
+cv::MarkerTypes SpreadImage::stringToMarkerType(const std::string &markerType)
+{
+    auto itr = MarkerLookup.find(markerType);
+    if( itr != MarkerLookup.end() ) {
+        return itr->second;
+    }
+    return cv::MARKER_TRIANGLE_UP;
 }
