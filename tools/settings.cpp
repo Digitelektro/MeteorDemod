@@ -55,33 +55,33 @@ void Settings::parseIni(const std::string &path)
 
     ini::extract(mIniParser.sections["Treatment"]["FillBlackLines"], mFillBackLines, true);
 
-    ini::extract(mIniParser.sections["Watermark"]["Place"], mWaterMarkPlace, std::string("top_center"));
-    ini::extract(mIniParser.sections["Watermark"]["Color"], mWaterMarkColor, HTMLColor());
+    ini::extract(mIniParser.sections["Watermark"]["Place"], mWaterMarkPlace);
+    ini::extract(mIniParser.sections["Watermark"]["Color"], mWaterMarkColor, HTMLColor(0xAD880C));
     ini::extract(mIniParser.sections["Watermark"]["Size"], mWaterMarkSize, 5);
-    ini::extract(mIniParser.sections["Watermark"]["Text"], mWaterMarkText, std::string());
+    ini::extract(mIniParser.sections["Watermark"]["Text"], mWaterMarkText);
 
     ini::extract(mIniParser.sections["ReceiverLocation"]["Draw"], mDrawreceiver, false);
     ini::extract(mIniParser.sections["ReceiverLocation"]["Latitude"], mReceiverLatitude, 0.0f);
     ini::extract(mIniParser.sections["ReceiverLocation"]["Longitude"], mReceiverLongitude, 0.0f);
-    ini::extract(mIniParser.sections["ReceiverLocation"]["Color"], mReceiverColor, HTMLColor());
+    ini::extract(mIniParser.sections["ReceiverLocation"]["Color"], mReceiverColor, HTMLColor(0xCC3030));
     ini::extract(mIniParser.sections["ReceiverLocation"]["Size"], mReceiverSize, 5);
     ini::extract(mIniParser.sections["ReceiverLocation"]["Thickness"], mReceiverThickness, 5);
     ini::extract(mIniParser.sections["ReceiverLocation"]["MarkType"], mReceiverMarkType);
 
     ini::extract(mIniParser.sections["ShapeFileGraticules"]["FileName"], mShapeGraticulesFile);
-    ini::extract(mIniParser.sections["ShapeFileGraticules"]["Color"], mShapeGraticulesColor, HTMLColor());
+    ini::extract(mIniParser.sections["ShapeFileGraticules"]["Color"], mShapeGraticulesColor, HTMLColor(0xC8C8C8));
     ini::extract(mIniParser.sections["ShapeFileGraticules"]["Thickness"], mShapeGraticulesThickness, 5);
 
     ini::extract(mIniParser.sections["ShapeFileCoastLines"]["FileName"], mShapeCoastLinesFile);
-    ini::extract(mIniParser.sections["ShapeFileCoastLines"]["Color"], mShapeCoastLinesColor, HTMLColor());
+    ini::extract(mIniParser.sections["ShapeFileCoastLines"]["Color"], mShapeCoastLinesColor, HTMLColor(0x808000));
     ini::extract(mIniParser.sections["ShapeFileCoastLines"]["Thickness"], mShapeCoastLinesThickness, 5);
 
     ini::extract(mIniParser.sections["ShapeFileBoundaryLines"]["FileName"], mShapeBoundaryLinesFile);
-    ini::extract(mIniParser.sections["ShapeFileBoundaryLines"]["Color"], mShapeBoundaryLinesColor, HTMLColor());
+    ini::extract(mIniParser.sections["ShapeFileBoundaryLines"]["Color"], mShapeBoundaryLinesColor, HTMLColor(0xC8C8C8));
     ini::extract(mIniParser.sections["ShapeFileBoundaryLines"]["Thickness"], mShapeBoundaryLinesThickness, 5);
 
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["FileName"], mShapePopulatedPlacesFile);
-    ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["Color"], mShapePopulatedPlacesColor, HTMLColor());
+    ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["Color"], mShapePopulatedPlacesColor, HTMLColor(0x5A42F5));
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["Thickness"], mShapePopulatedPlacesThickness, 5);
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["FontScale"], mShapePopulatedPlacesFontScale, 2);
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["PointRadius"], mShapePopulatedPlacesPointradius, 10);
