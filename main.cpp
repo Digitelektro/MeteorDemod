@@ -252,6 +252,9 @@ int main(int argc, char *argv[])
     }
 
     SpreadImage spreadImage;
+    std::ostringstream oss;
+    oss << std::setfill('0') << std::setw(2) << passStart.Day() << "/" << std::setw(2) << passStart.Month() << "/" << passStart.Year() << " " << std::setw(2) << passStart.Hour() << ":" << std::setw(2) << passStart.Minute() << ":" << std::setw(2) << passStart.Second() << " UTC";
+    std::string dateStr = oss.str();
 
     std::list<ImageForSpread>::const_iterator it;
 
@@ -263,6 +266,7 @@ int main(int argc, char *argv[])
             cv::Mat strechedImg = spreadImage.stretch((*it).image);
 
             if(!strechedImg.empty()) {
+                ThreatImage::drawWatermark(strechedImg, dateStr);
                 saveImage(mSettings.getOutputPath() + std::string("spread_") + fileName, strechedImg);
             } else {
                 std::cout << "Failed to strech image" << std::endl;
@@ -276,6 +280,7 @@ int main(int argc, char *argv[])
             std::cout << std::endl;
 
             if(!mercator.empty()) {
+                ThreatImage::drawWatermark(mercator, dateStr);
                 saveImage(mSettings.getOutputPath() + std::string("mercator_") + fileName, mercator);
             } else {
                 std::cout << "Failed to create mercator projection" << std::endl;
@@ -289,6 +294,7 @@ int main(int argc, char *argv[])
             std::cout << std::endl;
 
             if(!equidistant.empty()) {
+                ThreatImage::drawWatermark(equidistant, dateStr);
                 saveImage(mSettings.getOutputPath() + std::string("equidistant_") + fileName, equidistant);
             } else {
                 std::cout << "Failed to create equidistant projection" << std::endl;
