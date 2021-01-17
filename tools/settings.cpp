@@ -39,7 +39,11 @@ void Settings::parseArgs(int argc, char **argv)
 void Settings::parseIni(const std::string &path)
 {
     std::ifstream ifStream(path);
-    mIniParser.parse(ifStream);
+    if(!ifStream.is_open()) {
+        std::cout << "Unable to open settings.ini from location: '" << path << "' Program will use default settings." << std::endl;
+    } else {
+        mIniParser.parse(ifStream);
+    }
     //mIniParser.generate(std::cout);
 
     ini::extract(mIniParser.sections["Program"]["AzimuthalEquidistantProjection"], mEquidistantProjection, true);

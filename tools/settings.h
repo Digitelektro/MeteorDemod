@@ -69,7 +69,9 @@ public:
     friend std::istream &operator>>(std::istream& is, HTMLColor &color) {
         std::string rgb;
         is >> rgb;
-        color = HTMLColor(rgb);
+        if(!rgb.empty()) {
+            color = HTMLColor(rgb);
+        }
         return is;
     }
 
