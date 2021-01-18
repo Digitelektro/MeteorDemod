@@ -50,7 +50,9 @@ Input parameters:
 
 -f --format     Optional, format of the output images (jpg, bmp, png), default: bmp
 
--d --date       Optional, specify date for decoding older files (format: dd:mm:yyyy)
+-d --date       Optional, specify date for decoding older files (format: dd-mm-yyyy)
+
+Other settings can be found in the settings.ini file.
 
 
 ## Development
@@ -61,8 +63,6 @@ Master branch is for the latest stable version, beta branch for beta versions, d
  - Rain overlay
  - Composite output from multiple passes
  - Support dead Meteor M2 2 satellite (it may be required for future satellites)
- - More input parameters e.g.: ~~to control generated output formats, set date to decode older files~~
- - ~~JPEG output format~~
  - Multithreading, faster image processing
  - Wav file input
  
