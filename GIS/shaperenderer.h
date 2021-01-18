@@ -23,6 +23,17 @@ public:
     void drawShapeMercator(cv::Mat &src, float xStart, float yStart);
     void drawShapeEquidistant(cv::Mat &src, float xStart, float yStart, float xCenter, float yCenter);
 
+public: //setters
+    void setThickness(int thickness) {
+        mThicknes = thickness;
+    }
+    void setPointRadius(int radius) {
+        mPointRadius = radius;
+    }
+    void setFontScale(int scale) {
+        mFontScale = scale;
+    }
+
 private:
     bool equidistantCheck(float x, float y, float centerLongitude, float centerLatitude);
 
@@ -32,6 +43,9 @@ private:
     int mAltitude;
     std::map<std::string, int> mfilter;
     std::string mTextFieldName;
+    int mThicknes;
+    int mPointRadius;
+    int mFontScale;
 };
 
 } //namespace GIS

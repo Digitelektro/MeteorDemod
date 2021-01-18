@@ -4,6 +4,16 @@
 
 #include <cmath>
 
+std::map<std::string, cv::MarkerTypes> SpreadImage::MarkerLookup {
+    { "STAR", cv::MARKER_STAR },
+    { "CROSS", cv::MARKER_CROSS },
+    { "SQUARE", cv::MARKER_SQUARE },
+    { "DIAMOND", cv::MARKER_DIAMOND },
+    { "TRIANGLE_UP", cv::MARKER_TRIANGLE_UP },
+    { "TRIANGLE_DOWN", cv::MARKER_TRIANGLE_DOWN },
+    { "TILTED_CROSS", cv::MARKER_TILTED_CROSS }
+};
+
 SpreadImage::SpreadImage(int earthRadius, int altitude)
 {
     mEarthRadius = earthRadius;
@@ -134,17 +144,33 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
     }
 
     Settings &settings = Settings::getInstance();
-    GIS::ShapeRenderer graticules(settings.getResourcesPath() + "ShapeFiles/ne_110m_graticules_10.shp", {200, 200, 200});
-    GIS::ShapeRenderer coastLines(settings.getResourcesPath() + "ShapeFiles/ne_50m_coastline.shp", {0, 128, 128});
-    GIS::ShapeRenderer country(settings.getResourcesPath() + "ShapeFiles/ne_50m_admin_0_boundary_lines_land.shp", {200, 200, 200});
-    GIS::ShapeRenderer cities(settings.getResourcesPath() + "ShapeFiles/ne_50m_populated_places.shp", {245, 66, 90});
-    cities.addNumericFilter("ADM0CAP", 1);
-    cities.setTextFieldName("NAME");
-
+    GIS::ShapeRenderer graticules(settings.getResourcesPath() + settings.getShapeGraticulesFile(), cv::Scalar(settings.getShapeGraticulesColor().B, settings.getShapeGraticulesColor().G, settings.getShapeGraticulesColor().R));
+    graticules.setThickness(settings.getShapeGraticulesThickness());
     graticules.drawShapeMercator(newImage, xStart, yStart);
+
+    GIS::ShapeRenderer coastLines(settings.getResourcesPath() + settings.getShapeCoastLinesFile(), cv::Scalar(settings.getShapeCoastLinesColor().B, settings.getShapeCoastLinesColor().G, settings.getShapeCoastLinesColor().R));
+    coastLines.setThickness(settings.getShapeCoastLinesThickness());
     coastLines.drawShapeMercator(newImage, xStart, yStart);
-    country.drawShapeMercator(newImage, xStart, yStart);
+
+    GIS::ShapeRenderer countryBorders(settings.getResourcesPath() + settings.getShapeBoundaryLinesFile(), cv::Scalar(settings.getShapeBoundaryLinesColor().B, settings.getShapeBoundaryLinesColor().G, settings.getShapeBoundaryLinesColor().R));
+    countryBorders.setThickness(settings.getShapeBoundaryLinesThickness());
+    countryBorders.drawShapeMercator(newImage, xStart, yStart);
+
+    GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(), cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
+    cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
+    cities.setTextFieldName(settings.getShapePopulatedPlacesTextColumnName());
+    cities.setFontScale(settings.getShapePopulatedPlacesFontScale());
+    cities.setThickness(settings.getShapePopulatedPlacesThickness());
+    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
     cities.drawShapeMercator(newImage, xStart, yStart);
+
+    if(settings.drawReceiver()) {
+        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection(settings.getReceiverLatitude(), settings.getReceiverLongitude(), mEarthRadius + mAltitude);
+        coordinate.x -= xStart;
+        coordinate.y -= yStart;
+        cv::drawMarker(newImage, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(0, 0, 0), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness() + 1);
+        cv::drawMarker(newImage, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(settings.getReceiverColor().B, settings.getReceiverColor().G, settings.getReceiverColor().R), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness());
+    }
 
     return newImage;
 }
@@ -195,17 +221,34 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeol
     float centerLongitude = static_cast<float>(geolocationCalculator.getCenterCoordinate().longitude * (180.0 / M_PI));
 
     Settings &settings = Settings::getInstance();
-    GIS::ShapeRenderer coastLines(settings.getResourcesPath() + "ShapeFiles/ne_50m_coastline.shp", {0, 128, 128});
-    GIS::ShapeRenderer graticules(settings.getResourcesPath() + "ShapeFiles/ne_110m_graticules_10.shp", {200, 200, 200});
-    GIS::ShapeRenderer country(settings.getResourcesPath() + "ShapeFiles/ne_50m_admin_0_boundary_lines_land.shp", {200, 200, 200});
-    GIS::ShapeRenderer cities(settings.getResourcesPath() + "ShapeFiles/ne_50m_populated_places.shp", {115, 73, 31});
-    cities.addNumericFilter("ADM0CAP", 1);
-    cities.setTextFieldName("NAME");
 
-    coastLines.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
+    GIS::ShapeRenderer graticules(settings.getResourcesPath() + settings.getShapeGraticulesFile(), cv::Scalar(settings.getShapeGraticulesColor().B, settings.getShapeGraticulesColor().G, settings.getShapeGraticulesColor().R));
+    graticules.setThickness(settings.getShapeGraticulesThickness());
     graticules.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
-    country.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
+
+    GIS::ShapeRenderer coastLines(settings.getResourcesPath() + settings.getShapeCoastLinesFile(), cv::Scalar(settings.getShapeCoastLinesColor().B, settings.getShapeCoastLinesColor().G, settings.getShapeCoastLinesColor().R));
+    coastLines.setThickness(settings.getShapeCoastLinesThickness());
+    coastLines.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
+
+    GIS::ShapeRenderer countryBorders(settings.getResourcesPath() + settings.getShapeBoundaryLinesFile(), cv::Scalar(settings.getShapeBoundaryLinesColor().B, settings.getShapeBoundaryLinesColor().G, settings.getShapeBoundaryLinesColor().R));
+    countryBorders.setThickness(settings.getShapeBoundaryLinesThickness());
+    countryBorders.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
+
+    GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(), cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
+    cities.setFontScale(settings.getShapePopulatedPlacesFontScale());
+    cities.setThickness(settings.getShapePopulatedPlacesThickness());
+    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
+    cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
+    cities.setTextFieldName(settings.getShapePopulatedPlacesTextColumnName());
     cities.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude);
+
+    if(settings.drawReceiver()) {
+        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(settings.getReceiverLatitude(), settings.getReceiverLongitude(), centerLatitude, centerLongitude, mEarthRadius + mAltitude);
+        coordinate.x -= xStart;
+        coordinate.y -= yStart;
+        cv::drawMarker(newImage, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(0, 0, 0), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness() + 1);
+        cv::drawMarker(newImage, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(settings.getReceiverColor().B, settings.getReceiverColor().G, settings.getReceiverColor().R), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness());
+    }
 
     return newImage;
 }
@@ -380,4 +423,13 @@ void SpreadImage::projectiveTransform(const cv::Mat& src, cv::Mat& dst, const cv
 
         }
     }
+}
+
+cv::MarkerTypes SpreadImage::stringToMarkerType(const std::string &markerType)
+{
+    auto itr = MarkerLookup.find(markerType);
+    if( itr != MarkerLookup.end() ) {
+        return itr->second;
+    }
+    return cv::MARKER_TRIANGLE_UP;
 }

@@ -8,6 +8,9 @@ GIS::ShapeRenderer::ShapeRenderer(const std::string shapeFile, const cv::Scalar 
     , mColor(color)
     , mEarthRadius(earthRadius)
     , mAltitude(altitude)
+    , mThicknes(5)
+    , mPointRadius(10)
+    , mFontScale(2)
 {
 
 }
@@ -49,7 +52,7 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                     }
 
                     if(polyLines.size() > 1) {
-                        cv::polylines(src, polyLines, false, mColor, 5);
+                        cv::polylines(src, polyLines, false, mColor, mThicknes);
                     }
 
                     delete polyLineIterator;
@@ -70,7 +73,8 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                     coordinate.x += -xStart;
                     coordinate.y += -yStart;
 
-                    cv::drawMarker(src, cv::Point2d(coordinate.x, coordinate.y), mColor, cv::MARKER_TRIANGLE_UP, 20, 10);
+                    cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, mColor, cv::FILLED);
+                    cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, cv::Scalar(0,0,0), 1);
                 }
             }
         } else {
@@ -100,8 +104,8 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                             }
 
                             if(population >= mfilter[fieldAttributes[n].fieldName]) {
-                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, mColor, cv::FILLED);
-                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, cv::Scalar(0,0,0), 1);
+                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, mColor, cv::FILLED);
+                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, cv::Scalar(0,0,0), 1);
 
                                 drawName = true;
                             }
@@ -114,9 +118,9 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
 
                     if(drawName) {
                         int baseLine;
-                        cv::Size size = cv::getTextSize(fieldValues[namePos], cv::FONT_ITALIC, 2, 5, &baseLine);
-                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, 2, cv::Scalar(0,0,0), 5, cv::LINE_AA);
-                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, 2, mColor, 4, cv::LINE_AA);
+                        cv::Size size = cv::getTextSize(fieldValues[namePos], cv::FONT_ITALIC, mFontScale, mThicknes, &baseLine);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, mFontScale, cv::Scalar(0,0,0), mThicknes+1, cv::LINE_AA);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, mFontScale, mColor, mThicknes, cv::LINE_AA);
                     }
                 }
             }
@@ -153,7 +157,7 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                     }
 
                     if(polyLines.size() > 1) {
-                        cv::polylines(src, polyLines, false, mColor, 5);
+                        cv::polylines(src, polyLines, false, mColor, mThicknes);
                     }
 
                     delete polyLineIterator;
@@ -174,7 +178,8 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                     coordinate.x += -xStart;
                     coordinate.y += -yStart;
 
-                    cv::drawMarker(src, cv::Point2d(coordinate.x, coordinate.y), mColor, cv::MARKER_TRIANGLE_UP, 20, 10);
+                    cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, mColor, cv::FILLED);
+                    cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, cv::Scalar(0,0,0), 1);
                 }
             }
         } else {
@@ -204,8 +209,8 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                             }
 
                             if(population >= mfilter[fieldAttributes[n].fieldName]) {
-                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, mColor, cv::FILLED);
-                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), 10, cv::Scalar(0,0,0), 1);
+                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, mColor, cv::FILLED);
+                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, cv::Scalar(0,0,0), 1);
 
                                 drawName = true;
                             }
@@ -218,9 +223,9 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
 
                     if(drawName) {
                         int baseLine;
-                        cv::Size size = cv::getTextSize(fieldValues[namePos], cv::FONT_ITALIC, 2, 5, &baseLine);
-                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, 2, cv::Scalar(0,0,0), 5, cv::LINE_AA);
-                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, 2, mColor, 4, cv::LINE_AA);
+                        cv::Size size = cv::getTextSize(fieldValues[namePos], cv::FONT_ITALIC, mFontScale, mThicknes, &baseLine);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, mFontScale, cv::Scalar(0,0,0), mThicknes+1, cv::LINE_AA);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, mFontScale, mColor, mThicknes, cv::LINE_AA);
                     }
                 }
             }
