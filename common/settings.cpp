@@ -1,4 +1,5 @@
 #include "settings.h"
+#include "version.h"
 #include <sstream>
 #include <fstream>
 #include <ctime>
@@ -25,7 +26,7 @@ Settings::Settings()
     mSettingsList.push_back(SettingsData("--tle",   "-t", "TLE file required for pass calculation"));
     mSettingsList.push_back(SettingsData("--input", "-i", "Input S file containing softbits"));
     mSettingsList.push_back(SettingsData("--output","-o", "Output folder where generated files will be placed"));
-    mSettingsList.push_back(SettingsData("--date",  "-d", "Specify pass date, format should  be dd:mm:yyyy"));
+    mSettingsList.push_back(SettingsData("--date",  "-d", "Specify pass date, format should  be dd-mm-yyyy"));
     mSettingsList.push_back(SettingsData("--format",  "-f", "Output image format (bmp, jpg)"));
 }
 
@@ -95,6 +96,7 @@ std::string Settings::getHelp() const
     std::list<SettingsData>::const_iterator it;
     std::stringstream ss;
 
+    ss << "MeteorDemod Version " << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_FIX << std::endl;
     for(it = mSettingsList.begin(); it != mSettingsList.end(); ++it) {
         ss << (*it).argNameShort << "\t" << (*it).argName << "\t" << (*it).helpText << std::endl;
     }

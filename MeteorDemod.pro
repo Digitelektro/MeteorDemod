@@ -25,10 +25,10 @@ SOURCES += \
     decoder/correlation.cpp \
     imageproc/spreadimage.cpp \
     imageproc/threatimage.cpp \
+    common/settings.cpp \
     tools/databuffer.cpp \
     tools/iniparser.cpp \
     tools/pixelgeolocationcalculator.cpp \
-    tools/settings.cpp \
     tools/tlereader.cpp \
     tools/matrix.cpp \
     tools/vector.cpp \
@@ -52,10 +52,11 @@ HEADERS += \
     decoder/reedsolomon.h \
     imageproc/spreadimage.h \
     imageproc/threatimage.h \
+    common/settings.h \
+    common/version.h \
     tools/databuffer.h \
     tools/iniparser.h \
     tools/pixelgeolocationcalculator.h \
-    tools/settings.h \
     tools/matrix.h \
     tools/tlereader.h \
     tools/vector.h \
@@ -63,6 +64,7 @@ HEADERS += \
 
 INCLUDEPATH +=  ../../opencv/own_build/install/include
 INCLUDEPATH +=  ./decoder
+INCLUDEPATH +=  ./common
 INCLUDEPATH +=  ./tools
 INCLUDEPATH +=  ./imageproc
 INCLUDEPATH +=  $$PWD/external/libcorrect/include

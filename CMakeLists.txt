@@ -63,8 +63,9 @@ add_executable(meteordemod
     decoder/reedsolomon.h
     decoder/viterbi.cpp
     decoder/viterbi.h
-    tools/settings.cpp
-    tools/settings.h
+    common/settings.cpp
+    common/settings.h
+    common/version.h
     tools/matrix.cpp
     tools/matrix.h
     tools/tlereader.cpp
@@ -90,6 +91,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/imageproc
     ${CMAKE_SOURCE_DIR}/decoder
+    ${CMAKE_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}/tools
     ${CMAKE_SOURCE_DIR}/external/sgp4/libsgp4
     ${CMAKE_SOURCE_DIR}/external/libcorrect/include
