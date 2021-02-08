@@ -118,6 +118,8 @@ if(WIN32)
     install(TARGETS meteordemod DESTINATION ${CMAKE_INSTALL_PREFIX})
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/resources/ DESTINATION ${CMAKE_INSTALL_PREFIX}/resources)
 else()
-    install(TARGETS meteordemod DESTINATION bin)
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/resources/ DESTINATION $ENV{HOME}/meteordemod)
+    install(TARGETS meteordemod DESTINATION bin COMPONENT binaries)
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/resources/ DESTINATION $ENV{HOME}/.config/meteordemod COMPONENT config
+    USE_SOURCE_PERMISSIONS
+    )
 endif()

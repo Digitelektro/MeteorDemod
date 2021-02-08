@@ -137,7 +137,7 @@ std::string Settings::getResourcesPath() const
     return std::string(path) + "\\resources\\";
 #else
     struct passwd *pw = getpwuid(getuid());
-    return std::string(pw->pw_dir) + "/meteordemod/";
+    return std::string(pw->pw_dir) + "/.config/meteordemod/";
 #endif
 }
 
