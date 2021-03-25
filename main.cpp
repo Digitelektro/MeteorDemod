@@ -187,10 +187,10 @@ int main(int argc, char *argv[])
         cv::Mat threatedImage1 = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
         cv::Mat irImage = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
 
-        if(!ThreatImage::isNightPass(threatedImage1)) {
+        if(!ThreatImage::isNightPass(threatedImage1, mSettings.getNightPassTreshold())) {
             imagesToSpread.push_back(ImageForSpread(threatedImage1, "122_"));
         } else {
-            std::cout << "Nigh pass, RGB image is skipped" << std::endl;
+            std::cout << "Nigh pass, RGB image is skipped, treshold is set to: " << mSettings.getNightPassTreshold() << std::endl;
         }
 
         cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
@@ -213,10 +213,10 @@ int main(int argc, char *argv[])
     } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel66Available()) {
         cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_66, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
 
-        if(!ThreatImage::isNightPass(threatedImage)) {
+        if(!ThreatImage::isNightPass(threatedImage, mSettings.getNightPassTreshold())) {
             imagesToSpread.push_back(ImageForSpread(threatedImage, "123_"));
         } else {
-            std::cout << "Nigh pass, RGB image is skipped" << std::endl;
+            std::cout << "Nigh pass, RGB image is skipped, treshold is set to: " << mSettings.getNightPassTreshold() << std::endl;
         }
 
         mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
@@ -234,10 +234,10 @@ int main(int argc, char *argv[])
     } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available()) {
         cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
 
-        if(!ThreatImage::isNightPass(threatedImage)) {
+        if(!ThreatImage::isNightPass(threatedImage, mSettings.getNightPassTreshold())) {
             imagesToSpread.push_back(ImageForSpread(threatedImage, "122_"));
         } else {
-            std::cout << "Nigh pass, RGB image is skipped" << std::endl;
+            std::cout << "Nigh pass, RGB image is skipped, treshold is set to: " << mSettings.getNightPassTreshold() << std::endl;
         }
 
         cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());

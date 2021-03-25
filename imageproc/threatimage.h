@@ -22,7 +22,7 @@ public:
     static cv::Mat irToTemperature(const cv::Mat &irImage, const cv::Mat ref);
     static cv::Mat gamma(const cv::Mat &image, double gamma);
     static void drawWatermark(cv::Mat image, const std::string &date);
-    static bool isNightPass(const cv::Mat &image);
+    static bool isNightPass(const cv::Mat &image, float treshold);
 
 private:
     static void fill(cv::Mat &image, int x, int start, int end);

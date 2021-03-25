@@ -53,6 +53,7 @@ void Settings::parseIni(const std::string &path)
     ini::extract(mIniParser.sections["Program"]["JpgQuality"], mJpegQuality, 90);
     ini::extract(mIniParser.sections["Program"]["AlfaM2"], mAlfaM2, 110.8f);
     ini::extract(mIniParser.sections["Program"]["DeltaM2"], DeltaM2, -3.2f);
+    ini::extract(mIniParser.sections["Program"]["NightPassTreshold"], mNightPassTreshold, 10.0f);
 
     ini::extract(mIniParser.sections["Treatment"]["FillBlackLines"], mFillBackLines, true);
 
