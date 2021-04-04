@@ -104,6 +104,7 @@ public: //getters
     bool equadistantProjection() const { return mEquidistantProjection; }
     bool mercatorProjection() const { return mMercatorProjection; }
     bool spreadImage() const { return mSpreadImage; }
+    float getNightPassTreshold() const { return mNightPassTreshold; }
 
     bool fillBackLines() const { return mFillBackLines; }
 
@@ -153,6 +154,7 @@ private:
     bool mEquidistantProjection;
     bool mMercatorProjection;
     bool mSpreadImage;
+    float mNightPassTreshold;
 
     //ini section: Treatment
     bool mFillBackLines;

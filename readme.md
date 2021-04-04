@@ -30,7 +30,7 @@ For the development QT creator is used, but the qmake is maintained only for win
 CMAKE is the build system to compile the project. Tested on Windows and Linux(ubuntu, raspbian)
 
 ```
-git pull https://github.com/Digitelektro/MeteorDemod.git
+git clone https://github.com/Digitelektro/MeteorDemod.git
 cd MeteorDemod
 git submodule update --init --recursive
 mkdir build && cd build

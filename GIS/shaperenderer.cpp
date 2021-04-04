@@ -178,6 +178,10 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                     coordinate.x += -xStart;
                     coordinate.y += -yStart;
 
+                    if(equidistantCheck(point.y, point.x, xCenter, yCenter) == false) {
+                        continue;
+                    }
+
                     cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, mColor, cv::FILLED);
                     cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, cv::Scalar(0,0,0), 1);
                 }
@@ -195,6 +199,10 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                     PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(point.y, point.x, xCenter, yCenter, mEarthRadius + mAltitude);
                     coordinate.x += -xStart;
                     coordinate.y += -yStart;
+
+                    if(equidistantCheck(point.y, point.x, xCenter, yCenter) == false) {
+                        continue;
+                    }
 
                     bool drawName = false;
                     size_t namePos = 0;

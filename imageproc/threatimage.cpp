@@ -140,12 +140,13 @@ void ThreatImage::drawWatermark(cv::Mat image, const std::string &date)
     }
 }
 
-bool ThreatImage::isNightPass(const cv::Mat &image)
+bool ThreatImage::isNightPass(const cv::Mat &image, float treshold)
 {
     if(image.size().width > 0 && image.size().height > 0) {
         cv::Scalar result = cv::mean(image);
 
-        if(result[0] < 20 && result[1] < 20 && result[2] < 20) {
+        if(result[0] < treshold && result[1] < treshold && result[2] < treshold) {
+            std::cout << "Night pass mean calculation, CH1:" << result[0] << " CH2:" << result[1] << " CH3:" << result[2] << std::endl;
             return true;
         }
     }
