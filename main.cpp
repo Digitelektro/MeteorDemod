@@ -1,3 +1,5 @@
+#include "DSP/meteordemodulator.h"
+#include "DSP/wavreader.h"
 #include "correlation.h"
 #include "packetparser.h"
 #include "reedsolomon.h"
@@ -26,6 +28,8 @@ struct ImageForSpread {
 };
 
 void saveImage(const std::string fileName, const cv::Mat &image);
+void writeSymbolToFile(std::ostream &stream, const Wavreader::complex &sample);
+int8_t clamp(float x);
 
 static const uint8_t PRAND[] = {
     0xff, 0x48, 0x0e, 0xc0, 0x9a, 0x0d, 0x70, 0xbc, 0x8e, 0x2c, 0x93, 0xad, 0xa7,
@@ -83,9 +87,39 @@ int main(int argc, char *argv[])
     }
 
     do {
-        std::ifstream binaryData (mSettings.getInputFilePath(), std::ifstream::binary);
+        std::string inputPath = mSettings.getInputFilePath();
+
+        if(inputPath.substr(inputPath.find_last_of(".") + 1) == "wav") {
+            std::cout << "Input is a wav file, processing it..." << std::endl;
+
+            const std::string outputPath = inputPath.substr(0, inputPath.find_last_of(".") + 1) + "s";
+            std::ofstream  outputStream;
+            outputStream.open(outputPath);
+
+            if(!outputStream.is_open()) {
+                std::cout << "Create output .S file is failed, exiting...";
+                return -1;
+            }
+
+            Wavreader wavReader;
+            if(!wavReader.openFile(inputPath)) {
+                std::cout << "Wav file open failed, exiting...";
+                return -1;
+            }
+
+            DSP::MeteorDemodulator decoder(DSP::CostasLoop::QPSK, 72000.0f, 50);
+            decoder.process(wavReader, [&outputStream](const Wavreader::complex &sample, float) {
+                writeSymbolToFile(outputStream, sample);
+            });
+
+            outputStream.flush();
+            outputStream.close();
+            inputPath = outputPath;
+        }
+
+        std::ifstream binaryData (inputPath, std::ifstream::binary);
         if(!binaryData) {
-            std::cout << "Open file failed";
+            std::cout << "Open file '" << inputPath << "' is failed!";
             break;
         }
 
@@ -317,4 +351,30 @@ void saveImage(const std::string fileName, const cv::Mat &image)
     }
 }
 
+void writeSymbolToFile(std::ostream &stream, const Wavreader::complex &sample)
+{
+    int8_t outBuffer[2];
 
+    outBuffer[0] = clamp(std::real(sample) / 2.0f);
+    outBuffer[1] = clamp(std::imag(sample) / 2.0f);
+
+    stream.write(reinterpret_cast<char*>(outBuffer), sizeof(outBuffer));
+}
+
+// Clamp a real value to a int8_t
+int8_t clamp(float x)
+{
+    if (x < -128.0) {
+        return -128;
+    }
+    if (x > 127.0) {
+        return 127;
+    }
+    if (x > 0 && x < 1) {
+        return 1;
+    }
+    if (x > -1 && x < 0) {
+        return -1;
+    }
+    return static_cast<int8_t>(x);
+}

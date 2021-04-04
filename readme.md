@@ -1,6 +1,6 @@
 # Meteor Decoder
 
-This project is intended to be a cross platform software to decode METEOR M2 weather satellite raw data (softbits) into images. Input file extension is ".S"
+This project is intended to be a cross platform software to decode METEOR M2 weather satellite data into images. Input file can be ".S" (soft samples) or ".wav" file.
 It was created for educational purposes, to learn about satellite communications, how to decode QPSK modulated signals, GIS experiements and all the other stuff that was involved in this project. 
 
 The project is based on 
@@ -12,6 +12,8 @@ The project is based on
 [https://github.com/artlav/meteor_decoder](https://github.com/artlav/meteor_decoder)
 
 [https://lucasteske.dev/satcom-projects/satellite-projects](https://lucasteske.dev/satcom-projects/satellite-projects)
+
+[https://github.com/dbdexter-dev/meteor_demod](https://github.com/dbdexter-dev/meteor_demod)
 
 
 Currently supported outputs are raw channel images, RGB images, IR images. Output projection modes are rectified image, Mercator and Azimuthal Equidistant projection.
@@ -44,7 +46,7 @@ Input parameters:
 
 -t --tle        Two-line element set (TLE) file for calculating overlays
 
--i --input      Input *.S file
+-i --input      Input *.S file or *.wav
 
 -o --output     Optional, folder where generated files will be saved
 
@@ -64,7 +66,6 @@ Master branch is for the latest stable version, beta branch for beta versions, d
  - Composite output from multiple passes
  - Support dead Meteor M2 2 satellite (it may be required for future satellites)
  - Multithreading, faster image processing
- - Wav file input
  
  
 ## Example Outputs
