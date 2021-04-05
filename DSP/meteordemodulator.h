@@ -15,7 +15,7 @@ public:
     typedef std::function<void(const CostasLoop::complex&, float progress)> MeteorDecoderCallback_t;
 
 public:
-    MeteorDemodulator(CostasLoop::Mode mode, float symbolRate, bool waitForLock = true, uint16_t costasBw = 100, uint16_t rrcFilterOrder = 64, uint16_t interploationFacor = 4, float rrcFilterAlpha = 0.6f);
+    MeteorDemodulator(CostasLoop::Mode mode, float symbolRate, bool waitForLock = true, float costasBw = 100.0f, uint16_t rrcFilterOrder = 64, uint16_t interploationFacor = 4, float rrcFilterAlpha = 0.6f);
     ~MeteorDemodulator();
 
     MeteorDemodulator &operator=(const MeteorDemodulator &) = delete;
@@ -32,7 +32,7 @@ private:
     CostasLoop::Mode mMode;
     float mSymbolRate;
     bool mWaitForLock;
-    uint16_t mCostasBw;
+    float mCostasBw;
     uint16_t rrcFilterOrder;
     uint16_t mInterploationFacor;
     float rrcAlpha;

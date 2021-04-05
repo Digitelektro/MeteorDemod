@@ -107,7 +107,13 @@ int main(int argc, char *argv[])
                 return -1;
             }
 
-            DSP::MeteorDemodulator decoder(DSP::CostasLoop::QPSK, mSettings.getSymbolRate(), mSettings.waitForlock(), mSettings.getCostasBandwidth(), mSettings.getRRCFilterOrder(), mSettings.getInterpolationFactor());
+            DSP::CostasLoop::Mode mode = DSP::CostasLoop::QPSK;
+            if(mSettings.getDemodulatorMode() == "oqpsk") {
+                mode = DSP::CostasLoop::OQPSK;
+            }
+
+
+            DSP::MeteorDemodulator decoder(mode, mSettings.getSymbolRate(), mSettings.waitForlock(), mSettings.getCostasBandwidth(), mSettings.getRRCFilterOrder(), mSettings.getInterpolationFactor());
             decoder.process(wavReader, [&outputStream](const Wavreader::complex &sample, float) {
                 writeSymbolToFile(outputStream, sample);
             });

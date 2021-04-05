@@ -29,6 +29,7 @@ Settings::Settings()
     mSettingsList.push_back(SettingsData("--date",  "-d", "Specify pass date, format should  be dd-mm-yyyy"));
     mSettingsList.push_back(SettingsData("--format",  "-f", "Output image format (bmp, jpg)"));
     mSettingsList.push_back(SettingsData("--symbolrate",  "-s", "Set symbol rate for demodulator"));
+    mSettingsList.push_back(SettingsData("--mode",  "-m", "Set demodulator mode to qpsk or oqpsk"));
 }
 
 void Settings::parseArgs(int argc, char **argv)
@@ -233,4 +234,18 @@ float Settings::getSymbolRate() const
     }
 
     return symbolRate;
+}
+
+std::string Settings::getDemodulatorMode() const
+{
+    std::string modeStr = std::string("qpsk");
+
+    if(mArgs.count("-m")) {
+        modeStr = mArgs.at("-m");
+    }
+    if(mArgs.count("--mode")) {
+        modeStr =  mArgs.at("--mode");
+    }
+
+    return modeStr;
 }

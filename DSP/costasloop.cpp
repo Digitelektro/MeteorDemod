@@ -64,7 +64,7 @@ void CostasLoop::correctPhase(float err)
 
     // Detect whether the PLL is locked, and decrease the BW if it is
     if (mMode == OQPSK) {
-        if (!mIsLocked && mMovingAvg < 0.85f) {
+        if (!mIsLocked && mMovingAvg < 0.86f) {
             recomputeCoeffs(mDamping, mBandWidth / 10.0f);
             mIsLocked = true;
         } else if (mIsLocked && mMovingAvg > 0.9f) {
