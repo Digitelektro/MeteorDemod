@@ -30,6 +30,7 @@ Settings::Settings()
     mSettingsList.push_back(SettingsData("--format",  "-f", "Output image format (bmp, jpg)"));
     mSettingsList.push_back(SettingsData("--symbolrate",  "-s", "Set symbol rate for demodulator"));
     mSettingsList.push_back(SettingsData("--mode",  "-m", "Set demodulator mode to qpsk or oqpsk"));
+    mSettingsList.push_back(SettingsData("--diff",  "-diff", "Use differenctial decoding (Maybe required for newer satellites)"));
 }
 
 void Settings::parseArgs(int argc, char **argv)
@@ -248,4 +249,15 @@ std::string Settings::getDemodulatorMode() const
     }
 
     return modeStr;
+}
+
+bool Settings::differentialDecode() const
+{
+    bool result = false;
+
+    if(mArgs.count("--diff")) {
+        std::istringstream(mArgs.at("--diff")) >> result;
+    }
+
+    return result;
 }

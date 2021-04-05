@@ -29,7 +29,12 @@ struct ImageForSpread {
 
 void saveImage(const std::string fileName, const cv::Mat &image);
 void writeSymbolToFile(std::ostream &stream, const Wavreader::complex &sample);
+int mean(int cur, int prev);
+void differentialDecode(int8_t *data, int64_t len);
 int8_t clamp(float x);
+
+
+static uint16_t intSqrtTable[32768];
 
 static const uint8_t PRAND[] = {
     0xff, 0x48, 0x0e, 0xc0, 0x9a, 0x0d, 0x70, 0xbc, 0x8e, 0x2c, 0x93, 0xad, 0xa7,
@@ -140,6 +145,10 @@ int main(int argc, char *argv[])
         }
 
         binaryData.read (reinterpret_cast<char*>(softBits),fileLength);
+
+        if(mSettings.differentialDecode()) {
+            differentialDecode(reinterpret_cast<int8_t*>(softBits), fileLength);
+        }
 
         if(!binaryData) {
             std::cout << "File read failed" << std::endl;
@@ -365,6 +374,53 @@ void writeSymbolToFile(std::ostream &stream, const Wavreader::complex &sample)
     outBuffer[1] = clamp(std::imag(sample) / 2.0f);
 
     stream.write(reinterpret_cast<char*>(outBuffer), sizeof(outBuffer));
+}
+
+int mean(int cur, int prev)
+{
+    int v = cur * prev;
+    int result = 0;
+
+    if (v > 32767 || v < -32767) {
+        return 0;
+    }
+
+    if (v >=0) {
+        result = intSqrtTable[v];
+    } else {
+        result =-intSqrtTable[-v];
+    }
+
+    return result;
+}
+
+void differentialDecode(int8_t *data, int64_t len)
+{
+    int a;
+    int b;
+    int prevA;
+    int prevB;
+
+    if (len < 2) {
+        return;
+    }
+
+    for(int i = 0; i < 32768; i++) {
+        intSqrtTable[i] = round(sqrt(i));
+    }
+
+    prevA = data[0];
+    prevB = data[1];
+    data[0] = 0;
+    data[1] = 0;
+    for(int64_t i = 0; i < (len / 2); i++) {
+        a = data[i * 2 + 0];
+        b = data[i * 2 + 1];
+        data[i*2+0] = mean(a, prevA);
+        data[i*2+1] = mean(-b, prevB);
+        prevA = a;
+        prevB = b;
+    }
 }
 
 // Clamp a real value to a int8_t

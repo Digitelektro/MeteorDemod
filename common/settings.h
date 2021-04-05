@@ -99,6 +99,7 @@ public: //getters
     DateTime getPassDate() const;
     float getSymbolRate() const;
     std::string getDemodulatorMode() const;
+    bool differentialDecode() const;
 
     int getJpegQuality() const { return mJpegQuality; }
     float getM2Alfa() const { return mAlfaM2; }
