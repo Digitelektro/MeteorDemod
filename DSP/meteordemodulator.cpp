@@ -4,13 +4,14 @@
 
 namespace DSP {
 
-MeteorDemodulator::MeteorDemodulator(CostasLoop::Mode mode, float symbolRate, uint16_t costasBw, float rrcFilterAlpha, uint16_t rrcFilterOrder, uint16_t interploationFacor)
+MeteorDemodulator::MeteorDemodulator(CostasLoop::Mode mode, float symbolRate, bool waitForLock, uint16_t costasBw, uint16_t rrcFilterOrder, uint16_t interploationFacor, float rrcFilterAlpha)
     : mMode(mode)
       , mSymbolRate(symbolRate)
+      , mWaitForLock(waitForLock)
       , mCostasBw(costasBw)
-      , rrcAlpha(rrcFilterAlpha)
       , rrcFilterOrder(rrcFilterOrder)
       , mInterploationFacor(interploationFacor)
+      , rrcAlpha(rrcFilterAlpha)
       , samples(nullptr)
       , interpolatedSamples(nullptr)
 {
@@ -37,7 +38,7 @@ void MeteorDemodulator::process(IQSoruce &source, MeteorDecoderCallback_t callba
     float resyncOffset = 0;
     float resyncError;
     float resyncPeriod = (source.getSampleRate() * mInterploationFacor) / mSymbolRate;
-    bool writeStarted = false;
+    bool writeStarted = !mWaitForLock;
     uint64_t bytesWrited = 0;
     float progress = 0;
 

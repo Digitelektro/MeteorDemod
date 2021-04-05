@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
                 return -1;
             }
 
-            DSP::MeteorDemodulator decoder(DSP::CostasLoop::QPSK, 72000.0f, 50);
+            DSP::MeteorDemodulator decoder(DSP::CostasLoop::QPSK, mSettings.getSymbolRate(), mSettings.waitForlock(), mSettings.getCostasBandwidth(), mSettings.getRRCFilterOrder(), mSettings.getInterpolationFactor());
             decoder.process(wavReader, [&outputStream](const Wavreader::complex &sample, float) {
                 writeSymbolToFile(outputStream, sample);
             });

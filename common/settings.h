@@ -97,6 +97,7 @@ public: //getters
     std::string getOutputPath() const;
     std::string getOutputFormat() const;
     DateTime getPassDate() const;
+    float getSymbolRate() const;
 
     int getJpegQuality() const { return mJpegQuality; }
     float getM2Alfa() const { return mAlfaM2; }
@@ -105,6 +106,11 @@ public: //getters
     bool mercatorProjection() const { return mMercatorProjection; }
     bool spreadImage() const { return mSpreadImage; }
     float getNightPassTreshold() const { return mNightPassTreshold; }
+
+    int getCostasBandwidth() const { return mCostasBw; }
+    int getRRCFilterOrder() const { return mRRCFilterOrder; }
+    int getInterpolationFactor() const { return mInterploationFacor; }
+    bool waitForlock() const { return mWaitForLock; }
 
     bool fillBackLines() const { return mFillBackLines; }
 
@@ -155,6 +161,12 @@ private:
     bool mMercatorProjection;
     bool mSpreadImage;
     float mNightPassTreshold;
+
+    //ini section: Demodulator
+    int mCostasBw;
+    int mRRCFilterOrder;
+    int mInterploationFacor;
+    bool mWaitForLock;
 
     //ini section: Treatment
     bool mFillBackLines;

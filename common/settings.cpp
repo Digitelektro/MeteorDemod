@@ -28,6 +28,7 @@ Settings::Settings()
     mSettingsList.push_back(SettingsData("--output","-o", "Output folder where generated files will be placed"));
     mSettingsList.push_back(SettingsData("--date",  "-d", "Specify pass date, format should  be dd-mm-yyyy"));
     mSettingsList.push_back(SettingsData("--format",  "-f", "Output image format (bmp, jpg)"));
+    mSettingsList.push_back(SettingsData("--symbolrate",  "-s", "Set symbol rate for demodulator"));
 }
 
 void Settings::parseArgs(int argc, char **argv)
@@ -54,6 +55,11 @@ void Settings::parseIni(const std::string &path)
     ini::extract(mIniParser.sections["Program"]["AlfaM2"], mAlfaM2, 110.8f);
     ini::extract(mIniParser.sections["Program"]["DeltaM2"], DeltaM2, -3.2f);
     ini::extract(mIniParser.sections["Program"]["NightPassTreshold"], mNightPassTreshold, 10.0f);
+
+    ini::extract(mIniParser.sections["Demodulator"]["CostasBandwidth"], mCostasBw, 50);
+    ini::extract(mIniParser.sections["Demodulator"]["RRCFilterOrder"], mRRCFilterOrder, 64);
+    ini::extract(mIniParser.sections["Demodulator"]["InterpolationFactor"], mInterploationFacor, 4);
+    ini::extract(mIniParser.sections["Demodulator"]["WaitForLock"], mWaitForLock, true);
 
     ini::extract(mIniParser.sections["Treatment"]["FillBlackLines"], mFillBackLines, true);
 
@@ -213,4 +219,18 @@ DateTime Settings::getPassDate() const
     }
 
     return dateTime;
+}
+
+float Settings::getSymbolRate() const
+{
+    float symbolRate = 72000.0f;
+
+    if(mArgs.count("-s")) {
+        symbolRate = atof(mArgs.at("-s").c_str());
+    }
+    if(mArgs.count("--symbolrate")) {
+        symbolRate =  atof(mArgs.at("--symbolrate").c_str());
+    }
+
+    return symbolRate;
 }
