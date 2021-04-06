@@ -15,6 +15,7 @@ DEFINES +=_USE_MATH_DEFINES
 
 SOURCES += \
     GIS/dbfilereader.cpp \
+    decoder/deinterleaver.cpp \
     decoder/viterbi.cpp \
     main.cpp \
     GIS/shapereader.cpp \
@@ -51,6 +52,7 @@ HEADERS += \
     GIS/dbfilereader.h \
     GIS/shapereader.h \
     GIS/shaperenderer.h \
+    decoder/deinterleaver.h \
     decoder/viterbi.h \
     decoder/meteorimage.h \
     decoder/packetparser.h \

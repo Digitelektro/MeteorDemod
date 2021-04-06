@@ -4,6 +4,7 @@
 #include "packetparser.h"
 #include "reedsolomon.h"
 #include "viterbi.h"
+#include "deinterleaver.h"
 #include "pixelgeolocationcalculator.h"
 
 #include <iostream>
@@ -146,7 +147,15 @@ int main(int argc, char *argv[])
 
         binaryData.read (reinterpret_cast<char*>(softBits),fileLength);
 
+        if(mSettings.deInterleave()) {
+            std::cout << "Deinterleaving..." << std::endl;
+            uint64_t outLen = 0;
+            DeInterleaver::deInterleave(softBits, fileLength, &outLen);
+            fileLength = outLen;
+        }
+
         if(mSettings.differentialDecode()) {
+            std::cout << "Dediffing..." << std::endl;
             differentialDecode(reinterpret_cast<int8_t*>(softBits), fileLength);
         }
 
@@ -295,8 +304,14 @@ int main(int argc, char *argv[])
         saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_122.bmp", threatedImage);
+
+    } else if(mPacketParser.isChannel68Available()) {
+        cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
+
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
     } else {
         std::cout << "No usable channel data found!" << std::endl;
+
         return 0;
     }
 

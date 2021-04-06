@@ -100,6 +100,7 @@ public: //getters
     float getSymbolRate() const;
     std::string getDemodulatorMode() const;
     bool differentialDecode() const;
+    bool deInterleave() const;
 
     int getJpegQuality() const { return mJpegQuality; }
     float getM2Alfa() const { return mAlfaM2; }

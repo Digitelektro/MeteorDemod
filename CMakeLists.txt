@@ -65,6 +65,7 @@ add_executable(meteordemod
     decoder/reedsolomon.h
     decoder/viterbi.cpp
     decoder/viterbi.h
+    decoder/deinterleaver.cpp
     common/settings.cpp
     common/settings.h
     common/version.h
