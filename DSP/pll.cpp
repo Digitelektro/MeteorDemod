@@ -1,16 +1,17 @@
-#include "costasloop.h"
+#include "pll.h"
 #include <cmath>
 
 namespace DSP {
 
-float CostasLoop::TAN_LOOKUP_TABLE[256];
+float PLL::TAN_LOOKUP_TABLE[256];
 
-CostasLoop::CostasLoop(float bandWidth, Mode mode)
+PLL::PLL(float bandWidth, float lockLimit, float unlockLimit)
     : mBandWidth(bandWidth)
-    , mMode(mode)
+    , mLockLimit(lockLimit)
+    , mUnlockLimit(unlockLimit)
     , mNcoPhase(0)
-    , mNcoFreqency(COSTAS_INIT_FREQ)
-    , mDamping(COSTAS_DAMP)
+    , mNcoFreqency(PLL_INIT_FREQ)
+    , mDamping(PLL_DAMP)
     , mMovingAvg(1)
     , mIsLocked(false)
 {
@@ -18,11 +19,11 @@ CostasLoop::CostasLoop(float bandWidth, Mode mode)
         TAN_LOOKUP_TABLE[i] = tanhf((i-128.0f));
     }
 
-    recomputeCoeffs(COSTAS_DAMP, mBandWidth);
+    recomputeCoeffs(PLL_DAMP, mBandWidth);
 
 }
 
-CostasLoop::complex CostasLoop::mix(const complex &sample)
+PLL::complex PLL::mix(const complex &sample)
 {
     using namespace std::complex_literals;
 
@@ -36,7 +37,7 @@ CostasLoop::complex CostasLoop::mix(const complex &sample)
     return retval;
 }
 
-float CostasLoop::delta(const CostasLoop::complex &sample, const CostasLoop::complex &cosamp)
+float PLL::delta(const PLL::complex &sample, const PLL::complex &cosamp)
 {
     float error;
 
@@ -45,7 +46,7 @@ float CostasLoop::delta(const CostasLoop::complex &sample, const CostasLoop::com
     return error / 50.0f;
 }
 
-void CostasLoop::recomputeCoeffs(float damping, float bw)
+void PLL::recomputeCoeffs(float damping, float bw)
 {
     float denom;
 
@@ -54,7 +55,7 @@ void CostasLoop::recomputeCoeffs(float damping, float bw)
     mBeta = (4 * bw * bw) / denom;
 }
 
-void CostasLoop::correctPhase(float err)
+void PLL::correctPhase(float err)
 {
     err = floatClamp(err, 1.0f);
     mNcoPhase = std::fmod(mNcoPhase + mAlpha * err, static_cast<float>(2.0 * M_PI));
@@ -63,22 +64,12 @@ void CostasLoop::correctPhase(float err)
     mMovingAvg = (mMovingAvg * (AVG_WINSIZE-1) + std::fabs(err)) / AVG_WINSIZE;
 
     // Detect whether the PLL is locked, and decrease the BW if it is
-    if (mMode == OQPSK) {
-        if (!mIsLocked && mMovingAvg < 0.86f) {
-            recomputeCoeffs(mDamping, mBandWidth / 10.0f);
-            mIsLocked = true;
-        } else if (mIsLocked && mMovingAvg > 0.9f) {
-            recomputeCoeffs(mDamping, mBandWidth);
-            mIsLocked = false;
-        }
-    } else if (mMode == QPSK) {
-        if (!mIsLocked && mMovingAvg < 0.77f) {
-            recomputeCoeffs(mDamping, mBandWidth / 10.0f);
-            mIsLocked = true;
-        } else if (mIsLocked && mMovingAvg > 0.82f) {
-            recomputeCoeffs(mDamping, mBandWidth);
-            mIsLocked = false;
-        }
+    if (!mIsLocked && mMovingAvg < mLockLimit) {
+        recomputeCoeffs(mDamping, mBandWidth / 10.0f);
+        mIsLocked = true;
+    } else if (mIsLocked && mMovingAvg > mUnlockLimit) {
+        recomputeCoeffs(mDamping, mBandWidth);
+        mIsLocked = false;
     }
 
 

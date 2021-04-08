@@ -36,7 +36,7 @@ SOURCES += \
     tools/vector.cpp \
     tools/databuffer.cpp \
     DSP/agc.cpp \
-    DSP/costasloop.cpp \
+    DSP/pll.cpp \
     DSP/filter.cpp \
     DSP/iqsource.cpp \
     DSP/meteordemodulator.cpp \
@@ -71,7 +71,7 @@ HEADERS += \
     tools/vector.h \
     tools/databuffer.h \
     DSP/agc.h \
-    DSP/costasloop.h \
+    DSP/pll.h \
     DSP/filter.h \
     DSP/iqsource.h \
     DSP/meteordemodulator.h \
