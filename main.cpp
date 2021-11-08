@@ -113,9 +113,9 @@ int main(int argc, char *argv[])
                 return -1;
             }
 
-            DSP::CostasLoop::Mode mode = DSP::CostasLoop::QPSK;
+            DSP::MeteorDemodulator::Mode mode = DSP::MeteorDemodulator::QPSK;
             if(mSettings.getDemodulatorMode() == "oqpsk") {
-                mode = DSP::CostasLoop::OQPSK;
+                mode = DSP::MeteorDemodulator::OQPSK;
             }
 
 

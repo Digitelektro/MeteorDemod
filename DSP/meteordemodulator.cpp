@@ -4,7 +4,7 @@
 
 namespace DSP {
 
-MeteorDemodulator::MeteorDemodulator(CostasLoop::Mode mode, float symbolRate, bool waitForLock, float costasBw, uint16_t rrcFilterOrder, uint16_t interploationFacor, float rrcFilterAlpha)
+MeteorDemodulator::MeteorDemodulator(Mode mode, float symbolRate, bool waitForLock, float costasBw, uint16_t rrcFilterOrder, uint16_t interploationFacor, float rrcFilterAlpha)
     : mMode(mode)
     , mSymbolRate(symbolRate)
     , mWaitForLock(waitForLock)
@@ -15,11 +15,11 @@ MeteorDemodulator::MeteorDemodulator(CostasLoop::Mode mode, float symbolRate, bo
     , samples(nullptr)
     , interpolatedSamples(nullptr)
 {
-    samples = new CostasLoop::complex[CHUNK_SIZE];
-    interpolatedSamples = new CostasLoop::complex[CHUNK_SIZE * rrcFilterOrder];
+    samples = new PLL::complex[CHUNK_SIZE];
+    interpolatedSamples = new PLL::complex[CHUNK_SIZE * rrcFilterOrder];
 
    // OQPSK requires lower bandwidth
-    if(mode == CostasLoop::Mode::OQPSK) {
+    if(mode == Mode::OQPSK) {
         mCostasBw /= 5.0f;
     }
 }
@@ -33,7 +33,7 @@ MeteorDemodulator::~MeteorDemodulator()
 void MeteorDemodulator::process(IQSoruce &source, MeteorDecoderCallback_t callback)
 {
     float pllBandwidth = 2 * M_PI * mCostasBw / mSymbolRate;
-    DSP::CostasLoop pll(pllBandwidth, mMode);
+    DSP::PLL pll(pllBandwidth);
     DSP::RRCFilter rrcFilter(rrcFilterOrder, mInterploationFacor, source.getSampleRate()/mSymbolRate, rrcAlpha);
     uint32_t readedSamples;
 
@@ -56,7 +56,7 @@ void MeteorDemodulator::process(IQSoruce &source, MeteorDecoderCallback_t callba
     readedSamples = source.read(samples, rrcFilterOrder);
     interpolator(rrcFilter, samples, readedSamples, mInterploationFacor, interpolatedSamples);
 
-    if(mMode == CostasLoop::Mode::QPSK) {
+    if(mMode == Mode::QPSK) {
         while((readedSamples = source.read(samples, CHUNK_SIZE)) > 0) {
             interpolator(rrcFilter, samples, readedSamples, mInterploationFacor, interpolatedSamples);
             for(uint32_t i = 0; i < readedSamples * mInterploationFacor; i++) {
@@ -104,6 +104,9 @@ void MeteorDemodulator::process(IQSoruce &source, MeteorDecoderCallback_t callba
         IQSoruce::complex inphase;
         IQSoruce::complex quad;
         float prevI = 0;
+
+        pll.setLockLimit(0.86f);
+        pll.setUnlockLimit(0.9f);
 
         while((readedSamples = source.read(samples, CHUNK_SIZE)) > 0) {
             interpolator(rrcFilter, samples, readedSamples, mInterploationFacor, interpolatedSamples);
@@ -155,7 +158,7 @@ void MeteorDemodulator::process(IQSoruce &source, MeteorDecoderCallback_t callba
 }
 
 
-void MeteorDemodulator::interpolator(FilterBase &filter, CostasLoop::complex *inSamples, int inSamplesCount, int factor, CostasLoop::complex *outSamples)
+void MeteorDemodulator::interpolator(FilterBase &filter, PLL::complex *inSamples, int inSamplesCount, int factor, PLL::complex *outSamples)
 {
     uint32_t outSamplesCount = inSamplesCount * factor;
 

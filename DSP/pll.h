@@ -1,28 +1,30 @@
-#ifndef COSTASLOOP_H
-#define COSTASLOOP_H
+#ifndef PLL_H
+#define PLL_H
 
 #include <complex>
 
 namespace DSP {
 
-class CostasLoop
+class PLL
 {
 public:
     typedef std::complex<float> complex;
 
-    enum Mode {
-        QPSK,
-        OQPSK
-    };
-
 public:
-    CostasLoop(float bandWidth, Mode mode);
+    PLL(float bandWidth, float lockLimit = 0.77f, float unlockLimit = 0.82f);
 
     complex mix(const complex &sample);
 
     float delta(const complex &sample, const complex &cosamp);
     void recomputeCoeffs(float damping, float bw);
     void correctPhase(float err);
+
+    void setLockLimit(float limit) {
+        mLockLimit = limit;
+    }
+    void setUnlockLimit(float limit) {
+        mUnlockLimit = limit;
+    }
 
 public:
     bool isLocked() const {
@@ -43,7 +45,8 @@ public:
 
 private:
     float mBandWidth;
-    Mode mMode;
+    float mLockLimit;
+    float mUnlockLimit;
     float mNcoPhase;
     float mNcoFreqency;
     float mAlpha;
@@ -55,9 +58,8 @@ private:
 private:
     static float TAN_LOOKUP_TABLE[256];
 
-    static constexpr uint32_t COSTAS_BW = 100;
-    static constexpr float COSTAS_DAMP = static_cast<float>(1.0/M_SQRT2);
-    static constexpr float  COSTAS_INIT_FREQ = 0.001f;
+    static constexpr float PLL_DAMP = static_cast<float>(1.0/M_SQRT2);
+    static constexpr float  PLL_INIT_FREQ = 0.001f;
     static constexpr float  FREQ_MAX = 0.8f;
     static constexpr uint32_t AVG_WINSIZE = 2500;
 
@@ -85,4 +87,4 @@ private:
 
 } //namespace DSP
 
-#endif // COSTASLOOP_H
+#endif // PLL_H

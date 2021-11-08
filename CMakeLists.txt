@@ -89,7 +89,7 @@ add_executable(meteordemod
     GIS/dbfilereader.h
     DSP/meteordemodulator.cpp
     DSP/agc.cpp
-    DSP/costasloop.cpp
+    DSP/pll.cpp
     DSP/filter.cpp
     DSP/iqsource.cpp
     DSP/wavreader.cpp
