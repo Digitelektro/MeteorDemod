@@ -4,7 +4,7 @@ include(ExternalProject)
 
 project(Meteordemod LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
@@ -45,6 +45,8 @@ link_directories(
     ${CMAKE_BINARY_DIR}/libcorrect-build/lib
 )
 
+add_definitions(-D_USE_MATH_DEFINES)
+
 add_executable(meteordemod 
     main.cpp
     imageproc/spreadimage.cpp
@@ -63,6 +65,7 @@ add_executable(meteordemod
     decoder/reedsolomon.h
     decoder/viterbi.cpp
     decoder/viterbi.h
+    decoder/deinterleaver.cpp
     common/settings.cpp
     common/settings.h
     common/version.h
@@ -84,6 +87,12 @@ add_executable(meteordemod
     GIS/shaperenderer.h
     GIS/dbfilereader.cpp
     GIS/dbfilereader.h
+    DSP/meteordemodulator.cpp
+    DSP/agc.cpp
+    DSP/pll.cpp
+    DSP/filter.cpp
+    DSP/iqsource.cpp
+    DSP/wavreader.cpp
 )
 
 include_directories(
@@ -93,6 +102,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/decoder
     ${CMAKE_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}/tools
+    ${CMAKE_SOURCE_DIR}/DSP
     ${CMAKE_SOURCE_DIR}/external/sgp4/libsgp4
     ${CMAKE_SOURCE_DIR}/external/libcorrect/include
 )

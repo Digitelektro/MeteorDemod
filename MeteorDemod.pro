@@ -1,4 +1,4 @@
-CONFIG += c++11 console
+CONFIG += c++14 console
 CONFIG -= app_bundle
 
 # The following define makes your compiler emit warnings if you use
@@ -6,6 +6,7 @@ CONFIG -= app_bundle
 # depend on your compiler). Please consult the documentation of the
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS LIQUID_BUILD_CPLUSPLUS
+DEFINES +=_USE_MATH_DEFINES
 
 # You can also make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -14,6 +15,7 @@ DEFINES += QT_DEPRECATED_WARNINGS LIQUID_BUILD_CPLUSPLUS
 
 SOURCES += \
     GIS/dbfilereader.cpp \
+    decoder/deinterleaver.cpp \
     decoder/viterbi.cpp \
     main.cpp \
     GIS/shapereader.cpp \
@@ -32,7 +34,13 @@ SOURCES += \
     tools/tlereader.cpp \
     tools/matrix.cpp \
     tools/vector.cpp \
-    tools/databuffer.cpp
+    tools/databuffer.cpp \
+    DSP/agc.cpp \
+    DSP/pll.cpp \
+    DSP/filter.cpp \
+    DSP/iqsource.cpp \
+    DSP/meteordemodulator.cpp \
+    DSP/wavreader.cpp
 
 
 # Default rules for deployment.
@@ -44,6 +52,7 @@ HEADERS += \
     GIS/dbfilereader.h \
     GIS/shapereader.h \
     GIS/shaperenderer.h \
+    decoder/deinterleaver.h \
     decoder/viterbi.h \
     decoder/meteorimage.h \
     decoder/packetparser.h \
@@ -60,7 +69,13 @@ HEADERS += \
     tools/matrix.h \
     tools/tlereader.h \
     tools/vector.h \
-    tools/databuffer.h
+    tools/databuffer.h \
+    DSP/agc.h \
+    DSP/pll.h \
+    DSP/filter.h \
+    DSP/iqsource.h \
+    DSP/meteordemodulator.h \
+    DSP/wavreader.h
 
 INCLUDEPATH +=  ../../opencv/own_build/install/include
 INCLUDEPATH +=  ./decoder

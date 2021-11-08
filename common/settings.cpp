@@ -28,6 +28,10 @@ Settings::Settings()
     mSettingsList.push_back(SettingsData("--output","-o", "Output folder where generated files will be placed"));
     mSettingsList.push_back(SettingsData("--date",  "-d", "Specify pass date, format should  be dd-mm-yyyy"));
     mSettingsList.push_back(SettingsData("--format",  "-f", "Output image format (bmp, jpg)"));
+    mSettingsList.push_back(SettingsData("--symbolrate",  "-s", "Set symbol rate for demodulator"));
+    mSettingsList.push_back(SettingsData("--mode",  "-m", "Set demodulator mode to qpsk or oqpsk"));
+    mSettingsList.push_back(SettingsData("--diff",  "-diff", "Use differenctial decoding (Maybe required for newer satellites)"));
+    mSettingsList.push_back(SettingsData("--int",  "-int", "Deinterleave (Maybe required for newer satellites)"));
 }
 
 void Settings::parseArgs(int argc, char **argv)
@@ -54,6 +58,11 @@ void Settings::parseIni(const std::string &path)
     ini::extract(mIniParser.sections["Program"]["AlfaM2"], mAlfaM2, 110.8f);
     ini::extract(mIniParser.sections["Program"]["DeltaM2"], DeltaM2, -3.2f);
     ini::extract(mIniParser.sections["Program"]["NightPassTreshold"], mNightPassTreshold, 10.0f);
+
+    ini::extract(mIniParser.sections["Demodulator"]["CostasBandwidth"], mCostasBw, 50);
+    ini::extract(mIniParser.sections["Demodulator"]["RRCFilterOrder"], mRRCFilterOrder, 64);
+    ini::extract(mIniParser.sections["Demodulator"]["InterpolationFactor"], mInterploationFacor, 4);
+    ini::extract(mIniParser.sections["Demodulator"]["WaitForLock"], mWaitForLock, true);
 
     ini::extract(mIniParser.sections["Treatment"]["FillBlackLines"], mFillBackLines, true);
 
@@ -213,4 +222,54 @@ DateTime Settings::getPassDate() const
     }
 
     return dateTime;
+}
+
+float Settings::getSymbolRate() const
+{
+    float symbolRate = 72000.0f;
+
+    if(mArgs.count("-s")) {
+        symbolRate = atof(mArgs.at("-s").c_str());
+    }
+    if(mArgs.count("--symbolrate")) {
+        symbolRate =  atof(mArgs.at("--symbolrate").c_str());
+    }
+
+    return symbolRate;
+}
+
+std::string Settings::getDemodulatorMode() const
+{
+    std::string modeStr = std::string("qpsk");
+
+    if(mArgs.count("-m")) {
+        modeStr = mArgs.at("-m");
+    }
+    if(mArgs.count("--mode")) {
+        modeStr =  mArgs.at("--mode");
+    }
+
+    return modeStr;
+}
+
+bool Settings::differentialDecode() const
+{
+    bool result = false;
+
+    if(mArgs.count("--diff")) {
+        std::istringstream(mArgs.at("--diff")) >> result;
+    }
+
+    return result;
+}
+
+bool Settings::deInterleave() const
+{
+    bool result = false;
+
+    if(mArgs.count("--int")) {
+        std::istringstream(mArgs.at("--int")) >> result;
+    }
+
+    return result;
 }

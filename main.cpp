@@ -1,7 +1,10 @@
+#include "DSP/meteordemodulator.h"
+#include "DSP/wavreader.h"
 #include "correlation.h"
 #include "packetparser.h"
 #include "reedsolomon.h"
 #include "viterbi.h"
+#include "deinterleaver.h"
 #include "pixelgeolocationcalculator.h"
 
 #include <iostream>
@@ -26,6 +29,13 @@ struct ImageForSpread {
 };
 
 void saveImage(const std::string fileName, const cv::Mat &image);
+void writeSymbolToFile(std::ostream &stream, const Wavreader::complex &sample);
+int mean(int cur, int prev);
+void differentialDecode(int8_t *data, int64_t len);
+int8_t clamp(float x);
+
+
+static uint16_t intSqrtTable[32768];
 
 static const uint8_t PRAND[] = {
     0xff, 0x48, 0x0e, 0xc0, 0x9a, 0x0d, 0x70, 0xbc, 0x8e, 0x2c, 0x93, 0xad, 0xa7,
@@ -83,9 +93,45 @@ int main(int argc, char *argv[])
     }
 
     do {
-        std::ifstream binaryData (mSettings.getInputFilePath(), std::ifstream::binary);
+        std::string inputPath = mSettings.getInputFilePath();
+
+        if(inputPath.substr(inputPath.find_last_of(".") + 1) == "wav") {
+            std::cout << "Input is a wav file, processing it..." << std::endl;
+
+            const std::string outputPath = inputPath.substr(0, inputPath.find_last_of(".") + 1) + "s";
+            std::ofstream  outputStream;
+            outputStream.open(outputPath);
+
+            if(!outputStream.is_open()) {
+                std::cout << "Create output .S file is failed, exiting...";
+                return -1;
+            }
+
+            Wavreader wavReader;
+            if(!wavReader.openFile(inputPath)) {
+                std::cout << "Wav file open failed, exiting...";
+                return -1;
+            }
+
+            DSP::MeteorDemodulator::Mode mode = DSP::MeteorDemodulator::QPSK;
+            if(mSettings.getDemodulatorMode() == "oqpsk") {
+                mode = DSP::MeteorDemodulator::OQPSK;
+            }
+
+
+            DSP::MeteorDemodulator decoder(mode, mSettings.getSymbolRate(), mSettings.waitForlock(), mSettings.getCostasBandwidth(), mSettings.getRRCFilterOrder(), mSettings.getInterpolationFactor());
+            decoder.process(wavReader, [&outputStream](const Wavreader::complex &sample, float) {
+                writeSymbolToFile(outputStream, sample);
+            });
+
+            outputStream.flush();
+            outputStream.close();
+            inputPath = outputPath;
+        }
+
+        std::ifstream binaryData (inputPath, std::ifstream::binary);
         if(!binaryData) {
-            std::cout << "Open file failed";
+            std::cout << "Open file '" << inputPath << "' is failed!";
             break;
         }
 
@@ -100,6 +146,18 @@ int main(int argc, char *argv[])
         }
 
         binaryData.read (reinterpret_cast<char*>(softBits),fileLength);
+
+        if(mSettings.deInterleave()) {
+            std::cout << "Deinterleaving..." << std::endl;
+            uint64_t outLen = 0;
+            DeInterleaver::deInterleave(softBits, fileLength, &outLen);
+            fileLength = outLen;
+        }
+
+        if(mSettings.differentialDecode()) {
+            std::cout << "Dediffing..." << std::endl;
+            differentialDecode(reinterpret_cast<int8_t*>(softBits), fileLength);
+        }
 
         if(!binaryData) {
             std::cout << "File read failed" << std::endl;
@@ -246,8 +304,14 @@ int main(int argc, char *argv[])
         saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_122.bmp", threatedImage);
+
+    } else if(mPacketParser.isChannel68Available()) {
+        cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
+
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
     } else {
         std::cout << "No usable channel data found!" << std::endl;
+
         return 0;
     }
 
@@ -317,4 +381,77 @@ void saveImage(const std::string fileName, const cv::Mat &image)
     }
 }
 
+void writeSymbolToFile(std::ostream &stream, const Wavreader::complex &sample)
+{
+    int8_t outBuffer[2];
 
+    outBuffer[0] = clamp(std::real(sample) / 2.0f);
+    outBuffer[1] = clamp(std::imag(sample) / 2.0f);
+
+    stream.write(reinterpret_cast<char*>(outBuffer), sizeof(outBuffer));
+}
+
+int mean(int cur, int prev)
+{
+    int v = cur * prev;
+    int result = 0;
+
+    if (v > 32767 || v < -32767) {
+        return 0;
+    }
+
+    if (v >=0) {
+        result = intSqrtTable[v];
+    } else {
+        result =-intSqrtTable[-v];
+    }
+
+    return result;
+}
+
+void differentialDecode(int8_t *data, int64_t len)
+{
+    int a;
+    int b;
+    int prevA;
+    int prevB;
+
+    if (len < 2) {
+        return;
+    }
+
+    for(int i = 0; i < 32768; i++) {
+        intSqrtTable[i] = round(sqrt(i));
+    }
+
+    prevA = data[0];
+    prevB = data[1];
+    data[0] = 0;
+    data[1] = 0;
+    for(int64_t i = 0; i < (len / 2); i++) {
+        a = data[i * 2 + 0];
+        b = data[i * 2 + 1];
+        data[i*2+0] = mean(a, prevA);
+        data[i*2+1] = mean(-b, prevB);
+        prevA = a;
+        prevB = b;
+    }
+}
+
+// Clamp a real value to a int8_t
+int8_t clamp(float x)
+{
+    if (x < -128.0) {
+        return -128;
+    }
+    if (x > 127.0) {
+        return 127;
+    }
+    if (x > 0 && x < 1) {
+        return 1;
+    }
+    if (x > -1 && x < 0) {
+        return -1;
+    }
+    return static_cast<int8_t>(x);
+}

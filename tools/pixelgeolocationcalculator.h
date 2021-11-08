@@ -1,8 +1,5 @@
 #ifndef PIXELGEOLOCATIONCALCULATOR_H
 #define PIXELGEOLOCATIONCALCULATOR_H
-
-#define _USE_MATH_DEFINES
-
 #include <string>
 #include <math.h>
 #include <list>
