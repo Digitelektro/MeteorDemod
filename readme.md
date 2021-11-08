@@ -29,7 +29,7 @@ git clone https://github.com/opencv/opencv.git
 cd opencv/
 cmake ../  -DBUILD_LIST=core,imgproc,imgcodecs -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DCMAKE_SHARED_LINKER_FLAGS=-latomic
 make -j4
-sudo make install```
+sudo make install ```
 
 The other two dependencies can be downloaded from git with command:
 
