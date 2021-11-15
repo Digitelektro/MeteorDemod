@@ -18,7 +18,7 @@ The project is based on
 
 Currently supported outputs are raw channel images, RGB images, IR images. Output projection modes are rectified image, Mercator and Azimuthal Equidistant projection.
 
-## Dependencies
+## Dependencies for compiling the project
 OpenCV must be installed on the system. Required OpenCV modules: core, imgcodecs, imgproc
 
 Lots of people struggling with compiling openCV on Raspberry Pi. Here is the commands that I've tested on Raspbian:
@@ -29,7 +29,7 @@ sudo apt install libatlas-base-dev liblapacke-dev gfortran
 git clone https://github.com/opencv/opencv.git
 cd opencv/
 mkdir build && cd build
-cmake ../  -DBUILD_LIST=core,imgproc,imgcodecs -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DCMAKE_SHARED_LINKER_FLAGS=-latomic
+cmake ../  -DBUILD_LIST=core,imgproc,imgcodecs -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DCMAKE_SHARED_LINKER_FLAGS=-latomic -DBUILD_SHARED_LIBS=OFF
 make -j4
 sudo make install
 ```
@@ -39,7 +39,7 @@ The other two dependencies can be downloaded from git with command:
 ```git submodule update --init --recursive ``` 
 
 
-## Build and install
+## Build and install from sources
 For the development QT creator is used, but the qmake is maintained only for windows.
 
 CMAKE is the build system to compile the project. Tested on Windows and Linux(ubuntu, raspbian)
@@ -53,6 +53,10 @@ cmake ../
 make
 sudo make install
 ```
+
+## Install using deb package
+I've created a debian package for raspberry pi users. There is a limitation though, user home folder must be "/home/pi". 
+In the future the config folder should be moved from user home directory to somewhere else as deb package does not support putting files to home directory.
 
 ## Usage
 Input parameters:
