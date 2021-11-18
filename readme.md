@@ -29,7 +29,7 @@ sudo apt install libatlas-base-dev liblapacke-dev gfortran
 git clone https://github.com/opencv/opencv.git
 cd opencv/
 mkdir build && cd build
-cmake ../  -DBUILD_LIST=core,imgproc,imgcodecs -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DCMAKE_SHARED_LINKER_FLAGS=-latomic -DBUILD_SHARED_LIBS=OFF
+cmake ../  -DBUILD_LIST=core,imgproc,imgcodecs -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DCMAKE_SHARED_LINKER_FLAGS=-latomic
 make -j4
 sudo make install
 ```
@@ -56,7 +56,11 @@ sudo make install
 
 ## Install using deb package
 I've created a debian package for raspberry pi users. There is a limitation though, user home folder must be "/home/pi". 
-In the future the config folder should be moved from user home directory to somewhere else as deb package does not support putting files to home directory.
+
+```
+sudo apt install python3-opencv
+sudo apt install ./MeteorDemod-x.x.x-Linux.deb
+```
 
 ## Usage
 Input parameters:
