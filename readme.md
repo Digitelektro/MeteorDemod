@@ -18,7 +18,7 @@ The project is based on
 
 Currently supported outputs are raw channel images, RGB images, IR images. Output projection modes are rectified image, Mercator and Azimuthal Equidistant projection.
 
-## Dependencies
+## Dependencies for compiling the project
 OpenCV must be installed on the system. Required OpenCV modules: core, imgcodecs, imgproc
 
 Lots of people struggling with compiling openCV on Raspberry Pi. Here is the commands that I've tested on Raspbian:
@@ -39,7 +39,7 @@ The other two dependencies can be downloaded from git with command:
 ```git submodule update --init --recursive ``` 
 
 
-## Build and install
+## Build and install from sources
 For the development QT creator is used, but the qmake is maintained only for windows.
 
 CMAKE is the build system to compile the project. Tested on Windows and Linux(ubuntu, raspbian)
@@ -52,6 +52,14 @@ mkdir build && cd build
 cmake ../
 make
 sudo make install
+```
+
+## Install using deb package
+I've created a debian package for raspberry pi users. There is a limitation though, user home folder must be "/home/pi". 
+
+```
+sudo apt install python3-opencv
+sudo apt install ./MeteorDemod-x.x.x-Linux.deb
 ```
 
 ## Usage
