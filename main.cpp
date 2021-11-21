@@ -76,7 +76,7 @@ static Settings &mSettings = Settings::getInstance();
 int main(int argc, char *argv[])
 {
     if(argc < 5) {
-        std::cout << "Invalid argument number, exiting..." << std::endl;
+        std::cout << "Invalid number of arguments, exiting..." << std::endl;
         std::cout << mSettings.getHelp() << std::endl;
         return  -1;
     }
@@ -96,20 +96,20 @@ int main(int argc, char *argv[])
         std::string inputPath = mSettings.getInputFilePath();
 
         if(inputPath.substr(inputPath.find_last_of(".") + 1) == "wav") {
-            std::cout << "Input is a wav file, processing it..." << std::endl;
+            std::cout << "Input is a .wav file, processing it..." << std::endl;
 
             const std::string outputPath = inputPath.substr(0, inputPath.find_last_of(".") + 1) + "s";
             std::ofstream  outputStream;
             outputStream.open(outputPath);
 
             if(!outputStream.is_open()) {
-                std::cout << "Create output .S file is failed, exiting...";
+                std::cout << "Creating output .S file failed, exiting...";
                 return -1;
             }
 
             Wavreader wavReader;
             if(!wavReader.openFile(inputPath)) {
-                std::cout << "Wav file open failed, exiting...";
+                std::cout << "Opening .wav file failed, exiting...";
                 return -1;
             }
 
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 
         std::ifstream binaryData (inputPath, std::ifstream::binary);
         if(!binaryData) {
-            std::cout << "Open file '" << inputPath << "' is failed!";
+            std::cout << "Opening file '" << inputPath << "' failed!";
             break;
         }
 
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
         }
 
         if(!binaryData) {
-            std::cout << "File read failed" << std::endl;
+            std::cout << "Reading file failed" << std::endl;
             break;
         }
 
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
     std::cout << "Decoded packets:" << decodedPacketCounter << std::endl;
 
     if(decodedPacketCounter == 0) {
-        std::cout << "No data recevied, exiting..." << std::endl;
+        std::cout << "No data received, exiting..." << std::endl;
         return 0;
     }
 
@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
             imagesToSpread.push_back(ImageForSpread(threatedImage2, "123_"));
             saveImage(mSettings.getOutputPath() + fileNameDate + "_123.bmp", threatedImage2);
         } else {
-            std::cout << "Nigh pass, RGB image is skipped, treshold is set to: " << mSettings.getNightPassTreshold() << std::endl;
+            std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
         }
 
         cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
@@ -278,7 +278,7 @@ int main(int argc, char *argv[])
         if(!ThreatImage::isNightPass(threatedImage, mSettings.getNightPassTreshold())) {
             imagesToSpread.push_back(ImageForSpread(threatedImage, "123_"));
         } else {
-            std::cout << "Nigh pass, RGB image is skipped, treshold is set to: " << mSettings.getNightPassTreshold() << std::endl;
+            std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
         }
 
         mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
         if(!ThreatImage::isNightPass(threatedImage, mSettings.getNightPassTreshold())) {
             imagesToSpread.push_back(ImageForSpread(threatedImage, "122_"));
         } else {
-            std::cout << "Nigh pass, RGB image is skipped, treshold is set to: " << mSettings.getNightPassTreshold() << std::endl;
+            std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
         }
 
         cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
@@ -381,7 +381,7 @@ void saveImage(const std::string fileName, const cv::Mat &image)
     try {
         cv::imwrite(fileName, image, compression_params);
     } catch (const cv::Exception& ex) {
-        std::cout << "Save image " << fileName << " failed. error: " << ex.what() << std::endl;
+        std::cout << "Saving image " << fileName << " failed. error: " << ex.what() << std::endl;
     }
 }
 
