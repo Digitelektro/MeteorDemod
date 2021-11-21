@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
     TimeSpan passLength = mPacketParser.getLastTimeStamp() - passFirstTime;
 
     passStart.Initialise(passDate.Year(), passDate.Month(), passDate.Day(), passFirstTime.Hours()-3, passFirstTime.Minutes(), passFirstTime.Seconds(),passFirstTime.Microseconds());
-    std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute());
+    std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute()) + "-" + std::to_string(passStart.Second());
 
     PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getM2Alfa() / 2.0f, mSettings.getM2Delta());
     calc.calcPixelCoordinates();
@@ -247,6 +247,10 @@ int main(int argc, char *argv[])
 
         if(!ThreatImage::isNightPass(threatedImage1, mSettings.getNightPassTreshold())) {
             imagesToSpread.push_back(ImageForSpread(threatedImage1, "122_"));
+
+            cv::Mat threatedImage2 = mPacketParser.getRGBImage(PacketParser::APID_64, PacketParser::APID_65, PacketParser::APID_68, mSettings.fillBackLines());
+            imagesToSpread.push_back(ImageForSpread(threatedImage2, "123_"));
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_123.bmp", threatedImage2);
         } else {
             std::cout << "Nigh pass, RGB image is skipped, treshold is set to: " << mSettings.getNightPassTreshold() << std::endl;
         }
