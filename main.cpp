@@ -249,8 +249,8 @@ int main(int argc, char *argv[])
             imagesToSpread.push_back(ImageForSpread(threatedImage1, "122_"));
 
             cv::Mat threatedImage2 = mPacketParser.getRGBImage(PacketParser::APID_64, PacketParser::APID_65, PacketParser::APID_68, mSettings.fillBackLines());
-            imagesToSpread.push_back(ImageForSpread(threatedImage2, "123_"));
-            saveImage(mSettings.getOutputPath() + fileNameDate + "_123.bmp", threatedImage2);
+            imagesToSpread.push_back(ImageForSpread(threatedImage2, "125_"));
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_125.bmp", threatedImage2);
         } else {
             std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
         }
