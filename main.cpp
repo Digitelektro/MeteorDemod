@@ -243,26 +243,25 @@ int main(int argc, char *argv[])
 
     if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel68Available()) {
         cv::Mat threatedImage1 = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
-        cv::Mat irImage = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
+	cv::Mat irImage = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
+	cv::Mat threatedImage2 = mPacketParser.getRGBImage(PacketParser::APID_64, PacketParser::APID_65, PacketParser::APID_68, mSettings.fillBackLines());
 
         if(!ThreatImage::isNightPass(threatedImage1, mSettings.getNightPassTreshold())) {
-            imagesToSpread.push_back(ImageForSpread(threatedImage1, "122_"));
-
-            cv::Mat threatedImage2 = mPacketParser.getRGBImage(PacketParser::APID_64, PacketParser::APID_65, PacketParser::APID_68, mSettings.fillBackLines());
-            imagesToSpread.push_back(ImageForSpread(threatedImage2, "125_"));
-            saveImage(mSettings.getOutputPath() + fileNameDate + "_125.bmp", threatedImage2);
+            imagesToSpread.push_back(ImageForSpread(threatedImage1, "221_"));
+	    imagesToSpread.push_back(ImageForSpread(threatedImage2, "125_"));
+	    saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", threatedImage1);
+	    saveImage(mSettings.getOutputPath() + fileNameDate + "_125.bmp", threatedImage2);
         } else {
             std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
         }
 
         cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
-        cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
-        cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
+	cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
+	cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
 
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_122.bmp", threatedImage1);
+	saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
+	saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
+	saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
 
         cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
         cv::Mat thermalImage = ThreatImage::irToTemperature(irImage, thermalRef);
@@ -277,6 +276,7 @@ int main(int argc, char *argv[])
 
         if(!ThreatImage::isNightPass(threatedImage, mSettings.getNightPassTreshold())) {
             imagesToSpread.push_back(ImageForSpread(threatedImage, "123_"));
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_123.bmp", threatedImage);
         } else {
             std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
         }
@@ -292,12 +292,12 @@ int main(int argc, char *argv[])
         saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_66.bmp", ch66);
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_123.bmp", threatedImage);
     } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available()) {
         cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
 
         if(!ThreatImage::isNightPass(threatedImage, mSettings.getNightPassTreshold())) {
-            imagesToSpread.push_back(ImageForSpread(threatedImage, "122_"));
+            imagesToSpread.push_back(ImageForSpread(threatedImage, "221_"));
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", threatedImage);
         } else {
             std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
         }
@@ -307,8 +307,6 @@ int main(int argc, char *argv[])
 
         saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_122.bmp", threatedImage);
-
     } else if(mPacketParser.isChannel68Available()) {
         cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
 
