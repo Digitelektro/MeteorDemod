@@ -34,11 +34,6 @@ make -j4
 sudo make install
 ```
 
-The other two dependencies can be downloaded from git with command:
-
-```git submodule update --init --recursive ``` 
-
-
 ## Build and install from sources
 For the development QT creator is used, but the qmake is maintained only for windows.
 
