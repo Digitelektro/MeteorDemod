@@ -50,7 +50,7 @@ cd MeteorDemod
 git submodule update --init --recursive
 mkdir build && cd build
 cmake ../
-make
+make -j4
 sudo make install
 ```
 
