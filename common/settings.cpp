@@ -26,11 +26,11 @@ Settings::Settings()
     mSettingsList.push_back(SettingsData("--tle",   "-t", "TLE file required for pass calculation"));
     mSettingsList.push_back(SettingsData("--input", "-i", "Input S file containing softbits"));
     mSettingsList.push_back(SettingsData("--output","-o", "Output folder where generated files will be placed"));
-    mSettingsList.push_back(SettingsData("--date",  "-d", "Specify pass date, format should  be dd-mm-yyyy"));
+    mSettingsList.push_back(SettingsData("--date",  "-d", "Specify pass date, format should be dd-mm-yyyy"));
     mSettingsList.push_back(SettingsData("--format",  "-f", "Output image format (bmp, jpg)"));
     mSettingsList.push_back(SettingsData("--symbolrate",  "-s", "Set symbol rate for demodulator"));
     mSettingsList.push_back(SettingsData("--mode",  "-m", "Set demodulator mode to qpsk or oqpsk"));
-    mSettingsList.push_back(SettingsData("--diff",  "-diff", "Use differenctial decoding (Maybe required for newer satellites)"));
+    mSettingsList.push_back(SettingsData("--diff",  "-diff", "Use differential decoding (Maybe required for newer satellites)"));
     mSettingsList.push_back(SettingsData("--int",  "-int", "Deinterleave (Maybe required for newer satellites)"));
 }
 
@@ -45,7 +45,7 @@ void Settings::parseIni(const std::string &path)
 {
     std::ifstream ifStream(path);
     if(!ifStream.is_open()) {
-        std::cout << "Unable to open settings.ini from location: '" << path << "' Program will use default settings." << std::endl;
+        std::cout << "Unable to open settings.ini at: '" << path << "' Program will use default settings." << std::endl;
     } else {
         mIniParser.parse(ifStream);
     }
@@ -218,7 +218,7 @@ DateTime Settings::getPassDate() const
             std::cout << "Invalid given Date format, using today's date" << std::endl;
         }
     } catch (...) {
-        std::cout << "Extracting Date parameter is failed, regex might be not supported on yur system. GCC version >=4.9.2 is required. Using default Date" << std::endl;
+        std::cout << "Extracting date parameter failed, regex might not be supported on your system. GCC version >=4.9.2 is required. Using default Date" << std::endl;
     }
 
     return dateTime;
