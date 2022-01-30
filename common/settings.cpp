@@ -213,7 +213,7 @@ DateTime Settings::getPassDate() const
         if(std::regex_search(dateTimeStr, dateTimeRegex)) {
             std::replace( dateTimeStr.begin(), dateTimeStr.end(), '-', ' ');
             std::istringstream( dateTimeStr ) >> day >> month >> year;
-            dateTime.Initialise(year, month, day, today.tm_hour, today.tm_min, today.tm_sec, 0);
+            dateTime.Initialise(year, month, day, 12, 0, 0, 0);
         } else {
             std::cout << "Invalid given Date format, using today's date" << std::endl;
         }

@@ -229,10 +229,16 @@ int main(int argc, char *argv[])
 
     DateTime passStart;
     DateTime passDate = mSettings.getPassDate();
-    TimeSpan passFirstTime = mPacketParser.getFirstTimeStamp();
-    TimeSpan passLength = mPacketParser.getLastTimeStamp() - passFirstTime;
+    TimeSpan passStartTime = mPacketParser.getFirstTimeStamp();
+    TimeSpan passLength = mPacketParser.getLastTimeStamp() - passStartTime;
 
-    passStart.Initialise(passDate.Year(), passDate.Month(), passDate.Day(), passFirstTime.Hours()-3, passFirstTime.Minutes(), passFirstTime.Seconds(),passFirstTime.Microseconds());
+    passDate = passDate.AddHours(3); //Convert UTC 0 to Moscow time zone (UTC + 3)
+
+    //Satellite's date time
+    passStart.Initialise(passDate.Year(), passDate.Month(), passDate.Day(), passStartTime.Hours(), passStartTime.Minutes(), passStartTime.Seconds(), passStartTime.Microseconds());
+    //Convert satellite's Moscow time zone to UTC 0
+    passStart = passStart.AddHours(-3);
+
     std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute()) + "-" + std::to_string(passStart.Second());
 
     PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getM2Alfa() / 2.0f, mSettings.getM2Delta());
