@@ -21,7 +21,7 @@ public:
     void setTextFieldName(const std::string &name);
 
     void drawShapeMercator(cv::Mat &src, float xStart, float yStart);
-    void drawShapeEquidistant(cv::Mat &src, float xStart, float yStart, float xCenter, float yCenter);
+    void drawShapeEquidistant(cv::Mat &src, float xStart, float yStart, float centerLatitude, float centerLongitude);
 
 public: //setters
     void setThickness(int thickness) {
@@ -35,7 +35,7 @@ public: //setters
     }
 
 private:
-    bool equidistantCheck(float x, float y, float centerLongitude, float centerLatitude);
+    bool equidistantCheck(float latitude, float longitude, float centerLatitude, float centerLongitude);
 
 private:
     cv::Scalar mColor;
