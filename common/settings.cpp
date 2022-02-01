@@ -54,6 +54,7 @@ void Settings::parseIni(const std::string &path)
     ini::extract(mIniParser.sections["Program"]["AzimuthalEquidistantProjection"], mEquidistantProjection, true);
     ini::extract(mIniParser.sections["Program"]["MercatorProjection"], mMercatorProjection, true);
     ini::extract(mIniParser.sections["Program"]["SpreadImage"], mSpreadImage, true);
+    ini::extract(mIniParser.sections["Program"]["AddRainOverlay"], mAddRainOverlay, true);
     ini::extract(mIniParser.sections["Program"]["JpgQuality"], mJpegQuality, 90);
     ini::extract(mIniParser.sections["Program"]["AlfaM2"], mAlfaM2, 110.8f);
     ini::extract(mIniParser.sections["Program"]["DeltaM2"], DeltaM2, -3.2f);
