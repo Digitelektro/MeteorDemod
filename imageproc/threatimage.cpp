@@ -71,8 +71,6 @@ cv::Mat ThreatImage::irToRain(const cv::Mat &irImage, const cv::Mat &ref)
     }
 
     cv::Mat rainImage = cv::Mat::zeros(irImage.size(), irImage.type());
-    cv::Mat grayScale;
-    cv::Mat alpha;
 
     for (int x = 0; x < irImage.cols; x++) {
         for (int y = 0; y < irImage.rows; y++) {
