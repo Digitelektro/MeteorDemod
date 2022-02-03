@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
         imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
 
         if(mSettings.addRainOverlay()) {
-            imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(irImage, rainOverlay), "IR_rain_"));
+            imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(irImage, rainOverlay), "rain_IR_"));
         }
 
     } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel66Available()) {
@@ -338,7 +338,7 @@ int main(int argc, char *argv[])
         imagesToSpread.push_back(ImageForSpread(ch68, "IR_"));
 
         if(mSettings.addRainOverlay()) {
-            imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(ch68, rainOverlay), "IR_rain_"));
+            imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(ch68, rainOverlay), "rain_IR_"));
         }
     } else {
         std::cout << "No usable channel data found!" << std::endl;
