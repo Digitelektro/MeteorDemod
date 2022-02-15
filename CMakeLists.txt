@@ -81,6 +81,8 @@ add_executable(meteordemod
     tools/databuffer.h
     tools/iniparser.cpp
     tools/iniparser.h
+    tools/threadpool.cpp
+    tools/threadpool.h
     GIS/shapereader.cpp
     GIS/shapereader.h
     GIS/shaperenderer.cpp
