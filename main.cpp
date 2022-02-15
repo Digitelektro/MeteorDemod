@@ -229,10 +229,16 @@ int main(int argc, char *argv[])
 
     DateTime passStart;
     DateTime passDate = mSettings.getPassDate();
-    TimeSpan passFirstTime = mPacketParser.getFirstTimeStamp();
-    TimeSpan passLength = mPacketParser.getLastTimeStamp() - passFirstTime;
+    TimeSpan passStartTime = mPacketParser.getFirstTimeStamp();
+    TimeSpan passLength = mPacketParser.getLastTimeStamp() - passStartTime;
 
-    passStart.Initialise(passDate.Year(), passDate.Month(), passDate.Day(), passFirstTime.Hours()-3, passFirstTime.Minutes(), passFirstTime.Seconds(),passFirstTime.Microseconds());
+    passDate = passDate.AddHours(3); //Convert UTC 0 to Moscow time zone (UTC + 3)
+
+    //Satellite's date time
+    passStart.Initialise(passDate.Year(), passDate.Month(), passDate.Day(), passStartTime.Hours(), passStartTime.Minutes(), passStartTime.Seconds(), passStartTime.Microseconds());
+    //Convert satellite's Moscow time zone to UTC 0
+    passStart = passStart.AddHours(-3);
+
     std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute()) + "-" + std::to_string(passStart.Second());
 
     PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getM2Alfa() / 2.0f, mSettings.getM2Delta());
@@ -246,9 +252,18 @@ int main(int argc, char *argv[])
 	cv::Mat irImage = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
 	cv::Mat threatedImage2 = mPacketParser.getRGBImage(PacketParser::APID_64, PacketParser::APID_65, PacketParser::APID_68, mSettings.fillBackLines());
 
+        cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
+        cv::Mat rainOverlay = ThreatImage::irToRain(irImage, rainRef);
+
         if(!ThreatImage::isNightPass(threatedImage1, mSettings.getNightPassTreshold())) {
             imagesToSpread.push_back(ImageForSpread(threatedImage1, "221_"));
-	    imagesToSpread.push_back(ImageForSpread(threatedImage2, "125_"));
+            imagesToSpread.push_back(ImageForSpread(threatedImage2, "125_"));
+
+            if(mSettings.addRainOverlay()) {
+                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(threatedImage1, rainOverlay), "rain_221_"));
+                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(threatedImage2, rainOverlay), "rain_125_"));
+            }
+
 	    saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", threatedImage1);
 	    saveImage(mSettings.getOutputPath() + fileNameDate + "_125.bmp", threatedImage2);
         } else {
@@ -270,6 +285,10 @@ int main(int argc, char *argv[])
         cv::bitwise_not(irImage, irImage);
         irImage = ThreatImage::gamma(irImage, 1.8);
         imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
+
+        if(mSettings.addRainOverlay()) {
+            imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(irImage, rainOverlay), "rain_IR_"));
+        }
 
     } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel66Available()) {
         cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_66, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
@@ -309,8 +328,18 @@ int main(int argc, char *argv[])
         saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
     } else if(mPacketParser.isChannel68Available()) {
         cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
-
         saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
+
+        cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
+        cv::Mat rainOverlay = ThreatImage::irToRain(ch68, rainRef);
+
+        cv::bitwise_not(ch68, ch68);
+        ch68 = ThreatImage::gamma(ch68, 1.8);
+        imagesToSpread.push_back(ImageForSpread(ch68, "IR_"));
+
+        if(mSettings.addRainOverlay()) {
+            imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(ch68, rainOverlay), "rain_IR_"));
+        }
     } else {
         std::cout << "No usable channel data found!" << std::endl;
 

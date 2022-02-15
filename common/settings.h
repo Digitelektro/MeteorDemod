@@ -108,6 +108,7 @@ public: //getters
     bool equadistantProjection() const { return mEquidistantProjection; }
     bool mercatorProjection() const { return mMercatorProjection; }
     bool spreadImage() const { return mSpreadImage; }
+    bool addRainOverlay() const { return mAddRainOverlay; }
     float getNightPassTreshold() const { return mNightPassTreshold; }
 
     int getCostasBandwidth() const { return mCostasBw; }
@@ -163,6 +164,7 @@ private:
     bool mEquidistantProjection;
     bool mMercatorProjection;
     bool mSpreadImage;
+    bool mAddRainOverlay;
     float mNightPassTreshold;
 
     //ini section: Demodulator
