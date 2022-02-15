@@ -128,7 +128,7 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
     }
 }
 
-void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float yStart, float xCenter, float yCenter)
+void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float yStart, float centerLatitude, float centerLongitude)
 {
     if(!load()) {
         return;
@@ -146,12 +146,12 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                     for(polyLineIterator->begin(); *polyLineIterator != polyLineIterator->end(); ++(*polyLineIterator)) {
                         //std::cout << polyLineIterator->point.x << " " << polyLineIterator->point.y << std::endl;
 
-                        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(polyLineIterator->point.y, polyLineIterator->point.x, xCenter, yCenter, mEarthRadius + mAltitude);
+                        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(polyLineIterator->point.y, polyLineIterator->point.x, centerLatitude, centerLongitude, mEarthRadius + mAltitude);
 
                         coordinate.x += -xStart;
                         coordinate.y += -yStart;
 
-                        if(equidistantCheck(polyLineIterator->point.y, polyLineIterator->point.x, xCenter, yCenter)) {
+                        if(equidistantCheck(polyLineIterator->point.y, polyLineIterator->point.x, centerLatitude, centerLongitude)) {
                             polyLines.push_back(cv::Point2d(coordinate.x, coordinate.y));
                         }
                     }
@@ -174,11 +174,11 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                 for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator)) {
                     ShapeReader::Point point(*recordIterator);
 
-                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(point.y, point.x, xCenter, yCenter, mEarthRadius + mAltitude);
+                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(point.y, point.x, centerLatitude, centerLongitude, mEarthRadius + mAltitude);
                     coordinate.x += -xStart;
                     coordinate.y += -yStart;
 
-                    if(equidistantCheck(point.y, point.x, xCenter, yCenter) == false) {
+                    if(equidistantCheck(point.y, point.x, centerLatitude, centerLongitude) == false) {
                         continue;
                     }
 
@@ -196,11 +196,11 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                     ShapeReader::Point point(*recordIterator);
                     std::vector<std::string> fieldValues = dbFilereader.getFieldValues(i);
 
-                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(point.y, point.x, xCenter, yCenter, mEarthRadius + mAltitude);
+                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(point.y, point.x, centerLatitude, centerLongitude, mEarthRadius + mAltitude);
                     coordinate.x += -xStart;
                     coordinate.y += -yStart;
 
-                    if(equidistantCheck(point.y, point.x, xCenter, yCenter) == false) {
+                    if(equidistantCheck(point.y, point.x, centerLatitude, centerLongitude) == false) {
                         continue;
                     }
 
@@ -241,34 +241,38 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
     }
 }
 
-bool GIS::ShapeRenderer::equidistantCheck(float x, float y, float centerLongitude, float centerLatitude)
+bool GIS::ShapeRenderer::equidistantCheck(float latitude, float longitude, float centerLatitude, float centerLongitude)
 {
+    bool longResult = true;
+    bool latResult = true;
+
     int minLongitude = static_cast<int>(centerLongitude - 90);
     int maxLongitude = static_cast<int>(centerLongitude + 90);
     int minLatitude = static_cast<int>(centerLatitude - 45);
     int maxLatitude = static_cast<int>(centerLatitude + 45);
 
     //Normalize
-    minLongitude = (minLongitude + 540) % 360 - 180;
-    maxLongitude = (maxLongitude + 540) % 360 - 180;
+    minLongitude = ((minLongitude + 540) % 360 - 180);
+    maxLongitude = ((maxLongitude + 540) % 360 - 180);
+    minLatitude = ((minLatitude + 270) % 180 - 90);
+    maxLatitude = ((maxLatitude + 270) % 180 - 90);
 
-    if(minLatitude < -90)
+    if(maxLatitude < minLatitude)
     {
-        minLatitude = ((minLatitude + 270) % 180 - 90) * -1;
-    }
-    if(maxLatitude > 90)
-    {
-        maxLatitude = ((maxLatitude + 270) % 180 - 90) * -1;
-    }
-
-
-
-    if (x < minLongitude || x > maxLongitude || y < minLatitude || y > maxLatitude)
-    {
-        return false;
+        latResult = latitude > minLatitude || latitude < maxLatitude;
     }
     else
     {
-        return true;
+        latResult = latitude > minLatitude && latitude < maxLatitude;
     }
+    if(maxLongitude < minLongitude)
+    {
+        longResult = longitude < minLongitude || longitude < maxLongitude;
+    }
+    else
+    {
+        longResult = longitude > minLongitude && longitude < maxLongitude;
+    }
+
+    return longResult && latResult;
 }

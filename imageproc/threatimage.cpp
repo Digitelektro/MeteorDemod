@@ -1,6 +1,7 @@
 #include "threatimage.h"
 #include <iostream>
 #include "settings.h"
+#include <opencv2/imgcodecs.hpp>
 
 std::map<std::string, ThreatImage::WatermarkPosition> ThreatImage::WatermarkPositionLookup {
     {"top_left", WatermarkPosition::TOP_LEFT},
@@ -46,7 +47,7 @@ void ThreatImage::fillBlackLines(cv::Mat &bitmap, int minimumHeight, int maximum
     }
 }
 
-cv::Mat ThreatImage::irToTemperature(const cv::Mat &irImage, const cv::Mat ref)
+cv::Mat ThreatImage::irToTemperature(const cv::Mat &irImage, const cv::Mat &ref)
 {
     if(ref.cols != 256) {
         return cv::Mat();
@@ -61,6 +62,43 @@ cv::Mat ThreatImage::irToTemperature(const cv::Mat &irImage, const cv::Mat ref)
         }
     }
     return thermalImage;
+}
+
+cv::Mat ThreatImage::irToRain(const cv::Mat &irImage, const cv::Mat &ref)
+{
+    if(ref.cols != 256) {
+        return cv::Mat();
+    }
+
+    cv::Mat rainImage = cv::Mat::zeros(irImage.size(), irImage.type());
+
+    for (int x = 0; x < irImage.cols; x++) {
+        for (int y = 0; y < irImage.rows; y++) {
+            uint8_t temp = irImage.at<cv::Vec3b>(y, x)[0];
+            rainImage.at<cv::Vec3b>(y, x) = ref.at<cv::Vec3b>(0,temp);
+        }
+    }
+
+    return rainImage;
+}
+
+cv::Mat ThreatImage::addRainOverlay(const cv::Mat &image, const cv::Mat &rain)
+{
+    cv::Mat rainImage = cv::Mat::zeros(image.size(), image.type());
+    cv::Mat grayScale;
+    cv::Mat alpha;
+
+    //create mask
+    cv::cvtColor(rain, grayScale, cv::COLOR_BGR2GRAY);
+    cv::threshold(grayScale, alpha, 0, 255, cv::THRESH_BINARY);
+
+    //create masked image
+    cv::bitwise_and(image, image, rainImage, cv::Scalar::all(1.0)-alpha);
+
+    //add rain overlay
+    cv::bitwise_and(rain, rain, rainImage, alpha);
+
+    return rainImage;
 }
 
 cv::Mat ThreatImage::gamma(const cv::Mat &image, double gamma)

@@ -54,6 +54,7 @@ void Settings::parseIni(const std::string &path)
     ini::extract(mIniParser.sections["Program"]["AzimuthalEquidistantProjection"], mEquidistantProjection, true);
     ini::extract(mIniParser.sections["Program"]["MercatorProjection"], mMercatorProjection, true);
     ini::extract(mIniParser.sections["Program"]["SpreadImage"], mSpreadImage, true);
+    ini::extract(mIniParser.sections["Program"]["AddRainOverlay"], mAddRainOverlay, true);
     ini::extract(mIniParser.sections["Program"]["JpgQuality"], mJpegQuality, 90);
     ini::extract(mIniParser.sections["Program"]["AlfaM2"], mAlfaM2, 110.8f);
     ini::extract(mIniParser.sections["Program"]["DeltaM2"], DeltaM2, -3.2f);
@@ -213,7 +214,7 @@ DateTime Settings::getPassDate() const
         if(std::regex_search(dateTimeStr, dateTimeRegex)) {
             std::replace( dateTimeStr.begin(), dateTimeStr.end(), '-', ' ');
             std::istringstream( dateTimeStr ) >> day >> month >> year;
-            dateTime.Initialise(year, month, day, today.tm_hour, today.tm_min, today.tm_sec, 0);
+            dateTime.Initialise(year, month, day, 12, 0, 0, 0);
         } else {
             std::cout << "Invalid given Date format, using today's date" << std::endl;
         }
