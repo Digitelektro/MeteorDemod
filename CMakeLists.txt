@@ -6,6 +6,7 @@ project(Meteordemod LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
@@ -81,6 +82,8 @@ add_executable(meteordemod
     tools/databuffer.h
     tools/iniparser.cpp
     tools/iniparser.h
+    tools/threadpool.cpp
+    tools/threadpool.h
     GIS/shapereader.cpp
     GIS/shapereader.h
     GIS/shaperenderer.cpp

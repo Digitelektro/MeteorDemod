@@ -31,6 +31,7 @@ SOURCES += \
     tools/databuffer.cpp \
     tools/iniparser.cpp \
     tools/pixelgeolocationcalculator.cpp \
+    tools/threadpool.cpp \
     tools/tlereader.cpp \
     tools/matrix.cpp \
     tools/vector.cpp \
@@ -67,6 +68,7 @@ HEADERS += \
     tools/iniparser.h \
     tools/pixelgeolocationcalculator.h \
     tools/matrix.h \
+    tools/threadpool.h \
     tools/tlereader.h \
     tools/vector.h \
     tools/databuffer.h \

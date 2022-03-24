@@ -77,11 +77,8 @@ Other settings can be found in the settings.ini file.
 Master branch is for the latest stable version, beta branch for beta versions, development is ongoing on other branches.
 
 ## Future developments
- - More precise image overlays
- - Rain overlay
  - Composite output from multiple passes
  - Support dead Meteor M2 2 satellite (it may be required for future satellites)
- - Multithreading, faster image processing
  
  
 ## Example Outputs

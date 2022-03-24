@@ -18,6 +18,8 @@
 #include "tlereader.h"
 #include "settings.h"
 
+#include "threadpool.h"
+
 struct ImageForSpread {
     ImageForSpread(cv::Mat img, std::string fileNamebase)
         : image(img)
@@ -34,6 +36,7 @@ int mean(int cur, int prev);
 void differentialDecode(int8_t *data, int64_t len);
 int8_t clamp(float x);
 
+static std::mutex saveImageMutex;
 
 static uint16_t intSqrtTable[32768];
 
@@ -72,6 +75,7 @@ static Viterbi mViterbi;
 static PacketParser mPacketParser;
 static ReedSolomon mReedSolomon;
 static Settings &mSettings = Settings::getInstance();
+static ThreadPool mThreadPool(std::thread::hardware_concurrency());
 
 int main(int argc, char *argv[])
 {
@@ -84,6 +88,7 @@ int main(int argc, char *argv[])
     mSettings.parseArgs(argc, argv);
     mSettings.parseIni(mSettings.getResourcesPath() + "settings.ini");
 
+    mThreadPool.start();
     TleReader reader(mSettings.getTlePath());
     TleReader::TLE tle;
     reader.processFile();
@@ -350,61 +355,68 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    SpreadImage spreadImage;
     std::ostringstream oss;
     oss << std::setfill('0') << std::setw(2) << passStart.Day() << "/" << std::setw(2) << passStart.Month() << "/" << passStart.Year() << " " << std::setw(2) << passStart.Hour() << ":" << std::setw(2) << passStart.Minute() << ":" << std::setw(2) << passStart.Second() << " UTC";
     std::string dateStr = oss.str();
 
     std::list<ImageForSpread>::const_iterator it;
-
-    int c = 1;
-    for(it = imagesToSpread.begin(); it != imagesToSpread.end(); ++it, c++) {
+    for(it = imagesToSpread.begin(); it != imagesToSpread.end(); ++it) {
         std::string fileName = (*it).fileNameBase + fileNameDate + "." + mSettings.getOutputFormat();
 
         if(mSettings.spreadImage()) {
-            cv::Mat strechedImg = spreadImage.stretch((*it).image);
+            mThreadPool.addJob([=]() {
+                SpreadImage spreadImage;
+                cv::Mat strechedImg = spreadImage.stretch((*it).image);
 
-            if(!strechedImg.empty()) {
-                ThreatImage::drawWatermark(strechedImg, dateStr);
-                saveImage(mSettings.getOutputPath() + std::string("spread_") + fileName, strechedImg);
-            } else {
-                std::cout << "Failed to strech image" << std::endl;
-            }
+                if(!strechedImg.empty()) {
+                    ThreatImage::drawWatermark(strechedImg, dateStr);
+                    saveImage(mSettings.getOutputPath() + std::string("spread_") + fileName, strechedImg);
+                } else {
+                    std::cout << "Failed to strech image" << std::endl;
+                }
+            });
         }
 
         if(mSettings.mercatorProjection()) {
-            cv::Mat mercator = spreadImage.mercatorProjection((*it).image, calc, [c, &imagesToSpread](float percent) {
-                std::cout << "Spreading mercator " << c << " of " << imagesToSpread.size() << " " << static_cast<int>(percent) << "%\t\t\r" << std::flush;
-            });
-            std::cout << std::endl;
+            mThreadPool.addJob([=]() {
+                SpreadImage spreadImage;
+                cv::Mat mercator = spreadImage.mercatorProjection((*it).image, calc);
 
-            if(!mercator.empty()) {
-                ThreatImage::drawWatermark(mercator, dateStr);
-                saveImage(mSettings.getOutputPath() + std::string("mercator_") + fileName, mercator);
-            } else {
-                std::cout << "Failed to create mercator projection" << std::endl;
-            }
+                if(!mercator.empty()) {
+                    ThreatImage::drawWatermark(mercator, dateStr);
+                    saveImage(mSettings.getOutputPath() + std::string("mercator_") + fileName, mercator);
+                } else {
+                    std::cout << "Failed to create mercator projection" << std::endl;
+                }
+            });
         }
 
         if(mSettings.equadistantProjection()) {
-            cv::Mat equidistant = spreadImage.equidistantProjection((*it).image, calc, [c, &imagesToSpread](float percent) {
-                std::cout << "Spreading equidistant " << c << " of " << imagesToSpread.size() << " " << static_cast<int>(percent) << "%\t\t\r" << std::flush;
-            });
-            std::cout << std::endl;
+            mThreadPool.addJob([=]() {
+                SpreadImage spreadImage;
+                cv::Mat equidistant = spreadImage.equidistantProjection((*it).image, calc);
 
-            if(!equidistant.empty()) {
-                ThreatImage::drawWatermark(equidistant, dateStr);
-                saveImage(mSettings.getOutputPath() + std::string("equidistant_") + fileName, equidistant);
-            } else {
-                std::cout << "Failed to create equidistant projection" << std::endl;
-            }
+                if(!equidistant.empty()) {
+                    ThreatImage::drawWatermark(equidistant, dateStr);
+                    saveImage(mSettings.getOutputPath() + std::string("equidistant_") + fileName, equidistant);
+                } else {
+                    std::cout << "Failed to create equidistant projection" << std::endl;
+                }
+            });
         }
     }
+
+    std::cout << "Generate images" << std::endl;
+    mThreadPool.stop();
+    std::cout << "Generate images done" << std::endl;
+
     return 0;
 }
 
 void saveImage(const std::string fileName, const cv::Mat &image)
 {
+    std::unique_lock<decltype(saveImageMutex)>lock(saveImageMutex);
+
     std::vector<int> compression_params;
     compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
     compression_params.push_back(mSettings.getJpegQuality());
