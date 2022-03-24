@@ -291,11 +291,15 @@ int main(int argc, char *argv[])
         }
 
     } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel66Available()) {
-        cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_66, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
+        cv::Mat threatedImage1 = mPacketParser.getRGBImage(PacketParser::APID_66, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
+        cv::Mat threatedImage2 = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
 
-        if(!ThreatImage::isNightPass(threatedImage, mSettings.getNightPassTreshold())) {
-            imagesToSpread.push_back(ImageForSpread(threatedImage, "123_"));
-            saveImage(mSettings.getOutputPath() + fileNameDate + "_123.bmp", threatedImage);
+        if(!ThreatImage::isNightPass(threatedImage1, mSettings.getNightPassTreshold())) {
+            imagesToSpread.push_back(ImageForSpread(threatedImage1, "321_"));
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_321.bmp", threatedImage1);
+
+            imagesToSpread.push_back(ImageForSpread(threatedImage2, "221_"));
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", threatedImage2);
         } else {
             std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
         }
@@ -306,7 +310,7 @@ int main(int argc, char *argv[])
 
         cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
         cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
-        cv::Mat ch66 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
+        cv::Mat ch66 = mPacketParser.getChannelImage(PacketParser::APID_66, mSettings.fillBackLines());
 
         saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
