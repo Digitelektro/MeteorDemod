@@ -32,6 +32,7 @@ Settings::Settings()
     mSettingsList.push_back(SettingsData("--mode",  "-m", "Set demodulator mode to qpsk or oqpsk"));
     mSettingsList.push_back(SettingsData("--diff",  "-diff", "Use differential decoding (Maybe required for newer satellites)"));
     mSettingsList.push_back(SettingsData("--int",  "-int", "Deinterleave (Maybe required for newer satellites)"));
+    mSettingsList.push_back(SettingsData("--brokenM2",  "-b", "Broken M2 modulation"));
 }
 
 void Settings::parseArgs(int argc, char **argv)
@@ -270,6 +271,20 @@ bool Settings::deInterleave() const
 
     if(mArgs.count("--int")) {
         std::istringstream(mArgs.at("--int")) >> result;
+    }
+
+    return result;
+}
+
+bool Settings::getBrokenM2Modulation() const
+{
+    bool result = false;
+
+    if(mArgs.count("-b")) {
+        std::istringstream(mArgs.at("-b")) >> result;
+    }
+    if(mArgs.count("--brokenM2")) {
+        std::istringstream(mArgs.at("--brokenM2")) >> result;
     }
 
     return result;

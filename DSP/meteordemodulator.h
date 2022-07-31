@@ -3,7 +3,7 @@
 
 #include <functional>
 #include "iqsource.h"
-#include "pll.h"
+#include "meteorcostas.h"
 #include "filter.h"
 #include "agc.h"
 
@@ -20,7 +20,7 @@ public:
     };
 
 public:
-    MeteorDemodulator(Mode mode, float symbolRate, bool waitForLock = true, float costasBw = 100.0f, uint16_t rrcFilterOrder = 64, uint16_t interploationFacor = 4, float rrcFilterAlpha = 0.6f);
+    MeteorDemodulator(Mode mode, float symbolRate, float costasBw = 100.0f, uint16_t rrcFilterOrder = 64, uint16_t interploationFacor = 4, float rrcFilterAlpha = 0.6f, bool brokenM2Modulation = false);
     ~MeteorDemodulator();
 
     MeteorDemodulator &operator=(const MeteorDemodulator &) = delete;
@@ -35,8 +35,8 @@ private:
 
 private:
     Mode mMode;
+    bool mBorkenM2Modulation;
     float mSymbolRate;
-    bool mWaitForLock;
     float mCostasBw;
     uint16_t rrcFilterOrder;
     uint16_t mInterploationFacor;

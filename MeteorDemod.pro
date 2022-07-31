@@ -1,4 +1,4 @@
-CONFIG += c++14 console
+CONFIG += c++17 console
 CONFIG -= app_bundle
 
 # The following define makes your compiler emit warnings if you use
@@ -14,6 +14,9 @@ DEFINES +=_USE_MATH_DEFINES
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    DSP/meteorcostas.cpp \
+    DSP/phasecontrolloop.cpp \
+    DSP/pll.cpp \
     GIS/dbfilereader.cpp \
     decoder/deinterleaver.cpp \
     decoder/viterbi.cpp \
@@ -37,7 +40,6 @@ SOURCES += \
     tools/vector.cpp \
     tools/databuffer.cpp \
     DSP/agc.cpp \
-    DSP/pll.cpp \
     DSP/filter.cpp \
     DSP/iqsource.cpp \
     DSP/meteordemodulator.cpp \
@@ -50,6 +52,9 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
+    DSP/meteorcostas.h \
+    DSP/phasecontrolloop.h \
+    DSP/pll.h \
     GIS/dbfilereader.h \
     GIS/shapereader.h \
     GIS/shaperenderer.h \
@@ -73,7 +78,6 @@ HEADERS += \
     tools/vector.h \
     tools/databuffer.h \
     DSP/agc.h \
-    DSP/pll.h \
     DSP/filter.h \
     DSP/iqsource.h \
     DSP/meteordemodulator.h \

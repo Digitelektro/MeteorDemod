@@ -101,6 +101,7 @@ public: //getters
     std::string getDemodulatorMode() const;
     bool differentialDecode() const;
     bool deInterleave() const;
+    bool getBrokenM2Modulation() const;
 
     int getJpegQuality() const { return mJpegQuality; }
     float getM2Alfa() const { return mAlfaM2; }
