@@ -20,7 +20,7 @@ Agc::complex Agc::process(complex sample)
     sample -= mBias;
 
     // Update the sample magnitude average
-    rho = sqrtf(std::real(sample) * std::real(sample) + std::imag(sample) * std::imag(sample));
+    rho = std::abs(sample);
     mAvg = (mAvg * (mWindowSize - 1) + rho) / mWindowSize;
 
     mGain = mTargetAmplitude / mAvg;
