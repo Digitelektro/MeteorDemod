@@ -83,7 +83,7 @@ HEADERS += \
     DSP/meteordemodulator.h \
     DSP/wavreader.h
 
-INCLUDEPATH +=  ../../opencv/own_build/install/include
+INCLUDEPATH +=  ../../opencv/own_build_x86/install/include
 INCLUDEPATH +=  ./decoder
 INCLUDEPATH +=  ./common
 INCLUDEPATH +=  ./tools
@@ -92,25 +92,54 @@ INCLUDEPATH +=  $$PWD/external/libcorrect/include
 INCLUDEPATH +=  $$PWD/external/sgp4/libsgp4
 
 win32 {
-    CONFIG(debug, debug|release) {
-        LIBS += $$PWD/external/libcorrect/build/lib/Debug/correct.lib
-        LIBS += $$PWD/external/sgp4/build/libsgp4/Debug/sgp4.lib
+    !contains(QMAKE_TARGET.arch, x86_64) {
+        CONFIG(debug, debug|release) {
+            message("x86 debug build")
+            LIBS += $$PWD/external/libcorrect/build_x86/lib/Debug/correct.lib
+            LIBS += $$PWD/external/sgp4/build_x86/libsgp4/Debug/sgp4.lib
 
-        LIBS += -L$$PWD/../../opencv/own_build/lib/Debug
-        SHARED_LIB_FILES = $$files($$PWD/../../opencv/own_build/lib/Debug/*.lib)
-        for(FILE, SHARED_LIB_FILES) {
-            BASENAME = $$basename(FILE)
-            LIBS += -l$$replace(BASENAME,\.lib,)
+            LIBS += -L$$PWD/../../opencv/own_build_x86/lib/Debug
+            SHARED_LIB_FILES = $$files($$PWD/../../opencv/own_build_x86/lib/Debug/*.lib)
+            for(FILE, SHARED_LIB_FILES) {
+                BASENAME = $$basename(FILE)
+                LIBS += -l$$replace(BASENAME,\.lib,)
+            }
+        } else {
+            message("x86 release build")
+            LIBS += $$PWD/external/libcorrect/build_x86/lib/Release/correct.lib
+            LIBS += $$PWD/external/sgp4/build_x86/libsgp4/Release/sgp4.lib
+
+            LIBS += -L$$PWD/../../opencv/own_build_x86/lib/Release
+            SHARED_LIB_FILES = $$files($$PWD/../../opencv/own_build_x86/lib/Release/*.lib)
+            for(FILE, SHARED_LIB_FILES) {
+                BASENAME = $$basename(FILE)
+                LIBS += -l$$replace(BASENAME,\.lib,)
+            }
         }
-    } else {
-        LIBS += $$PWD/external/libcorrect/build/lib/Release/correct.lib
-        LIBS += $$PWD/external/sgp4/build/libsgp4/Release/sgp4.lib
+    }
+    else {
+        CONFIG(debug, debug|release) {
+            message("x64 debug build")
+            LIBS += $$PWD/external/libcorrect/build/lib/Debug/correct.lib
+            LIBS += $$PWD/external/sgp4/build/libsgp4/Debug/sgp4.lib
 
-        LIBS += -L$$PWD/../../opencv/own_build/lib/Release
-        SHARED_LIB_FILES = $$files($$PWD/../../opencv/own_build/lib/Release/*.lib)
-        for(FILE, SHARED_LIB_FILES) {
-            BASENAME = $$basename(FILE)
-            LIBS += -l$$replace(BASENAME,\.lib,)
+            LIBS += -L$$PWD/../../opencv/own_build_x64/lib/Debug
+            SHARED_LIB_FILES = $$files($$PWD/../../opencv/own_build_x64/lib/Debug/*.lib)
+            for(FILE, SHARED_LIB_FILES) {
+                BASENAME = $$basename(FILE)
+                LIBS += -l$$replace(BASENAME,\.lib,)
+            }
+        } else {
+            message("x64 release build")
+            LIBS += $$PWD/external/libcorrect/build/lib/Release/correct.lib
+            LIBS += $$PWD/external/sgp4/build/libsgp4/Release/sgp4.lib
+
+            LIBS += -L$$PWD/../../opencv/own_build_x64/lib/Release
+            SHARED_LIB_FILES = $$files($$PWD/../../opencv/own_build_x64/lib/Release/*.lib)
+            for(FILE, SHARED_LIB_FILES) {
+                BASENAME = $$basename(FILE)
+                LIBS += -l$$replace(BASENAME,\.lib,)
+            }
         }
     }
 }
