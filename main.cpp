@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
             const std::string outputPath = inputPath.substr(0, inputPath.find_last_of(".") + 1) + "s";
             std::ofstream  outputStream;
-            outputStream.open(outputPath);
+            outputStream.open(outputPath, std::ios::binary);
 
             if(!outputStream.is_open()) {
                 std::cout << "Creating output .S file failed, exiting...";
