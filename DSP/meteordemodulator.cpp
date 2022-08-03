@@ -88,7 +88,7 @@ void MeteorDemodulator::process(IQSoruce &source, MeteorDecoderCallback_t callba
 
             float carierFreq = costas.getFrequency() * mSymbolRate / (2 * M_PI);
 
-            std::cout << std::fixed << std::setprecision(2) << " Carrier: " << carierFreq << "Hz\t OutputSize: " << bytesWrited/1024.0f/1024.0f << "Mb Progress: " <<  progress  << "% \t\t\r" << std::flush;
+            std::cout << std::fixed << std::setprecision(2) << " Carrier: " << carierFreq << "Hz\t Error: "<< costas.getError() << "\t OutputSize: " << bytesWrited/1024.0f/1024.0f << "Mb Progress: " <<  progress  << "% \t\t\r" << std::flush;
         }
     } else {
         using namespace std::complex_literals;

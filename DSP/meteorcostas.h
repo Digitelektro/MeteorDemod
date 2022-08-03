@@ -14,7 +14,8 @@ public:
     virtual complex process(const complex &sample) override {
         complex retval;
         retval = sample * complex(cosf(-mPhase), sinf(-mPhase));
-        advance(errorFunction(retval));
+        mError = errorFunction(retval);
+        advance(mError);
         return retval;
     }
 
@@ -38,13 +39,23 @@ protected:
             if (fabsf(dp4) < fabsf(lowest)) { lowest = dp4; }
             error = lowest * std::abs(value);
         } else {
-             error = (std::clamp(value.real(), -1.0f, 1.0f) * value.imag()) - (std::clamp(value.imag(), -1.0f, 1.0f) * value.real());   
-            }
+            error = (step(value.real()) * value.imag()) - (step(value.imag()) * value.real());
+        }
         return std::clamp(error, -1.0f, 1.0f);
+    }
+
+    inline float step(float val) {
+        return val > 0 ? 1.0f : -1.0f;
+    }
+
+public:
+    float getError() const {
+        return mError;
     }
 
 protected:
  bool mBrokenModulation;
+ float mError;
 
 };
 
