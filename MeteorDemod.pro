@@ -15,8 +15,12 @@ DEFINES +=_USE_MATH_DEFINES
 
 SOURCES += \
     DSP/meteorcostas.cpp \
+    DSP/mm.cpp \
     DSP/phasecontrolloop.cpp \
     DSP/pll.cpp \
+    DSP/polyphasebank.cpp \
+    DSP/window.cpp \
+    DSP/windowedsinc.cpp \
     GIS/dbfilereader.cpp \
     decoder/deinterleaver.cpp \
     decoder/viterbi.cpp \
@@ -43,7 +47,8 @@ SOURCES += \
     DSP/filter.cpp \
     DSP/iqsource.cpp \
     DSP/meteordemodulator.cpp \
-    DSP/wavreader.cpp
+    DSP/wavreader.cpp \
+    DSP/mm.cpp
 
 
 # Default rules for deployment.
@@ -53,11 +58,16 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     DSP/meteorcostas.h \
+    DSP/mm.h \
     DSP/phasecontrolloop.h \
     DSP/pll.h \
+    DSP/polyphasebank.h \
+    DSP/window.h \
+    DSP/windowedsinc.h \
     GIS/dbfilereader.h \
     GIS/shapereader.h \
     GIS/shaperenderer.h \
+    common/global.h \
     decoder/deinterleaver.h \
     decoder/viterbi.h \
     decoder/meteorimage.h \
@@ -81,7 +91,8 @@ HEADERS += \
     DSP/filter.h \
     DSP/iqsource.h \
     DSP/meteordemodulator.h \
-    DSP/wavreader.h
+    DSP/wavreader.h \
+    DSP/mm.h
 
 INCLUDEPATH +=  ../../opencv/own_build_x86/install/include
 INCLUDEPATH +=  ./decoder

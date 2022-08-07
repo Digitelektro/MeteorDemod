@@ -63,7 +63,6 @@ void Settings::parseIni(const std::string &path)
 
     ini::extract(mIniParser.sections["Demodulator"]["CostasBandwidth"], mCostasBw, 50);
     ini::extract(mIniParser.sections["Demodulator"]["RRCFilterOrder"], mRRCFilterOrder, 64);
-    ini::extract(mIniParser.sections["Demodulator"]["InterpolationFactor"], mInterploationFacor, 4);
     ini::extract(mIniParser.sections["Demodulator"]["WaitForLock"], mWaitForLock, true);
 
     ini::extract(mIniParser.sections["Treatment"]["FillBlackLines"], mFillBackLines, true);

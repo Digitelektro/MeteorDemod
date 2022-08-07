@@ -114,7 +114,6 @@ public: //getters
 
     int getCostasBandwidth() const { return mCostasBw; }
     int getRRCFilterOrder() const { return mRRCFilterOrder; }
-    int getInterpolationFactor() const { return mInterploationFacor; }
     bool waitForlock() const { return mWaitForLock; }
 
     bool fillBackLines() const { return mFillBackLines; }
@@ -171,7 +170,6 @@ private:
     //ini section: Demodulator
     int mCostasBw;
     int mRRCFilterOrder;
-    int mInterploationFacor;
     bool mWaitForLock;
 
     //ini section: Treatment

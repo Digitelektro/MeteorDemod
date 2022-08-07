@@ -5,11 +5,15 @@
 
 namespace DSP {
 
+class MM;
+
 class PhaseControlLoop
 {
+    friend class MM;
+
 public:
-    PhaseControlLoop(float bandWidth, float phase, float minPhase, float maxPhase, float freq, float minFreq, float maxFreq);
-    PhaseControlLoop(float alpha, float beta, float phase, float minPhase, float maxPhase, float freq, float minFreq, float maxFreq);
+    PhaseControlLoop(float bandWidth, float phase, float minPhase, float maxPhase, float freq, float minFreq, float maxFreq, bool clampPhase = true);
+    PhaseControlLoop(float alpha, float beta, float phase, float minPhase, float maxPhase, float freq, float minFreq, float maxFreq, bool clampPhase = true);
 
     float normalizePhase(float diff) {
         if (diff > M_PI) {
@@ -59,12 +63,7 @@ protected:
     float mMinFreq;
     float mMaxFreq;
     float mPhaseDelta;
-
-private:
-
-
-private:
-
+    bool mClampPhase;
 };
 
 } //namespace DSP

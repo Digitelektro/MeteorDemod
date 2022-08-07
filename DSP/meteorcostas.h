@@ -11,12 +11,18 @@ class MeteorCostas : public PLL
 public:
     MeteorCostas(float bandWidth, float initPhase = 0.0f, float initFreq = 0.0f, float minFreq = -M_PI, float maxFreq = M_PI, bool brokenModulation = false);
 
-    virtual complex process(const complex &sample) override {
+    inline virtual complex process(const complex &sample) override {
         complex retval;
         retval = sample * complex(cosf(-mPhase), sinf(-mPhase));
         mError = errorFunction(retval);
         advance(mError);
         return retval;
+    }
+
+    inline virtual void process(const complex *insamples, complex *outsampes, unsigned int count) {
+        for(unsigned int i = 0; i < count; i++) {
+            *outsampes++ = process(*insamples++);
+        }
     }
 
 protected:

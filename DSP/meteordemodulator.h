@@ -6,6 +6,7 @@
 #include "meteorcostas.h"
 #include "filter.h"
 #include "agc.h"
+#include "mm.h"
 
 namespace DSP {
 
@@ -20,7 +21,7 @@ public:
     };
 
 public:
-    MeteorDemodulator(Mode mode, float symbolRate, float costasBw = 100.0f, uint16_t rrcFilterOrder = 64, uint16_t interploationFacor = 4, float rrcFilterAlpha = 0.6f, bool brokenM2Modulation = false);
+    MeteorDemodulator(Mode mode, float symbolRate, float costasBw = 100.0f, uint16_t rrcFilterOrder = 64, bool brokenM2Modulation = false);
     ~MeteorDemodulator();
 
     MeteorDemodulator &operator=(const MeteorDemodulator &) = delete;
@@ -31,22 +32,14 @@ public:
     void process(IQSoruce &source, MeteorDecoderCallback_t callback);
 
 private:
-    void interpolator(FilterBase &filter, PLL::complex *inSamples, int inSamplesCount, int factor, PLL::complex *outSamples);
-
-private:
     Mode mMode;
     bool mBorkenM2Modulation;
     float mSymbolRate;
     float mCostasBw;
-    uint16_t rrcFilterOrder;
-    uint16_t mInterploationFacor;
-    float rrcAlpha;
+    uint16_t mRrcFilterOrder;
     Agc mAgc;
-    PLL::complex *samples;
-    PLL::complex *interpolatedSamples;
-
-private:
-    static constexpr uint32_t CHUNK_SIZE = 8192;
+    std::unique_ptr<PLL::complex[]> mSamples;
+    std::unique_ptr<PLL::complex[]> mProcessedSamples;
 };
 
 } // namespace DSP

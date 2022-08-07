@@ -95,6 +95,10 @@ add_executable(meteordemod
     DSP/pll.cpp
 	DSP/meteorcostas.cpp
 	DSP/phasecontrolloop.cpp
+	DSP/polyphasebank.cpp
+	DSP/mm.cpp
+	DSP/window.cpp
+	DSP/windowedsinc.cpp
     DSP/filter.cpp
     DSP/iqsource.cpp
     DSP/wavreader.cpp

@@ -3,7 +3,7 @@
 
 namespace DSP {
 
-PhaseControlLoop::PhaseControlLoop(float bandWidth, float phase, float minPhase, float maxPhase, float freq, float minFreq, float maxFreq)
+PhaseControlLoop::PhaseControlLoop(float bandWidth, float phase, float minPhase, float maxPhase, float freq, float minFreq, float maxFreq, bool clampPhase)
     : mAlpha(0)
     , mBeta(0)
     , mFreq(freq)
@@ -13,6 +13,7 @@ PhaseControlLoop::PhaseControlLoop(float bandWidth, float phase, float minPhase,
     , mMinFreq(minFreq)
     , mMaxFreq(maxFreq)
     , mPhaseDelta(maxPhase - mMinPhase)
+    , mClampPhase(clampPhase)
 {
     float damping = sqrtf(2.0f) / 2.0f;
     float denom = 1.0f + 2.0f * damping * bandWidth + bandWidth * bandWidth;
@@ -21,7 +22,7 @@ PhaseControlLoop::PhaseControlLoop(float bandWidth, float phase, float minPhase,
 
 }
 
-PhaseControlLoop::PhaseControlLoop(float alpha, float beta, float phase, float minPhase, float maxPhase, float freq, float minFreq, float maxFreq)
+PhaseControlLoop::PhaseControlLoop(float alpha, float beta, float phase, float minPhase, float maxPhase, float freq, float minFreq, float maxFreq, bool clampPhase)
     : mAlpha(alpha)
     , mBeta(beta)
     , mFreq(freq)
@@ -31,6 +32,7 @@ PhaseControlLoop::PhaseControlLoop(float alpha, float beta, float phase, float m
     , mMinFreq(minFreq)
     , mMaxFreq(maxFreq)
     , mPhaseDelta(maxPhase - mMinPhase)
+    , mClampPhase(clampPhase)
 {
 
 }
@@ -43,7 +45,9 @@ void PhaseControlLoop::advance(float error)
 
     // Increment and clamp phase
     mPhase += mFreq + (mAlpha * error);
-    clampPhase();
+    if(mClampPhase) {
+        clampPhase();
+    }
 }
 
 } //namespace DSP
