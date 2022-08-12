@@ -21,7 +21,7 @@ public:
     };
 
 public:
-    MeteorDemodulator(Mode mode, float symbolRate, float costasBw = 100.0f, uint16_t rrcFilterOrder = 64, bool brokenM2Modulation = false);
+    MeteorDemodulator(Mode mode, float symbolRate, float costasBw = 100.0f, uint16_t rrcFilterOrder = 64, bool waitForLock = true, bool brokenM2Modulation = false);
     ~MeteorDemodulator();
 
     MeteorDemodulator &operator=(const MeteorDemodulator &) = delete;
@@ -34,6 +34,7 @@ public:
 private:
     Mode mMode;
     bool mBorkenM2Modulation;
+    bool mWaitForLock;
     float mSymbolRate;
     float mCostasBw;
     uint16_t mRrcFilterOrder;

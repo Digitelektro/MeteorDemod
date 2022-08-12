@@ -6,9 +6,10 @@
 
 namespace DSP {
 
-MeteorDemodulator::MeteorDemodulator(Mode mode, float symbolRate, float costasBw, uint16_t rrcFilterOrder, bool brokenM2Modulation)
+MeteorDemodulator::MeteorDemodulator(Mode mode, float symbolRate, float costasBw, uint16_t rrcFilterOrder, bool waitForLock, bool brokenM2Modulation)
     : mMode(mode)
     , mBorkenM2Modulation(brokenM2Modulation)
+    , mWaitForLock(waitForLock)
     , mSymbolRate(symbolRate)
     , mCostasBw(costasBw)
     , mRrcFilterOrder(rrcFilterOrder)
@@ -56,9 +57,9 @@ void MeteorDemodulator::process(IQSoruce &source, MeteorDecoderCallback_t callba
             mAgc.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
             costas.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
 
-            mm.process(readedSamples, mProcessedSamples.get(), [progress, &bytesWrited, callback, &costas](MM::complex value) mutable {
+            mm.process(readedSamples, mProcessedSamples.get(), [progress, &bytesWrited, callback, &costas, this](MM::complex value) mutable {
                 // Append the new samples to the output file
-                if(callback != nullptr && costas.isLockedOnce()) {
+                if(callback != nullptr && (!mWaitForLock || costas.isLockedOnce())) {
                     callback(value, progress);
                 }
                 bytesWrited +=2;

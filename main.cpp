@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
             }
 
 
-            DSP::MeteorDemodulator decoder(mode, mSettings.getSymbolRate(), mSettings.getCostasBandwidth(), mSettings.getRRCFilterOrder(), mSettings.getBrokenM2Modulation());
+            DSP::MeteorDemodulator decoder(mode, mSettings.getSymbolRate(), mSettings.getCostasBandwidth(), mSettings.getRRCFilterOrder(), mSettings.waitForlock(), mSettings.getBrokenM2Modulation());
             decoder.process(wavReader, [&outputStream](const Wavreader::complex &sample, float) {
                 writeSymbolToFile(outputStream, sample);
             });
