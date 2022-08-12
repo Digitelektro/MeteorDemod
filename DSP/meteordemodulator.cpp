@@ -12,7 +12,7 @@ MeteorDemodulator::MeteorDemodulator(Mode mode, float symbolRate, float costasBw
     , mSymbolRate(symbolRate)
     , mCostasBw(costasBw)
     , mRrcFilterOrder(rrcFilterOrder)
-    , mAgc(170.0f)
+    , mAgc(0.5f)
     , mSamples(nullptr)
     , mProcessedSamples(nullptr)
 {

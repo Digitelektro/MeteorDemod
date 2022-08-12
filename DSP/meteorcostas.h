@@ -9,7 +9,7 @@ namespace DSP {
 class MeteorCostas : public PLL
 {    
 private:
-    static constexpr int cLockDetectionTreshold = 75;
+    static constexpr float cLockDetectionTreshold = 0.22;
 
 public:
     MeteorCostas(float bandWidth, float initPhase = 0.0f, float initFreq = 0.0f, float minFreq = -M_PI, float maxFreq = M_PI, bool brokenModulation = false);
@@ -68,7 +68,7 @@ public:
         return mLockDetector;
     }
     inline bool isLocked() const {
-        return mLockDetector < 75;
+        return mLockDetector < cLockDetectionTreshold;
     }
     inline bool isLockedOnce() const {
         return mIsLockedOnce;

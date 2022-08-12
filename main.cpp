@@ -432,8 +432,8 @@ void writeSymbolToFile(std::ostream &stream, const Wavreader::complex &sample)
 {
     int8_t outBuffer[2];
 
-    outBuffer[0] = clamp(std::real(sample) / 2.0f);
-    outBuffer[1] = clamp(std::imag(sample) / 2.0f);
+    outBuffer[0] = clamp(std::real(sample) * 127);
+    outBuffer[1] = clamp(std::imag(sample) * 127);
 
     stream.write(reinterpret_cast<char*>(outBuffer), sizeof(outBuffer));
 }
