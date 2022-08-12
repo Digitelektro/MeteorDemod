@@ -6,6 +6,8 @@ MeteorCostas::MeteorCostas(float bandWidth, float initPhase, float initFreq, flo
     : PLL(bandWidth, initPhase, initFreq, minFreq, maxFreq)
     , mBrokenModulation(brokenModulation)
     , mError(0.0f)
+    , mLockDetector(0.0f)
+    , mIsLockedOnce(false)
 {
 
 }

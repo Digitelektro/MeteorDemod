@@ -7,7 +7,10 @@
 namespace DSP {
 
 class MeteorCostas : public PLL
-{
+{    
+private:
+    static constexpr int cLockDetectionTreshold = 75;
+
 public:
     MeteorCostas(float bandWidth, float initPhase = 0.0f, float initFreq = 0.0f, float minFreq = -M_PI, float maxFreq = M_PI, bool brokenModulation = false);
 
@@ -47,6 +50,12 @@ protected:
         } else {
             error = (step(value.real()) * value.imag()) - (step(value.imag()) * value.real());
         }
+
+        mLockDetector = std::abs(error) * 0.0001 + mLockDetector * 0.9999;
+        if(mLockDetector < cLockDetectionTreshold) {
+            mIsLockedOnce = true;
+        }
+
         return std::clamp(error, -1.0f, 1.0f);
     }
 
@@ -55,14 +64,21 @@ protected:
     }
 
 public:
-    float getError() const {
-        return mError;
+    inline float getError() const {
+        return mLockDetector;
+    }
+    inline bool isLocked() const {
+        return mLockDetector < 75;
+    }
+    inline bool isLockedOnce() const {
+        return mIsLockedOnce;
     }
 
 protected:
  bool mBrokenModulation;
  float mError;
-
+ float mLockDetector;
+ bool mIsLockedOnce;
 };
 
 } // namespace DSP

@@ -12,7 +12,7 @@ MeteorDemodulator::MeteorDemodulator(Mode mode, float symbolRate, float costasBw
     , mSymbolRate(symbolRate)
     , mCostasBw(costasBw)
     , mRrcFilterOrder(rrcFilterOrder)
-    , mAgc(1.0f)
+    , mAgc(170.0f)
     , mSamples(nullptr)
     , mProcessedSamples(nullptr)
 {
@@ -56,9 +56,9 @@ void MeteorDemodulator::process(IQSoruce &source, MeteorDecoderCallback_t callba
             mAgc.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
             costas.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
 
-            mm.process(readedSamples, mProcessedSamples.get(), [progress, &bytesWrited, callback](MM::complex value) mutable {
+            mm.process(readedSamples, mProcessedSamples.get(), [progress, &bytesWrited, callback, &costas](MM::complex value) mutable {
                 // Append the new samples to the output file
-                if(callback != nullptr) {
+                if(callback != nullptr && costas.isLockedOnce()) {
                     callback(value, progress);
                 }
                 bytesWrited +=2;
@@ -67,7 +67,7 @@ void MeteorDemodulator::process(IQSoruce &source, MeteorDecoderCallback_t callba
 
             float carierFreq = costas.getFrequency() * mSymbolRate / (2 * M_PI);
 
-            std::cout << std::fixed << std::setprecision(2) << " Carrier: " << carierFreq << "Hz\t Error: "<< costas.getError() << "\t OutputSize: " << bytesWrited/1024.0f/1024.0f << "Mb Progress: " <<  progress  << "% \t\t\r" << std::flush;
+            std::cout << std::fixed << std::setprecision(2) << " Carrier: " << carierFreq << "Hz\t Lock detector: "<< costas.getError() << "\t isLocked: " << costas.isLocked() <<"\t OutputSize: " << bytesWrited/1024.0f/1024.0f << "Mb Progress: " <<  progress  << "% \t\t\r" << std::flush;
         }
     } else if(Mode::OQPSK) {
 
