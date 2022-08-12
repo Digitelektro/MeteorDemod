@@ -2,11 +2,13 @@
 
 namespace DSP {
 
-Agc::Agc()
-    : mWindowSize(AGC_WINSIZE)
-    , mAvg(AGC_TARGET)
+Agc::Agc(float targetAmplitude, float maxGain, float windowSize, float biasWindowSize)
+    : mWindowSize(windowSize)
+    , mAvg(targetAmplitude)
     , mGain(1)
-    , mTargetAmplitude(AGC_TARGET)
+    , mMaxGain(maxGain)
+    , mTargetAmplitude(targetAmplitude)
+    , mBiasWindowSize(biasWindowSize)
     , mBias(0)
 {
 
