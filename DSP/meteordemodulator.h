@@ -39,6 +39,7 @@ private:
     float mCostasBw;
     uint16_t mRrcFilterOrder;
     Agc mAgc;
+    float mPrevI;
     std::unique_ptr<PLL::complex[]> mSamples;
     std::unique_ptr<PLL::complex[]> mProcessedSamples;
 };

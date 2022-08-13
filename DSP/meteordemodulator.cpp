@@ -14,16 +14,12 @@ MeteorDemodulator::MeteorDemodulator(Mode mode, float symbolRate, float costasBw
     , mCostasBw(costasBw)
     , mRrcFilterOrder(rrcFilterOrder)
     , mAgc(0.5f)
+    , mPrevI(0.0f)
     , mSamples(nullptr)
     , mProcessedSamples(nullptr)
 {
     mSamples = std::make_unique<PLL::complex[]>(STREAM_CHUNK_SIZE);
     mProcessedSamples = std::make_unique<PLL::complex[]>(STREAM_CHUNK_SIZE);
-
-   // OQPSK requires lower bandwidth
-    if(mode == Mode::OQPSK) {
-        mCostasBw /= 5.0f;
-    }
 }
 
 MeteorDemodulator::~MeteorDemodulator()
@@ -51,27 +47,29 @@ void MeteorDemodulator::process(IQSoruce &source, MeteorDecoderCallback_t callba
     readedSamples = source.read(mSamples.get(), mRrcFilterOrder);
     rrcFilter.process(mSamples.get(), mProcessedSamples.get(), readedSamples);
 
-    if(mMode == Mode::QPSK) {
-        while((readedSamples = source.read(mSamples.get(), STREAM_CHUNK_SIZE)) > 0) {
-            rrcFilter.process(mSamples.get(), mProcessedSamples.get(), readedSamples);
-            mAgc.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
-            costas.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
+    while((readedSamples = source.read(mSamples.get(), STREAM_CHUNK_SIZE)) > 0) {
+        rrcFilter.process(mSamples.get(), mProcessedSamples.get(), readedSamples);
+        mAgc.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
+        costas.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
 
-            mm.process(readedSamples, mProcessedSamples.get(), [progress, &bytesWrited, callback, &costas, this](MM::complex value) mutable {
-                // Append the new samples to the output file
-                if(callback != nullptr && (!mWaitForLock || costas.isLockedOnce())) {
-                    callback(value, progress);
-                }
-                bytesWrited +=2;
-            });
-            progress = (source.getReadedSamples() / static_cast<float>(source.getTotalSamples())) * 100;
+        mm.process(readedSamples, mProcessedSamples.get(), [progress, &bytesWrited, callback, &costas, this](MM::complex value) mutable {
+            if(mMode == Mode::OQPSK) {
+                float temp = value.imag();
+                value._Val[1] = mPrevI;
+                mPrevI = temp;
+            }
 
-            float carierFreq = costas.getFrequency() * mSymbolRate / (2 * M_PI);
+            // Append the new samples to the output file
+            if(callback != nullptr && (!mWaitForLock || costas.isLockedOnce())) {
+                callback(value, progress);
+            }
+            bytesWrited +=2;
+        });
+        progress = (source.getReadedSamples() / static_cast<float>(source.getTotalSamples())) * 100;
 
-            std::cout << std::fixed << std::setprecision(2) << " Carrier: " << carierFreq << "Hz\t Lock detector: "<< costas.getError() << "\t isLocked: " << costas.isLocked() <<"\t OutputSize: " << bytesWrited/1024.0f/1024.0f << "Mb Progress: " <<  progress  << "% \t\t\r" << std::flush;
-        }
-    } else if(Mode::OQPSK) {
+        float carierFreq = costas.getFrequency() * mSymbolRate / (2 * M_PI);
 
+        std::cout << std::fixed << std::setprecision(2) << " Carrier: " << carierFreq << "Hz\t Lock detector: "<< costas.getError() << "\t isLocked: " << costas.isLocked() <<"\t OutputSize: " << bytesWrited/1024.0f/1024.0f << "Mb Progress: " <<  progress  << "% \t\t\r" << std::flush;
     }
 
     std::cout << std::endl;
