@@ -10,6 +10,7 @@ class MeteorCostas : public PLL
 {    
 private:
     static constexpr float cLockDetectionTreshold = 0.22;
+    static constexpr float cUnLockDetectionTreshold = 0.25;
 
 public:
     MeteorCostas(float bandWidth, float initPhase = 0.0f, float initFreq = 0.0f, float minFreq = -M_PI, float maxFreq = M_PI, bool brokenModulation = false);
@@ -51,7 +52,16 @@ protected:
             error = (step(value.real()) * value.imag()) - (step(value.imag()) * value.real());
         }
 
-        mLockDetector = std::abs(error) * 0.0001 + mLockDetector * 0.9999;
+        mLockDetector = std::abs(error) * 0.00001 + mLockDetector * 0.99999;
+
+        if(mLockDetector < cLockDetectionTreshold && !mIsLocked) {
+            mIsLocked = true;
+            setBandWidth(mPllOriginalBandwidth/10.0f);
+        } else if(mLockDetector > cUnLockDetectionTreshold && mIsLocked) {
+            mIsLocked = false;
+            setBandWidth(mPllOriginalBandwidth);
+        }
+
         if(mLockDetector < cLockDetectionTreshold) {
             mIsLockedOnce = true;
         }
@@ -68,17 +78,19 @@ public:
         return mLockDetector;
     }
     inline bool isLocked() const {
-        return mLockDetector < cLockDetectionTreshold;
+        return mIsLocked;
     }
     inline bool isLockedOnce() const {
         return mIsLockedOnce;
     }
 
 protected:
- bool mBrokenModulation;
- float mError;
- float mLockDetector;
- bool mIsLockedOnce;
+    float mPllOriginalBandwidth;
+    bool mBrokenModulation;
+    float mError;
+    float mLockDetector;
+    bool mIsLocked;
+    bool mIsLockedOnce;
 };
 
 } // namespace DSP

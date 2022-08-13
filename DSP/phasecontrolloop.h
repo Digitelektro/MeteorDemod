@@ -28,6 +28,14 @@ public:
     void advance(float err);
 
 public:
+    void setBandWidth(float bandWidth) {
+        float damping = sqrtf(2.0f) / 2.0f;
+        float denom = 1.0f + 2.0f * damping * bandWidth + bandWidth * bandWidth;
+        mAlpha = (4 * damping * bandWidth) / denom;
+        mBeta = (4 * bandWidth * bandWidth) / denom;
+    }
+
+public:
     float getPhase() const {
         return mPhase;
     }
