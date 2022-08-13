@@ -55,7 +55,7 @@ void MeteorDemodulator::process(IQSoruce &source, MeteorDecoderCallback_t callba
         mm.process(readedSamples, mProcessedSamples.get(), [progress, &bytesWrited, callback, &costas, this](MM::complex value) mutable {
             if(mMode == Mode::OQPSK) {
                 float temp = value.imag();
-                value._Val[1] = mPrevI;
+                value = MM::complex(value.real(), mPrevI);
                 mPrevI = temp;
             }
 
