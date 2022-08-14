@@ -30,7 +30,8 @@ MeteorDemodulator::~MeteorDemodulator()
 void MeteorDemodulator::process(IQSoruce &source, MeteorDecoderCallback_t callback)
 {
     float pllBandwidth = 2 * M_PI * mCostasBw / mSymbolRate;
-    DSP::MeteorCostas costas(pllBandwidth, 0, 0, -M_PI, M_PI, mBorkenM2Modulation);
+    float maxFreqDeviation = 10000.0f * (2.0f * M_PI) / mSymbolRate; //+-10kHz
+    DSP::MeteorCostas costas(pllBandwidth, 0, 0, -maxFreqDeviation, maxFreqDeviation, mBorkenM2Modulation);
     DSP::RRCFilter rrcFilter(mRrcFilterOrder, 0.6f, mSymbolRate, source.getSampleRate());
     MM mm(source.getSampleRate() / mSymbolRate, 1e-6, 0.01f, 0.01f);
     uint32_t readedSamples;
