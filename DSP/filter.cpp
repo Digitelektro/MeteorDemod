@@ -9,49 +9,31 @@ FilterBase::FilterBase(int taps)
 
 }
 
-FilterBase::complex FilterBase::process(const FilterBase::complex &in)
+RRCFilter::RRCFilter(int taps, float beta, float symbolrate, float samplerate)
+    : FilterBase(taps)
 {
-    complex out = 0.0f;
-
-    mMemory.push_front(in);
-    mMemory.pop_back();
-
-    std::list<complex>::const_reverse_iterator it = mMemory.crbegin();
-
-    for(int i = mTaps - 1; i >=0; --i, ++it) {
-        out += (*it) * mCoeffs[i];
-    }
-    return out;
-}
-
-RRCFilter::RRCFilter(unsigned order, unsigned factor, float osf, float alpha)
-    :FilterBase(order * 2 + 1)
-{
-    for (uint16_t i=0; i < mTaps; i++) {
-        mCoeffs.emplace_back(computeCoeffs(i, mTaps, osf * factor, alpha));
-    }
-
+    computeCoeffs(taps, beta, samplerate / symbolrate);
     mMemory.resize(mTaps, 0);
 }
 
-float RRCFilter::computeCoeffs(int stageNo, uint16_t taps, float osf, float alpha)
+void RRCFilter::computeCoeffs(int taps, float beta, float Ts)
 {
     float coeff;
-    float t;
-    float interm;
-    int order;
-
-    order = (taps - 1)/2;
-
-    if (order == stageNo) {
-        return 1 - alpha + 4 * alpha / M_PI;
+    float half = taps / 2.0f;
+    float limit = Ts / (4.0 * beta);
+    for (int i = 0; i < taps; i++) {
+        float t = (float)i - half + 0.5;
+        if (t == 0.0) {
+            coeff = (1.0f + beta * (4.0f / M_PI - 1.0f)) / Ts;
+        }
+        else if (t == limit || t == -limit) {
+            coeff = ((1.0f + 2.0f / M_PI) * sinf(M_PI / (4.0f * beta)) + (1.0f - 2.0f / M_PI)*cos(M_PI / (4.0f * beta))) * beta / (Ts * sqrtf(2.0f));
+        }
+        else {
+            coeff = ((sinf((1.0f - beta) * M_PI * t / Ts) + cosf((1.0f + beta) * M_PI * t / Ts) * 4.0f * beta * t / Ts) / ((1.0f - (4.0f * beta * t / Ts) * (4.0f * beta * t / Ts)) * M_PI * t / Ts)) / Ts;
+        }
+        mCoeffs.emplace_back(coeff);
     }
-
-    t = std::abs(order - stageNo) / osf;
-    coeff = std::sin(M_PI * t * (1 - alpha)) + 4 * alpha * t * std::cos(M_PI * t * (1 + alpha));
-    interm = M_PI * t * (1 - (4 * alpha * t) * (4 * alpha * t));
-
-    return coeff / interm;
 }
 
 } //namespace DSP

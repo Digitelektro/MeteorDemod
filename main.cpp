@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
             const std::string outputPath = inputPath.substr(0, inputPath.find_last_of(".") + 1) + "s";
             std::ofstream  outputStream;
-            outputStream.open(outputPath);
+            outputStream.open(outputPath, std::ios::binary);
 
             if(!outputStream.is_open()) {
                 std::cout << "Creating output .S file failed, exiting...";
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
             }
 
 
-            DSP::MeteorDemodulator decoder(mode, mSettings.getSymbolRate(), mSettings.waitForlock(), mSettings.getCostasBandwidth(), mSettings.getRRCFilterOrder(), mSettings.getInterpolationFactor());
+            DSP::MeteorDemodulator decoder(mode, mSettings.getSymbolRate(), mSettings.getCostasBandwidth(), mSettings.getRRCFilterOrder(), mSettings.waitForlock(), mSettings.getBrokenM2Modulation());
             decoder.process(wavReader, [&outputStream](const Wavreader::complex &sample, float) {
                 writeSymbolToFile(outputStream, sample);
             });
@@ -432,8 +432,8 @@ void writeSymbolToFile(std::ostream &stream, const Wavreader::complex &sample)
 {
     int8_t outBuffer[2];
 
-    outBuffer[0] = clamp(std::real(sample) / 2.0f);
-    outBuffer[1] = clamp(std::imag(sample) / 2.0f);
+    outBuffer[0] = clamp(std::real(sample) * 127);
+    outBuffer[1] = clamp(std::imag(sample) * 127);
 
     stream.write(reinterpret_cast<char*>(outBuffer), sizeof(outBuffer));
 }
