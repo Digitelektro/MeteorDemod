@@ -4,7 +4,7 @@ include(ExternalProject)
 
 project(Meteordemod LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
@@ -93,6 +93,12 @@ add_executable(meteordemod
     DSP/meteordemodulator.cpp
     DSP/agc.cpp
     DSP/pll.cpp
+	DSP/meteorcostas.cpp
+	DSP/phasecontrolloop.cpp
+	DSP/polyphasebank.cpp
+	DSP/mm.cpp
+	DSP/window.cpp
+	DSP/windowedsinc.cpp
     DSP/filter.cpp
     DSP/iqsource.cpp
     DSP/wavreader.cpp

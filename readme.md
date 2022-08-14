@@ -15,6 +15,8 @@ The project is based on
 
 [https://github.com/dbdexter-dev/meteor_demod](https://github.com/dbdexter-dev/meteor_demod)
 
+[https://github.com/AlexandreRouma/SDRPlusPlus](https://github.com/AlexandreRouma/SDRPlusPlus)
+
 
 Currently supported outputs are raw channel images, RGB images, IR images. Output projection modes are rectified image, Mercator and Azimuthal Equidistant projection.
 

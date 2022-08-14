@@ -14,7 +14,27 @@ public:
 public:
     FilterBase(int taps);
     virtual ~FilterBase() {}
-    complex process(const complex &in);
+
+    inline complex process(const complex &in) {
+        complex out = 0.0f;
+
+        mMemory.push_front(in);
+        mMemory.pop_back();
+
+        std::list<complex>::const_reverse_iterator it = mMemory.crbegin();
+
+        for(int i = mTaps - 1; i >=0; --i, ++it) {
+            out += (*it) * mCoeffs[i];
+        }
+        return out;
+    }
+
+    inline void process(const complex *inSamples, complex *outSamples, unsigned int count) {
+        for(unsigned int i = 0; i < count; i++) {
+            *outSamples = process(*inSamples++);
+            outSamples++;
+        }
+    }
 
 protected:
     std::vector<float> mCoeffs;
@@ -24,10 +44,10 @@ protected:
 
 class RRCFilter : public FilterBase {
 public:
-    RRCFilter(unsigned order, unsigned factor, float osf, float alpha);
+    RRCFilter(int taps, float beta, float symbolrate, float samplerate);
 
 private:
-    float computeCoeffs(int stageNo, uint16_t taps, float osf, float alpha);
+    void computeCoeffs(int taps, float beta, float Ts);
 };
 
 } //namespace DSP

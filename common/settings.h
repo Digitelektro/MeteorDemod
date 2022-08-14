@@ -101,6 +101,7 @@ public: //getters
     std::string getDemodulatorMode() const;
     bool differentialDecode() const;
     bool deInterleave() const;
+    bool getBrokenM2Modulation() const;
 
     int getJpegQuality() const { return mJpegQuality; }
     float getM2Alfa() const { return mAlfaM2; }
@@ -113,7 +114,6 @@ public: //getters
 
     int getCostasBandwidth() const { return mCostasBw; }
     int getRRCFilterOrder() const { return mRRCFilterOrder; }
-    int getInterpolationFactor() const { return mInterploationFacor; }
     bool waitForlock() const { return mWaitForLock; }
 
     bool fillBackLines() const { return mFillBackLines; }
@@ -170,7 +170,6 @@ private:
     //ini section: Demodulator
     int mCostasBw;
     int mRRCFilterOrder;
-    int mInterploationFacor;
     bool mWaitForLock;
 
     //ini section: Treatment
