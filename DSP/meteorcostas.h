@@ -57,7 +57,7 @@ protected:
 
         if(mLockDetector < cLockDetectionTreshold && !mIsLocked) {
             mIsLocked = true;
-            setBandWidth(mPllOriginalBandwidth/10.0f);
+            setBandWidth(mPllOriginalBandwidth/5.0f);
         } else if(mLockDetector > cUnLockDetectionTreshold && mIsLocked) {
             mIsLocked = false;
             setBandWidth(mPllOriginalBandwidth);
