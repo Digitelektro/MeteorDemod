@@ -11,6 +11,7 @@ class MeteorCostas : public PLL
 private:
     static constexpr float cLockDetectionTreshold = 0.22;
     static constexpr float cUnLockDetectionTreshold = 0.25;
+    static constexpr float cLockFilterCoeff = 0.00001f;
 
 public:
     MeteorCostas(float bandWidth, float initPhase = 0.0f, float initFreq = 0.0f, float minFreq = -M_PI, float maxFreq = M_PI, bool brokenModulation = false);
@@ -52,7 +53,7 @@ protected:
             error = (step(value.real()) * value.imag()) - (step(value.imag()) * value.real());
         }
 
-        mLockDetector = std::abs(error) * 0.00001 + mLockDetector * 0.99999;
+        mLockDetector = std::abs(error) * cLockFilterCoeff + mLockDetector * (1.0f - cLockFilterCoeff);
 
         if(mLockDetector < cLockDetectionTreshold && !mIsLocked) {
             mIsLocked = true;
