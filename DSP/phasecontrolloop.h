@@ -25,7 +25,17 @@ public:
         return diff;
     }
 
-    void advance(float err);
+    inline void advance(float error) {
+        // Increment and clamp frequency
+        mFreq += mBeta * error;
+        clampFreq();
+
+        // Increment and clamp phase
+        mPhase += mFreq + (mAlpha * error);
+        if(mClampPhase) {
+            clampPhase();
+        }
+    }
 
 public:
     void setBandWidth(float bandWidth) {

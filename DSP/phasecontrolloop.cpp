@@ -37,17 +37,4 @@ PhaseControlLoop::PhaseControlLoop(float alpha, float beta, float phase, float m
 
 }
 
-void PhaseControlLoop::advance(float error)
-{
-    // Increment and clamp frequency
-    mFreq += mBeta * error;
-    clampFreq();
-
-    // Increment and clamp phase
-    mPhase += mFreq + (mAlpha * error);
-    if(mClampPhase) {
-        clampPhase();
-    }
-}
-
 } //namespace DSP
