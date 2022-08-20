@@ -4,8 +4,9 @@ include(ExternalProject)
 
 project(Meteordemod LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
@@ -81,6 +82,8 @@ add_executable(meteordemod
     tools/databuffer.h
     tools/iniparser.cpp
     tools/iniparser.h
+    tools/threadpool.cpp
+    tools/threadpool.h
     GIS/shapereader.cpp
     GIS/shapereader.h
     GIS/shaperenderer.cpp
@@ -90,6 +93,12 @@ add_executable(meteordemod
     DSP/meteordemodulator.cpp
     DSP/agc.cpp
     DSP/pll.cpp
+	DSP/meteorcostas.cpp
+	DSP/phasecontrolloop.cpp
+	DSP/polyphasebank.cpp
+	DSP/mm.cpp
+	DSP/window.cpp
+	DSP/windowedsinc.cpp
     DSP/filter.cpp
     DSP/iqsource.cpp
     DSP/wavreader.cpp
@@ -139,7 +148,7 @@ if(UNIX AND NOT APPLE)
     if (DEBIAN_FOUND)
         SET(CPACK_GENERATOR "DEB")
         SET(CPACK_PACKAGE_VERSION_MAJOR "2")
-        SET(CPACK_PACKAGE_VERSION_MINOR "1")
+        SET(CPACK_PACKAGE_VERSION_MINOR "3")
         SET(CPACK_PACKAGE_VERSION_PATCH "0")
         SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Digitelektro")
         SET(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/Digitelektro/MeteorDemod")
