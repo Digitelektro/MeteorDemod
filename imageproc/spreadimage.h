@@ -23,7 +23,6 @@ public:
 
 private:
     void affineTransform(const cv::Mat& src, cv::Mat& dst, const cv::Point2f source[], const cv::Point2f destination[], int originX, int originY);
-    void projectiveTransform(const cv::Mat& src, cv::Mat& dst, const cv::Mat &transform);
 
 private:
     int mEarthRadius;
