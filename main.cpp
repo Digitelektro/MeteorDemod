@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
 
                 for(int i = 0; i < 4; i++) {
                     mReedSolomon.deinterleave(viterbiResult + 4, i , 4);
-                    rsResult[i] = mReedSolomon.decode(0);
+                    rsResult[i] = mReedSolomon.decode();
                     mReedSolomon.interleave(decodedPacket, i, 4);
                 }
 
