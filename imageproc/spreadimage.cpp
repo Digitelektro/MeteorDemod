@@ -1,7 +1,7 @@
 #include "spreadimage.h"
 #include "GIS/shaperenderer.h"
 #include "settings.h"
-#include <opencv2/shape/shape_transformer.hpp>
+//#include <opencv2/shape/shape_transformer.hpp>
 #include <cmath>
 
 std::map<std::string, cv::MarkerTypes> SpreadImage::MarkerLookup {
@@ -163,6 +163,55 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
 
     return newImage;
 }
+
+// Concept for using ThinPlateSplineShapeTransform. Unfortunately it is extremly slow for big images
+/*cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, ProgressCallback progressCallback)
+{
+    cv::Point2f srcTri[3];
+    cv::Point2f dstTri[3];
+
+    double MinX = std::min(geolocationCalculator.getTopLeftMercator().x, std::min(geolocationCalculator.getTopRightMercator().x, std::min(geolocationCalculator.getBottomLeftMercator().x, geolocationCalculator.getBottomRightMercator().x)));
+    double MinY = std::min(geolocationCalculator.getTopLeftMercator().y, std::min(geolocationCalculator.getTopRightMercator().y, std::min(geolocationCalculator.getBottomLeftMercator().y, geolocationCalculator.getBottomRightMercator().y)));
+    double MaxX = std::max(geolocationCalculator.getTopLeftMercator().x, std::max(geolocationCalculator.getTopRightMercator().x, std::max(geolocationCalculator.getBottomLeftMercator().x, geolocationCalculator.getBottomRightMercator().x)));
+    double MaxY = std::max(geolocationCalculator.getTopLeftMercator().y, std::max(geolocationCalculator.getTopRightMercator().y, std::max(geolocationCalculator.getBottomLeftMercator().y, geolocationCalculator.getBottomRightMercator().y)));
+
+    int width = static_cast<int>(std::abs(MaxX - MinX));
+    int height = static_cast<int>(std::abs(MaxY - MinY));
+
+    int xStart = static_cast<int>(std::min(MinX, MaxX));
+    int yStart = static_cast<int>(std::min(MinY, MaxY));
+
+    int imageWithGeorefHeight = geolocationCalculator.getGeorefMaxImageHeight() < image.size().height ? geolocationCalculator.getGeorefMaxImageHeight() : image.size().height;
+
+    cv::Mat newImage;
+    cv::Mat paddedImage = cv::Mat::zeros(height, width, image.type());
+    image.copyTo(paddedImage.rowRange(0, image.size().height).colRange(0, image.size().width));
+
+    auto tpsTransform = cv::createThinPlateSplineShapeTransformer();
+    std::vector<cv::Point2f> sourcePoints, targetPoints;
+
+    for (int y = 0; y < imageWithGeorefHeight; y += 50) {
+        for (int x = 0; x < image.size().width; x += 50) {
+            const PixelGeolocationCalculator::CartesianCoordinateF p1 = geolocationCalculator.getMercatorAt(x, y);
+            sourcePoints.push_back(cv::Point2f(x, y));
+            targetPoints.push_back(cv::Point2f((int)(p1.x + (-xStart)), (int)(p1.y + (-yStart))));
+        }
+    }
+
+    std::vector<cv::DMatch> matches;
+    for (unsigned int i = 0; i < sourcePoints.size(); i++) {
+        matches.push_back(cv::DMatch(i, i, 0));
+    }
+    //tpsTransform->estimateTransformation(sourcePoints, targetPoints, matches);
+    tpsTransform->estimateTransformation(targetPoints, sourcePoints, matches);
+    std::vector<cv::Point2f> transPoints;
+    tpsTransform->applyTransformation(sourcePoints, transPoints);
+    tpsTransform->warpImage(paddedImage, newImage, cv::INTER_LINEAR);
+
+    //Todo: overlays here
+
+    return newImage;
+}*/
 
 cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, ProgressCallback progressCallback)
 {
