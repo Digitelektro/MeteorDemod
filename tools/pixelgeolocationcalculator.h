@@ -32,7 +32,7 @@ private:
     PixelGeolocationCalculator();
 
 public:
-    PixelGeolocationCalculator(const TleReader::TLE &tle, const DateTime &passStart, const TimeSpan &passLength, double alfa, double delta, int earthRadius = 6378, int satelliteAltitude = 825);
+    PixelGeolocationCalculator(const TleReader::TLE &tle, const DateTime &passStart, const TimeSpan &passLength, double scanAngle, double roll, double pitch, double yaw, int earthRadius = 6378, int satelliteAltitude = 825);
 
     void calcPixelCoordinates();
 
@@ -147,7 +147,7 @@ private:
     SGP4 mSgp4;
     DateTime mPassStart;
     TimeSpan mPassLength;
-    double mAlfa, mDelta;
+    double mScanAngle, mRoll, mPitch, mYaw;
     int mEarthradius;
     int mSatelliteAltitude;
     std::vector<CoordGeodetic> mCoordinates;
