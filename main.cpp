@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
 
                 for(int i = 0; i < 4; i++) {
                     mReedSolomon.deinterleave(viterbiResult + 4, i , 4);
-                    rsResult[i] = mReedSolomon.decode(0);
+                    rsResult[i] = mReedSolomon.decode();
                     mReedSolomon.interleave(decodedPacket, i, 4);
                 }
 
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
 
     std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute()) + "-" + std::to_string(passStart.Second());
 
-    PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getM2Alfa() / 2.0f, mSettings.getM2Delta());
+    PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getM2ScanAngle(), mSettings.getM2Roll(), mSettings.getM2Pitch(), mSettings.getM2Yaw());
     calc.calcPixelCoordinates();
     calc.save(mSettings.getOutputPath() + fileNameDate + ".gcp");
 

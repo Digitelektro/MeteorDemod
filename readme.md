@@ -20,15 +20,34 @@ The project is based on
 
 Currently supported outputs are raw channel images, RGB images, IR images. Output projection modes are rectified image, Mercator and Azimuthal Equidistant projection.
 
-## Dependencies for compiling the project
+## Install using deb package
+I've created a debian package for raspberry pi users. There is a limitation though, user home folder must be "/home/pi". 
+
+```
+sudo apt install python3-opencv
+sudo apt install ./MeteorDemod-x.x.x-Linux.deb
+```
+
+
+## Build and install from sources
+For the development QT creator is used, but the qmake is maintained only for windows.
+
+CMAKE is the build system to compile the project. Tested on Windows and Linux(ubuntu, raspbian)
+
 OpenCV must be installed on the system. Required OpenCV modules: core, imgcodecs, imgproc
 
-Lots of people struggling with compiling openCV on Raspberry Pi. Here is the commands that I've tested on Raspbian:
+First install all dependencies:
+
 ```
-sudo apt install python3-dev python3-pip
-sudo apt install cmake build-essential pkg-config git
-sudo apt install libatlas-base-dev liblapacke-dev gfortran
-git clone https://github.com/opencv/opencv.git
+sudo apt install python3-dev python3-pip -y
+sudo apt install cmake build-essential pkg-config git -y
+sudo apt install libatlas-base-dev liblapacke-dev gfortran -y
+```
+
+Build opencv from sources:
+
+```
+git clone --depth=1 https://github.com/opencv/opencv.git
 cd opencv/
 mkdir build && cd build
 cmake ../  -DBUILD_LIST=core,imgproc,imgcodecs -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DCMAKE_SHARED_LINKER_FLAGS=-latomic
@@ -36,27 +55,23 @@ make -j4
 sudo make install
 ```
 
-## Build and install from sources
-For the development QT creator is used, but the qmake is maintained only for windows.
-
-CMAKE is the build system to compile the project. Tested on Windows and Linux(ubuntu, raspbian)
+Or install it:
 
 ```
-git clone https://github.com/Digitelektro/MeteorDemod.git
+sudo apt install libopencv-dev python3-opencv -y
+```
+
+
+Then build and install MeteorDemod:
+
+```
+git clone --depth=1 https://github.com/Digitelektro/MeteorDemod.git
 cd MeteorDemod
 git submodule update --init --recursive
 mkdir build && cd build
 cmake ../
 make -j4
 sudo make install
-```
-
-## Install using deb package
-I've created a debian package for raspberry pi users. There is a limitation though, user home folder must be "/home/pi". 
-
-```
-sudo apt install python3-opencv
-sudo apt install ./MeteorDemod-x.x.x-Linux.deb
 ```
 
 ## Usage
@@ -80,7 +95,6 @@ Master branch is for the latest stable version, beta branch for beta versions, d
 
 ## Future developments
  - Composite output from multiple passes
- - Support dead Meteor M2 2 satellite (it may be required for future satellites)
  
  
 ## Example Outputs

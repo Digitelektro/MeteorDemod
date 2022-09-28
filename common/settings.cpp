@@ -57,8 +57,10 @@ void Settings::parseIni(const std::string &path)
     ini::extract(mIniParser.sections["Program"]["SpreadImage"], mSpreadImage, true);
     ini::extract(mIniParser.sections["Program"]["AddRainOverlay"], mAddRainOverlay, true);
     ini::extract(mIniParser.sections["Program"]["JpgQuality"], mJpegQuality, 90);
-    ini::extract(mIniParser.sections["Program"]["AlfaM2"], mAlfaM2, 110.8f);
-    ini::extract(mIniParser.sections["Program"]["DeltaM2"], DeltaM2, -3.2f);
+    ini::extract(mIniParser.sections["Program"]["ScanAngleM2"], mScanAngleM2, 110.8f);
+    ini::extract(mIniParser.sections["Program"]["RollM2"], mM2Roll, -2.9f);
+    ini::extract(mIniParser.sections["Program"]["PitchM2"], mM2Pitch, 0.3f);
+    ini::extract(mIniParser.sections["Program"]["YawM2"], mM2Yaw, 0.0f);
     ini::extract(mIniParser.sections["Program"]["NightPassTreshold"], mNightPassTreshold, 10.0f);
 
     ini::extract(mIniParser.sections["Demodulator"]["CostasBandwidth"], mCostasBw, 50);

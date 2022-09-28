@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <iterator>
+#include <memory>
 #include "databuffer.h"
 #include "dbfilereader.h"
 
@@ -373,24 +374,24 @@ public:
         }
     }
 
-    RecordIterator *getRecordIterator() {
+    std::unique_ptr<RecordIterator> getRecordIterator() {
         if(mLoaded) {
-            return new RecordIterator(mBinaryData);
+            return std::unique_ptr<RecordIterator>(new RecordIterator(mBinaryData));
         }
-        return nullptr;
+        return std::unique_ptr<RecordIterator>(nullptr);
     }
-    PolyLineIterator *getPolyLineIterator(const RecordIterator &recordIterator) {
+    std::unique_ptr<PolyLineIterator> getPolyLineIterator(const RecordIterator &recordIterator) {
         if(mLoaded) {
-            return new PolyLineIterator(mBinaryData, recordIterator.mRecordPosition);
+            return std::unique_ptr<PolyLineIterator>(new PolyLineIterator(mBinaryData, recordIterator.mRecordPosition));
         }
-        return nullptr;
+        return std::unique_ptr<PolyLineIterator>(nullptr);
     }
 
-    MultiPointIterator *getMultiPointIterator(const RecordIterator &recordIterator) {
+    std::unique_ptr<MultiPointIterator> getMultiPointIterator(const RecordIterator &recordIterator) {
         if(mLoaded) {
-            return new MultiPointIterator(mBinaryData, recordIterator.mRecordPosition);
+            return std::unique_ptr<MultiPointIterator>(new MultiPointIterator(mBinaryData, recordIterator.mRecordPosition));
         }
-        return nullptr;
+        return std::unique_ptr<MultiPointIterator>(nullptr);
     }
 
     const DbFileReader &getDbFilereader() const {

@@ -1,13 +1,15 @@
 #include "pixelgeolocationcalculator.h"
 #include <fstream>
 
-PixelGeolocationCalculator::PixelGeolocationCalculator(const TleReader::TLE &tle, const DateTime &passStart, const TimeSpan &passLength, double alfa, double delta, int earthRadius, int satelliteAltitude)
+PixelGeolocationCalculator::PixelGeolocationCalculator(const TleReader::TLE &tle, const DateTime &passStart, const TimeSpan &passLength, double scanAngle, double roll, double pitch, double yaw, int earthRadius, int satelliteAltitude)
     : mTle(tle.satellite, tle.line1, tle.line2)
     , mSgp4(mTle)
     , mPassStart(passStart)
     , mPassLength(passLength)
-    , mAlfa(alfa)
-    , mDelta(delta)
+    , mScanAngle(scanAngle)
+    , mRoll(roll)
+    , mPitch(pitch)
+    , mYaw(yaw)
     , mEarthradius(earthRadius)
     , mSatelliteAltitude(satelliteAltitude)
 {
@@ -45,7 +47,7 @@ void PixelGeolocationCalculator::calcPixelCoordinates()
 
         for (int n = 79; n > -79; n--)
         {
-            CoordGeodetic coordinate (los_to_earth(satOnGround, degreeToRadian((((mAlfa) / 79.0)) * n), 0, angle));
+            CoordGeodetic coordinate (los_to_earth(satOnGround, degreeToRadian((((mScanAngle/2.0) / 79.0)) * n), 0, angle));
             mCoordinates.push_back(coordinate);
         }
     }
@@ -185,9 +187,9 @@ CoordGeodetic PixelGeolocationCalculator::los_to_earth(const Vector &position, d
 
     Vector lookVector(0, 0, 0);
     Matrix4x4 lookMatrix = lookAt(position, lookVector, Vector(0, 0, 1));
-    Matrix4x4 rotateX = Matrix4x4::CreateRotationX(roll + degreeToRadian(mDelta));
-    Matrix4x4 rotateY = Matrix4x4::CreateRotationY(pitch);
-    Matrix4x4 rotateZ = Matrix4x4::CreateRotationZ(yaw);
+    Matrix4x4 rotateX = Matrix4x4::CreateRotationX(roll + degreeToRadian(mRoll));
+    Matrix4x4 rotateY = Matrix4x4::CreateRotationY(pitch + degreeToRadian(mPitch));
+    Matrix4x4 rotateZ = Matrix4x4::CreateRotationZ(yaw + degreeToRadian(mYaw));
     matrix = matrix * lookMatrix * rotateZ * rotateY * rotateX;
 
     Vector vector3(matrix.mElements[2], matrix.mElements[6], matrix.mElements[10]);
