@@ -1,7 +1,7 @@
 #include "spreadimage.h"
 #include "GIS/shaperenderer.h"
 #include "settings.h"
-
+//#include <opencv2/shape/shape_transformer.hpp>
 #include <cmath>
 
 std::map<std::string, cv::MarkerTypes> SpreadImage::MarkerLookup {
@@ -28,7 +28,7 @@ SpreadImage::SpreadImage(int earthRadius, int altitude)
 
 cv::Mat SpreadImage::stretch(const cv::Mat &image)
 {
-    int i, k, k2, ni, imageHeight, imageWidth, newImageWidth;
+    int i, k, ni, imageHeight, imageWidth, newImageWidth;
     int imageHalfWidth, newImageHalfWidth;              // centrepoints of scanlines
     int DupPix;
 
@@ -39,6 +39,9 @@ cv::Mat SpreadImage::stretch(const cv::Mat &image)
     cv::Mat strechedImage(imageHeight, static_cast<int>(imageWidth * (0.902 + std::sin(mScanAngle))), image.type());
     newImageWidth = strechedImage.size().width;
     newImageHalfWidth = (newImageWidth + 1) / 2;       // Half-Width of stretched image ('Z')
+
+    cv::Mat mapX(strechedImage.size(), CV_32FC1);
+    cv::Mat mapY(strechedImage.size(), CV_32FC1);
 
     // Create lookup table of std::sines
     memset(mLookUp, 0, sizeof(mLookUp));
@@ -53,8 +56,7 @@ cv::Mat SpreadImage::stretch(const cv::Mat &image)
     while (i < newImageHalfWidth)
     {
         mPhi = std::atan((i / static_cast<double>(newImageHalfWidth)) * mHalfChord / (mAltitude + mInc));
-        k = static_cast<int>(imageHalfWidth * (std::sin(mPhi) / std::sin(mScanAngle)));
-        //k = LookUp[i];
+        k = mLookUp[i];
         ni = i;
         while(true)
         {
@@ -64,26 +66,25 @@ cv::Mat SpreadImage::stretch(const cv::Mat &image)
         }
 
         DupPix = ni - i;    // DupPix = number of repeated (spread) pixels
-        k2 = mLookUp[ni];
 
         if (mLookUp[ni] == 0)
         {
             DupPix = 1;
         }
 
-        cv::Mat scaledimageRight;
-        cv::Mat scaledimageLeft;
-        const cv::Mat &imageRight = image(cv::Rect(imageHalfWidth + k - 1, 0, 1, imageHeight));
-        const cv::Mat &imageLeft = image(cv::Rect(imageHalfWidth - k, 0, 1, imageHeight));
-
-        cv::resize(imageRight, scaledimageRight, cv::Size(DupPix, imageHeight));
-        cv::resize(imageLeft, scaledimageLeft, cv::Size(DupPix, imageHeight));
-
-        scaledimageRight.copyTo(strechedImage.rowRange(0, imageHeight).colRange(newImageHalfWidth + i - 1, newImageHalfWidth + i - 1 + DupPix));
-        scaledimageLeft.copyTo(strechedImage.rowRange(0, imageHeight).colRange(newImageHalfWidth - i - DupPix, newImageHalfWidth - i));
+        for(int y = 0; y < image.rows; y++) {
+            for(int x = 0; x < DupPix; x++) {
+                mapX.at<float>(y, newImageHalfWidth + i - 1 + x) = imageHalfWidth + k - 1;
+                mapX.at<float>(y, newImageHalfWidth - i - x) = imageHalfWidth - k;
+                mapY.at<float>(y, newImageHalfWidth + i - 1 + x) = y;
+                mapY.at<float>(y, newImageHalfWidth - i - x) = y;
+            }
+        }
 
         i += DupPix;
     }
+
+    cv::remap(image, strechedImage, mapX, mapY, cv::INTER_CUBIC, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
 
     return strechedImage;
 }
@@ -119,18 +120,6 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
             const PixelGeolocationCalculator::CartesianCoordinateF &p1 = geolocationCalculator.getMercatorAt(x, y);
             const PixelGeolocationCalculator::CartesianCoordinateF &p2 = geolocationCalculator.getMercatorAt(x + 10, y);
             const PixelGeolocationCalculator::CartesianCoordinateF &p3 = geolocationCalculator.getMercatorAt(x, y + 10);
-
-            //test
-            /*srcTri[0] = cv::Point2f( 0, 0 );
-            srcTri[1] = cv::Point2f( 400, 0 );
-            srcTri[2] = cv::Point2f( 0, 400 );
-
-            dstTri[0] = cv::Point2f( 800, 800 );
-            dstTri[1] = cv::Point2f( 400, 800 );
-            dstTri[2] = cv::Point2f( 800, 400 );
-            affineTransform(image, newImage, srcTri, dstTri, 0, 0);
-            return newImage;*/
-
 
             srcTri[0] = cv::Point2f( x, y );
             srcTri[1] = cv::Point2f( x + 10, y );
@@ -174,6 +163,55 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
 
     return newImage;
 }
+
+// Concept for using ThinPlateSplineShapeTransform. Unfortunately it is extremly slow for big images
+/*cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, ProgressCallback progressCallback)
+{
+    cv::Point2f srcTri[3];
+    cv::Point2f dstTri[3];
+
+    double MinX = std::min(geolocationCalculator.getTopLeftMercator().x, std::min(geolocationCalculator.getTopRightMercator().x, std::min(geolocationCalculator.getBottomLeftMercator().x, geolocationCalculator.getBottomRightMercator().x)));
+    double MinY = std::min(geolocationCalculator.getTopLeftMercator().y, std::min(geolocationCalculator.getTopRightMercator().y, std::min(geolocationCalculator.getBottomLeftMercator().y, geolocationCalculator.getBottomRightMercator().y)));
+    double MaxX = std::max(geolocationCalculator.getTopLeftMercator().x, std::max(geolocationCalculator.getTopRightMercator().x, std::max(geolocationCalculator.getBottomLeftMercator().x, geolocationCalculator.getBottomRightMercator().x)));
+    double MaxY = std::max(geolocationCalculator.getTopLeftMercator().y, std::max(geolocationCalculator.getTopRightMercator().y, std::max(geolocationCalculator.getBottomLeftMercator().y, geolocationCalculator.getBottomRightMercator().y)));
+
+    int width = static_cast<int>(std::abs(MaxX - MinX));
+    int height = static_cast<int>(std::abs(MaxY - MinY));
+
+    int xStart = static_cast<int>(std::min(MinX, MaxX));
+    int yStart = static_cast<int>(std::min(MinY, MaxY));
+
+    int imageWithGeorefHeight = geolocationCalculator.getGeorefMaxImageHeight() < image.size().height ? geolocationCalculator.getGeorefMaxImageHeight() : image.size().height;
+
+    cv::Mat newImage;
+    cv::Mat paddedImage = cv::Mat::zeros(height, width, image.type());
+    image.copyTo(paddedImage.rowRange(0, image.size().height).colRange(0, image.size().width));
+
+    auto tpsTransform = cv::createThinPlateSplineShapeTransformer();
+    std::vector<cv::Point2f> sourcePoints, targetPoints;
+
+    for (int y = 0; y < imageWithGeorefHeight; y += 50) {
+        for (int x = 0; x < image.size().width; x += 50) {
+            const PixelGeolocationCalculator::CartesianCoordinateF p1 = geolocationCalculator.getMercatorAt(x, y);
+            sourcePoints.push_back(cv::Point2f(x, y));
+            targetPoints.push_back(cv::Point2f((int)(p1.x + (-xStart)), (int)(p1.y + (-yStart))));
+        }
+    }
+
+    std::vector<cv::DMatch> matches;
+    for (unsigned int i = 0; i < sourcePoints.size(); i++) {
+        matches.push_back(cv::DMatch(i, i, 0));
+    }
+    //tpsTransform->estimateTransformation(sourcePoints, targetPoints, matches);
+    tpsTransform->estimateTransformation(targetPoints, sourcePoints, matches);
+    std::vector<cv::Point2f> transPoints;
+    tpsTransform->applyTransformation(sourcePoints, transPoints);
+    tpsTransform->warpImage(paddedImage, newImage, cv::INTER_LINEAR);
+
+    //Todo: overlays here
+
+    return newImage;
+}*/
 
 cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, ProgressCallback progressCallback)
 {
@@ -354,72 +392,19 @@ void SpreadImage::affineTransform(const cv::Mat& src, cv::Mat& dst, const cv::Po
                 x2 = src.size().width - 1;
             }
 
+            // Other possible solution but much slower
+            //cv::Mat interpolated;
+            //cv::Point2f srcPoint(srcX, srcY);
+            //cv::remap(src, interpolated, cv::Mat(1, 1, CV_32FC2, &srcPoint), cv::noArray(), cv::INTER_LINEAR, cv::BORDER_REFLECT_101);
+            //dst.at<cv::Vec3b>(y, x) = interpolated.at<cv::Vec3b>(0,0);
+
             //Todo: order does matter when image is flipped
             cv::Vec3b interpolated = (src.at<cv::Vec3b>(y1, x2)) * ((srcX-x1)*(y2-srcY)) / ((y2-y1)*(x2-x1)) +
                 (src.at<cv::Vec3b>(y2, x1)) * (((srcY-y1)*(x2-srcX)) / ((y2-y1)*(x2-x1))) +
                 (src.at<cv::Vec3b>(y1, x1)) * (((x2-srcX)*(y2-srcY)) / ((y2-y1)*(x2-x1))) +
                 (src.at<cv::Vec3b>(y2, x2)) * ((srcY-y1)*(srcX-x1)) / ((y2-y1)*(x2-x1));
 
-            // Put the values of original coordinates to transformed coordinates
-            //dst.at<cv::Vec3b>(y, x) = src.at<cv::Vec3b>(srcY,srcX);
             dst.at<cv::Vec3b>(y, x) = interpolated;
-
-        }
-    }
-}
-
-//This function is not finished yet
-void SpreadImage::projectiveTransform(const cv::Mat& src, cv::Mat& dst, const cv::Mat &transform)
-{
-    // Create an empty 3x1 matrix for storing original frame coordinates
-    cv::Mat xOrg = cv::Mat(3, 1, CV_64FC1);
-
-    // Create an empty 3x1 matrix for storing transformed frame coordinates
-    cv::Mat xTrans = cv::Mat(3, 1, CV_64FC1);
-
-    // Default initialisation of output matrix
-    //dst = cv::Mat::zeros(src.size(), src.type());
-
-    // Go through entire image
-    for(int i = 0; i < src.size().height; i++) {
-        for(int j = 0; j < src.size().width; j++) {
-
-        // Get current coorndinates
-        xOrg.at<double>(0,0) = j;
-        xOrg.at<double>(1,0) = i;
-        xOrg.at<double>(2,0) = 1;
-
-        // Get transformed coodinates
-        xTrans = transform * xOrg;
-
-        // Homogeneous to cartesian transformation
-        const double newX = xTrans.at<double>(0,0) / xTrans.at<double>(2,0);
-        const double newY = xTrans.at<double>(1,0) / xTrans.at<double>(2,0);
-
-        // Make sure boundary is not exceeded
-        if(newX >= dst.size().width || newY >= dst.size().height || newX < 0 || newY < 0)
-        {
-            continue;
-        }
-
-        int c1 = floor(newX);
-        int c2 = c1 + 1;
-        if(c2 >= src.size().width) {
-            c2 = src.size().width - 1;
-        }
-
-        int r1 = floor(newY);
-        int r2 = r1+1;
-        if(r2 >= src.size().height) {
-            r2 = src.size().height - 1;
-        }
-
-        //unsigned int interpolated = (src.at<uchar>(c1, r1))*((newX-c1)*(r2-newY)) / ((r2-r1)*(c2-c1)) + (src.at<uchar>(c2, r1)) * (((newY-r1)*(c2-newX))/((r2-r1)*(c2-c1))) +
-        //    (src.at<uchar>(c1, r1))*(((c2-newX)*(r2-newY)) / ((r2-r1)*(c2-c1))) + (src.at<uchar>(c2, r2))*((newY-r1)*(newX-c1)) / ((r2-r1)*(c2-c1));
-
-        // Put the values of original coordinates to transformed coordinates
-        dst.at<cv::Vec3b>(newX, newY) = src.at<cv::Vec3b>(i,j);
-        //dst.at<uchar>(newY, newX) = interpolated;
 
         }
     }

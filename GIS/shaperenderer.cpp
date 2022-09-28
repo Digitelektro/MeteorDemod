@@ -1,6 +1,6 @@
 #include "shaperenderer.h"
-#include <vector>
 #include "pixelgeolocationcalculator.h"
+#include <vector>
 
 
 GIS::ShapeRenderer::ShapeRenderer(const std::string shapeFile, const cv::Scalar &color, int earthRadius, int altitude)
@@ -32,11 +32,11 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
     }
 
     if(getShapeType() == ShapeReader::ShapeType::stPolyline) {
-        ShapeReader::RecordIterator *recordIterator = getRecordIterator();
+        auto recordIterator = getRecordIterator();
 
         if(recordIterator) {
             for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator)) {
-                ShapeReader::PolyLineIterator *polyLineIterator = getPolyLineIterator(*recordIterator);
+                auto polyLineIterator = getPolyLineIterator(*recordIterator);
 
                 if(polyLineIterator) {
                     std::vector<cv::Point> polyLines;
@@ -54,15 +54,11 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                     if(polyLines.size() > 1) {
                         cv::polylines(src, polyLines, false, mColor, mThicknes);
                     }
-
-                    delete polyLineIterator;
                 }
             }
-
-            delete recordIterator;
         }
     } else if(getShapeType() == ShapeReader::ShapeType::stPoint) {
-        ShapeReader::RecordIterator *recordIterator = getRecordIterator();
+        auto recordIterator = getRecordIterator();
 
         if(mfilter.size() == 0) {
             if(recordIterator) {
@@ -135,11 +131,11 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
     }
 
     if(getShapeType() == ShapeReader::ShapeType::stPolyline) {
-        ShapeReader::RecordIterator *recordIterator = getRecordIterator();
+        auto recordIterator = getRecordIterator();
 
         if(recordIterator) {
             for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator)) {
-                ShapeReader::PolyLineIterator *polyLineIterator = getPolyLineIterator(*recordIterator);
+                auto polyLineIterator = getPolyLineIterator(*recordIterator);
 
                 if(polyLineIterator) {
                     std::vector<cv::Point> polyLines;
@@ -159,15 +155,11 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                     if(polyLines.size() > 1) {
                         cv::polylines(src, polyLines, false, mColor, mThicknes);
                     }
-
-                    delete polyLineIterator;
                 }
             }
-
-            delete recordIterator;
         }
     } else if(getShapeType() == ShapeReader::ShapeType::stPoint) {
-        ShapeReader::RecordIterator *recordIterator = getRecordIterator();
+        auto recordIterator = getRecordIterator();
 
         if(mfilter.size() == 0) {
             if(recordIterator) {
