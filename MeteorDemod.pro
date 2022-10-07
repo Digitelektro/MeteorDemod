@@ -7,6 +7,9 @@ CONFIG -= app_bundle
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS LIQUID_BUILD_CPLUSPLUS
 DEFINES +=_USE_MATH_DEFINES
+DEFINES += _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
+
+QMAKE_LFLAGS += -lstdc++fs
 
 # You can also make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.

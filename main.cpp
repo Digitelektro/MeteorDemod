@@ -10,15 +10,18 @@
 #include <iostream>
 #include <fstream>
 #include <ctime>
+#include <chrono>
+#include <experimental/filesystem>
 #include <opencv2/imgcodecs.hpp>
-#include "spreadimage.h"
 
+#include "spreadimage.h"
 #include "GIS/shapereader.h"
 #include "GIS/shaperenderer.h"
 #include "tlereader.h"
 #include "settings.h"
-
 #include "threadpool.h"
+
+namespace fs = std::experimental::filesystem;
 
 struct ImageForSpread {
     ImageForSpread(cv::Mat img, std::string fileNamebase)
@@ -89,6 +92,7 @@ int main(int argc, char *argv[])
     mSettings.parseIni(mSettings.getResourcesPath() + "settings.ini");
 
     mThreadPool.start();
+
     TleReader reader(mSettings.getTlePath());
     TleReader::TLE tle;
     reader.processFile();
@@ -407,9 +411,124 @@ int main(int argc, char *argv[])
     }
 
     std::cout << "Generate images" << std::endl;
-    mThreadPool.stop();
+    mThreadPool.waitForAllJobsDone();
     std::cout << "Generate images done" << std::endl;
 
+
+    std::cout << "Generate composite images" << std::endl;
+    std::list<cv::Mat> images123;
+    std::list<cv::Mat> images221;
+    std::list<cv::Mat> images68;
+    std::list<PixelGeolocationCalculator> geolocationCalculators123;
+    std::list<PixelGeolocationCalculator> geolocationCalculators221;
+    std::list<PixelGeolocationCalculator> geolocationCalculators68;
+
+    std::time_t now = std::time(nullptr);
+
+    for(const auto & entry : fs::directory_iterator(mSettings.getOutputPath())) {
+        auto ftime = fs::last_write_time(entry);
+        std::time_t cftime = std::chrono::system_clock::to_time_t((ftime));
+        std::time_t fileCreatedSec = now - cftime;
+
+        if(entry.path().extension() == ".gcp" && fileCreatedSec < 18000) { //5h
+            std::string folder = entry.path().parent_path().generic_string();
+            std::string gcpFileName = entry.path().filename().generic_string();
+            std::string fileNameBase = gcpFileName.substr(0, gcpFileName.size() - 4);
+
+            //check for channel 123 images
+            do {
+                fs::path rgbFile123jpg(folder + "/" + fileNameBase + "_123.jpg");
+
+                if(fs::exists(rgbFile123jpg)) {
+                    std::cout << "" << rgbFile123jpg << " " << std::endl;
+
+                    images123.emplace_back(cv::imread(rgbFile123jpg.generic_string()));
+                    geolocationCalculators123.emplace_back(PixelGeolocationCalculator::load(entry.path().generic_string()));
+
+                    break;
+                }
+
+                fs::path rgbFile123bmp(folder + "/" + fileNameBase + "_123.bmp");
+
+                if(fs::exists(rgbFile123bmp)) {
+                    std::cout << "" << rgbFile123bmp << " " << std::endl;
+
+                    images123.emplace_back(cv::imread(rgbFile123bmp.generic_string()));
+                    geolocationCalculators123.emplace_back(PixelGeolocationCalculator::load(entry.path().generic_string()));
+
+                    break;
+                }
+            } while(false);
+
+            //check for channel 221 images
+            do {
+                fs::path rgbFile221jpg(folder + "/" + fileNameBase + "_221.jpg");
+
+                if(fs::exists(rgbFile221jpg)) {
+                   std::cout << "" << rgbFile221jpg << " " << std::endl;
+
+                    images221.emplace_back(cv::imread(rgbFile221jpg.generic_string()));
+                    geolocationCalculators221.emplace_back(PixelGeolocationCalculator::load(entry.path().generic_string()));
+
+                    break;
+                }
+
+                fs::path rgbFile221bmp(folder + "/" + fileNameBase + "_221.bmp");
+
+                if(fs::exists(rgbFile221bmp)) {
+                    std::cout << "" << rgbFile221bmp << " " << std::endl;
+
+                    images221.emplace_back(cv::imread(rgbFile221bmp.generic_string()));
+                    geolocationCalculators221.emplace_back(PixelGeolocationCalculator::load(entry.path().generic_string()));
+
+                    break;
+                }
+            } while(false);
+
+            //check for channel 68 images
+            do {
+                fs::path rgbFile68jpg(folder + "/" + fileNameBase + "_68.jpg");
+
+                if(fs::exists(rgbFile68jpg)) {
+                    std::cout << "" << rgbFile68jpg << " " << std::endl;
+
+                    images221.emplace_back(cv::imread(rgbFile68jpg.generic_string()));
+                    geolocationCalculators221.emplace_back(PixelGeolocationCalculator::load(entry.path().generic_string()));
+
+                    break;
+                }
+
+                fs::path rgbFile68bmp(folder + "/" + fileNameBase + "_68.bmp");
+
+                if(fs::exists(rgbFile68bmp)) {
+                    std::cout << "" << rgbFile68bmp << " " << std::endl;
+
+                    images68.emplace_back(cv::imread(rgbFile68bmp.generic_string()));
+                    geolocationCalculators68.emplace_back(PixelGeolocationCalculator::load(entry.path().generic_string()));
+
+                    break;
+                }
+            } while(false);
+        }
+    }
+
+    if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
+         //mThreadPool.addJob([=]() {
+            SpreadImage spreadImage;
+            cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68);
+            saveImage(mSettings.getOutputPath() + "composite68.jpg", composite);
+        //});
+    }
+
+    if(images221.size() > 1 && images221.size() == geolocationCalculators221.size()) {
+        //mThreadPool.addJob([=]() {
+            SpreadImage spreadImage;
+            cv::Mat composite = spreadImage.mercatorProjection(images221, geolocationCalculators221);
+            saveImage(mSettings.getOutputPath() + "composite221.jpg", composite);
+        //});
+    }
+
+    mThreadPool.stop();
     return 0;
 }
 

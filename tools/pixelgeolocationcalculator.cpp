@@ -1,5 +1,35 @@
 #include "pixelgeolocationcalculator.h"
+#include "settings.h"
 #include <fstream>
+
+PixelGeolocationCalculator PixelGeolocationCalculator::load(const std::string &path)
+{
+    Settings &settings = Settings::getInstance();
+    TleReader reader (settings.getTlePath());
+    reader.processFile();
+    TleReader::TLE tle;
+    reader.getTLE("METEOR-M 2", tle);
+    PixelGeolocationCalculator calc(tle, DateTime(), TimeSpan(0), settings.getM2ScanAngle(), settings.getM2Roll(), settings.getM2Pitch(), settings.getM2Yaw());
+    std::ifstream gcpReader(path);
+
+    if(!gcpReader) {
+        std::cout << "Open GCP file failed";
+        return calc;
+    }
+
+    calc.mCoordinates.clear();
+
+    int i, n;
+    double longitude, latitude;
+    while (gcpReader >> i >> n >> latitude >> longitude)
+    {
+        calc.mCoordinates.push_back(CoordGeodetic(latitude, longitude, 0, false));
+    }
+
+    calc.calculateCartesionCoordinates();
+
+    return calc;
+}
 
 PixelGeolocationCalculator::PixelGeolocationCalculator(const TleReader::TLE &tle, const DateTime &passStart, const TimeSpan &passLength, double scanAngle, double roll, double pitch, double yaw, int earthRadius, int satelliteAltitude)
     : mTle(tle.satellite, tle.line1, tle.line2)
@@ -77,27 +107,6 @@ void PixelGeolocationCalculator::save(const std::string &path)
     }
 
     file.close();
-}
-
-void PixelGeolocationCalculator::load(const std::string &path)
-{
-    std::ifstream gcpReader(path);
-
-    if(!gcpReader) {
-        std::cout << "Open GCP file failed";
-        return;
-    }
-
-    mCoordinates.clear();
-
-    int i, n;
-    double longitude, latitude;
-    while (gcpReader >> i >> n >> latitude >> longitude)
-    {
-        mCoordinates.push_back(CoordGeodetic(latitude, longitude, 0, false));
-    }
-
-    calculateCartesionCoordinates();
 }
 
 void PixelGeolocationCalculator::calculateCartesionCoordinates()

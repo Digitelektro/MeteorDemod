@@ -32,12 +32,14 @@ private:
     PixelGeolocationCalculator();
 
 public:
+    static PixelGeolocationCalculator load(const std::string &path);
+
+public:
     PixelGeolocationCalculator(const TleReader::TLE &tle, const DateTime &passStart, const TimeSpan &passLength, double scanAngle, double roll, double pitch, double yaw, int earthRadius = 6378, int satelliteAltitude = 825);
 
     void calcPixelCoordinates();
 
     void save(const std::string &path);
-    void load(const std::string &path);
 
 public:
 

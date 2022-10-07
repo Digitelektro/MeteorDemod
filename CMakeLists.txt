@@ -39,14 +39,14 @@ ExternalProject_Add(libcorrect
   CMAKE_ARGS        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
-find_package(OpenCV REQUIRED PATHS "D:/Programozas/opencv/own_build/install/")
+find_package(OpenCV)
 
 link_directories(
     ${CMAKE_BINARY_DIR}/sgp4-build/libsgp4
     ${CMAKE_BINARY_DIR}/libcorrect-build/lib
 )
 
-add_definitions(-D_USE_MATH_DEFINES)
+add_definitions(-D_USE_MATH_DEFINES -D_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING)
 
 add_executable(meteordemod 
     main.cpp
@@ -124,12 +124,14 @@ if(WIN32)
         ${OpenCV_LIBS}
         sgp4.lib
         correct.lib
+		stdc++fs
     )
 else()
     target_link_libraries(meteordemod
         ${OpenCV_LIBS}
         sgp4.a
         correct.a
+        stdc++fs
     )
 endif()
 
