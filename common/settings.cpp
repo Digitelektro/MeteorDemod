@@ -32,6 +32,7 @@ Settings::Settings()
     mSettingsList.push_back(SettingsData("--mode",  "-m", "Set demodulator mode to qpsk or oqpsk"));
     mSettingsList.push_back(SettingsData("--diff",  "-diff", "Use differential decoding (Maybe required for newer satellites)"));
     mSettingsList.push_back(SettingsData("--int",  "-int", "Deinterleave (Maybe required for newer satellites)"));
+    mSettingsList.push_back(SettingsData("--brokenM2",  "-b", "Broken M2 modulation"));
 }
 
 void Settings::parseArgs(int argc, char **argv)
@@ -56,13 +57,14 @@ void Settings::parseIni(const std::string &path)
     ini::extract(mIniParser.sections["Program"]["SpreadImage"], mSpreadImage, true);
     ini::extract(mIniParser.sections["Program"]["AddRainOverlay"], mAddRainOverlay, true);
     ini::extract(mIniParser.sections["Program"]["JpgQuality"], mJpegQuality, 90);
-    ini::extract(mIniParser.sections["Program"]["AlfaM2"], mAlfaM2, 110.8f);
-    ini::extract(mIniParser.sections["Program"]["DeltaM2"], DeltaM2, -3.2f);
+    ini::extract(mIniParser.sections["Program"]["ScanAngleM2"], mScanAngleM2, 110.8f);
+    ini::extract(mIniParser.sections["Program"]["RollM2"], mM2Roll, -2.9f);
+    ini::extract(mIniParser.sections["Program"]["PitchM2"], mM2Pitch, 0.3f);
+    ini::extract(mIniParser.sections["Program"]["YawM2"], mM2Yaw, 0.0f);
     ini::extract(mIniParser.sections["Program"]["NightPassTreshold"], mNightPassTreshold, 10.0f);
 
     ini::extract(mIniParser.sections["Demodulator"]["CostasBandwidth"], mCostasBw, 50);
     ini::extract(mIniParser.sections["Demodulator"]["RRCFilterOrder"], mRRCFilterOrder, 64);
-    ini::extract(mIniParser.sections["Demodulator"]["InterpolationFactor"], mInterploationFacor, 4);
     ini::extract(mIniParser.sections["Demodulator"]["WaitForLock"], mWaitForLock, true);
 
     ini::extract(mIniParser.sections["Treatment"]["FillBlackLines"], mFillBackLines, true);
@@ -270,6 +272,20 @@ bool Settings::deInterleave() const
 
     if(mArgs.count("--int")) {
         std::istringstream(mArgs.at("--int")) >> result;
+    }
+
+    return result;
+}
+
+bool Settings::getBrokenM2Modulation() const
+{
+    bool result = false;
+
+    if(mArgs.count("-b")) {
+        std::istringstream(mArgs.at("-b")) >> result;
+    }
+    if(mArgs.count("--brokenM2")) {
+        std::istringstream(mArgs.at("--brokenM2")) >> result;
     }
 
     return result;

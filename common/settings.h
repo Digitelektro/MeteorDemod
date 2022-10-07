@@ -101,10 +101,13 @@ public: //getters
     std::string getDemodulatorMode() const;
     bool differentialDecode() const;
     bool deInterleave() const;
+    bool getBrokenM2Modulation() const;
 
     int getJpegQuality() const { return mJpegQuality; }
-    float getM2Alfa() const { return mAlfaM2; }
-    float getM2Delta() const { return DeltaM2; }
+    float getM2ScanAngle() const { return mScanAngleM2; }
+    float getM2Roll() const { return mM2Roll; }
+    float getM2Pitch() const { return mM2Pitch; }
+    float getM2Yaw() const { return mM2Yaw; }
     bool equadistantProjection() const { return mEquidistantProjection; }
     bool mercatorProjection() const { return mMercatorProjection; }
     bool spreadImage() const { return mSpreadImage; }
@@ -113,7 +116,6 @@ public: //getters
 
     int getCostasBandwidth() const { return mCostasBw; }
     int getRRCFilterOrder() const { return mRRCFilterOrder; }
-    int getInterpolationFactor() const { return mInterploationFacor; }
     bool waitForlock() const { return mWaitForLock; }
 
     bool fillBackLines() const { return mFillBackLines; }
@@ -159,8 +161,10 @@ private:
 
     //ini section: Program
     int mJpegQuality;
-    float mAlfaM2;
-    float DeltaM2;
+    float mScanAngleM2;
+    float mM2Roll;
+    float mM2Pitch;
+    float mM2Yaw;
     bool mEquidistantProjection;
     bool mMercatorProjection;
     bool mSpreadImage;
@@ -170,7 +174,6 @@ private:
     //ini section: Demodulator
     int mCostasBw;
     int mRRCFilterOrder;
-    int mInterploationFacor;
     bool mWaitForLock;
 
     //ini section: Treatment

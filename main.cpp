@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
             const std::string outputPath = inputPath.substr(0, inputPath.find_last_of(".") + 1) + "s";
             std::ofstream  outputStream;
-            outputStream.open(outputPath);
+            outputStream.open(outputPath, std::ios::binary);
 
             if(!outputStream.is_open()) {
                 std::cout << "Creating output .S file failed, exiting...";
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
             }
 
 
-            DSP::MeteorDemodulator decoder(mode, mSettings.getSymbolRate(), mSettings.waitForlock(), mSettings.getCostasBandwidth(), mSettings.getRRCFilterOrder(), mSettings.getInterpolationFactor());
+            DSP::MeteorDemodulator decoder(mode, mSettings.getSymbolRate(), mSettings.getCostasBandwidth(), mSettings.getRRCFilterOrder(), mSettings.waitForlock(), mSettings.getBrokenM2Modulation());
             decoder.process(wavReader, [&outputStream](const Wavreader::complex &sample, float) {
                 writeSymbolToFile(outputStream, sample);
             });
@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
 
                 for(int i = 0; i < 4; i++) {
                     mReedSolomon.deinterleave(viterbiResult + 4, i , 4);
-                    rsResult[i] = mReedSolomon.decode(0);
+                    rsResult[i] = mReedSolomon.decode();
                     mReedSolomon.interleave(decodedPacket, i, 4);
                 }
 
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
 
     std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute()) + "-" + std::to_string(passStart.Second());
 
-    PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getM2Alfa() / 2.0f, mSettings.getM2Delta());
+    PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getM2ScanAngle(), mSettings.getM2Roll(), mSettings.getM2Pitch(), mSettings.getM2Yaw());
     calc.calcPixelCoordinates();
     calc.save(mSettings.getOutputPath() + fileNameDate + ".gcp");
 
@@ -296,11 +296,15 @@ int main(int argc, char *argv[])
         }
 
     } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel66Available()) {
-        cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_66, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
+        cv::Mat threatedImage1 = mPacketParser.getRGBImage(PacketParser::APID_66, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
+        cv::Mat threatedImage2 = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
 
-        if(!ThreatImage::isNightPass(threatedImage, mSettings.getNightPassTreshold())) {
-            imagesToSpread.push_back(ImageForSpread(threatedImage, "123_"));
-            saveImage(mSettings.getOutputPath() + fileNameDate + "_123.bmp", threatedImage);
+        if(!ThreatImage::isNightPass(threatedImage1, mSettings.getNightPassTreshold())) {
+            imagesToSpread.push_back(ImageForSpread(threatedImage1, "321_"));
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_321.bmp", threatedImage1);
+
+            imagesToSpread.push_back(ImageForSpread(threatedImage2, "221_"));
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", threatedImage2);
         } else {
             std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
         }
@@ -311,7 +315,7 @@ int main(int argc, char *argv[])
 
         cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
         cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
-        cv::Mat ch66 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
+        cv::Mat ch66 = mPacketParser.getChannelImage(PacketParser::APID_66, mSettings.fillBackLines());
 
         saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
         saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
@@ -428,8 +432,8 @@ void writeSymbolToFile(std::ostream &stream, const Wavreader::complex &sample)
 {
     int8_t outBuffer[2];
 
-    outBuffer[0] = clamp(std::real(sample) / 2.0f);
-    outBuffer[1] = clamp(std::imag(sample) / 2.0f);
+    outBuffer[0] = clamp(std::real(sample) * 127);
+    outBuffer[1] = clamp(std::imag(sample) * 127);
 
     stream.write(reinterpret_cast<char*>(outBuffer), sizeof(outBuffer));
 }
