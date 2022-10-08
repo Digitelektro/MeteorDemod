@@ -113,6 +113,7 @@ public: //getters
     bool spreadImage() const { return mSpreadImage; }
     bool addRainOverlay() const { return mAddRainOverlay; }
     float getNightPassTreshold() const { return mNightPassTreshold; }
+    float getProjectionScale() const {return mProjectionScale; }
 
     int getCostasBandwidth() const { return mCostasBw; }
     int getRRCFilterOrder() const { return mRRCFilterOrder; }
@@ -170,6 +171,7 @@ private:
     bool mSpreadImage;
     bool mAddRainOverlay;
     float mNightPassTreshold;
+    float mProjectionScale;
 
     //ini section: Demodulator
     int mCostasBw;

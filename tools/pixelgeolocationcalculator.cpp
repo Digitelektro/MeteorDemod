@@ -125,10 +125,10 @@ void PixelGeolocationCalculator::calculateCartesionCoordinates()
     for (unsigned int i = 0; i < mMercatorCartesianCoordinates.size(); i++) {
 
         //Azimuthal Equidistant Projection
-        mEquidistantCartesianCoordinates[i] = coordinateToAzimuthalEquidistantProjection(mCoordinates[i], mCenterCoordinate, radius);
+        mEquidistantCartesianCoordinates[i] = coordinateToAzimuthalEquidistantProjection(mCoordinates[i], mCenterCoordinate, radius, 1.0f);
 
         //Mercator Projection
-        mMercatorCartesianCoordinates[i] = coordinateToMercatorProjection(mCoordinates[i], radius);
+        mMercatorCartesianCoordinates[i] = coordinateToMercatorProjection(mCoordinates[i], radius, 1.0f);
     }
 }
 

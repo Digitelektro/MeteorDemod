@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
         if(mSettings.mercatorProjection()) {
             mThreadPool.addJob([=]() {
                 SpreadImage spreadImage;
-                cv::Mat mercator = spreadImage.mercatorProjection((*it).image, calc);
+                cv::Mat mercator = spreadImage.mercatorProjection((*it).image, calc, mSettings.getProjectionScale());
 
                 if(!mercator.empty()) {
                     ThreatImage::drawWatermark(mercator, dateStr);
@@ -398,7 +398,7 @@ int main(int argc, char *argv[])
         if(mSettings.equadistantProjection()) {
             mThreadPool.addJob([=]() {
                 SpreadImage spreadImage;
-                cv::Mat equidistant = spreadImage.equidistantProjection((*it).image, calc);
+                cv::Mat equidistant = spreadImage.equidistantProjection((*it).image, calc, mSettings.getProjectionScale());
 
                 if(!equidistant.empty()) {
                     ThreatImage::drawWatermark(equidistant, dateStr);

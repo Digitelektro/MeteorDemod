@@ -47,60 +47,60 @@ public:
         return (mEquidistantCartesianCoordinates.size() / 158) * 10;
     }
 
-    const CartesianCoordinateF &getTopLeftEquidistant() const {
-        return mEquidistantCartesianCoordinates[0];
+    const CartesianCoordinateF getTopLeftEquidistant(float scale) const {
+        return {mEquidistantCartesianCoordinates[0].x * scale, mEquidistantCartesianCoordinates[0].y * scale};
     }
 
-    const CartesianCoordinateF &getTopRightEquidistant() const {
-        return mEquidistantCartesianCoordinates[157];
+    const CartesianCoordinateF getTopRightEquidistant(float scale) const {
+        return {mEquidistantCartesianCoordinates[157].x * scale, mEquidistantCartesianCoordinates[157].y * scale};
     }
 
-    const CartesianCoordinateF &getBottomLeftEquidistant() const {
-        return mEquidistantCartesianCoordinates[mEquidistantCartesianCoordinates.size() - 158];
+    const CartesianCoordinateF getBottomLeftEquidistant(float scale) const {
+        return {mEquidistantCartesianCoordinates[mEquidistantCartesianCoordinates.size() - 158].x * scale, mEquidistantCartesianCoordinates[mEquidistantCartesianCoordinates.size() - 158].y * scale};
     }
 
-    const CartesianCoordinateF &getBottomRightEquidistant() const {
-        return mEquidistantCartesianCoordinates[mEquidistantCartesianCoordinates.size() - 1];
+    const CartesianCoordinateF getBottomRightEquidistant(float scale) const {
+        return {mEquidistantCartesianCoordinates[mEquidistantCartesianCoordinates.size() - 1].x * scale, mEquidistantCartesianCoordinates[mEquidistantCartesianCoordinates.size() - 1].y * scale};
     }
 
-    const CartesianCoordinateF &getEquidistantAt(unsigned int x, unsigned int y) const {
-        return mEquidistantCartesianCoordinates[((x / 10)) + ((y / 10) * 158)];
+    const CartesianCoordinateF getEquidistantAt(unsigned int x, unsigned int y, float scale) const {
+        return {mEquidistantCartesianCoordinates[((x / 10)) + ((y / 10) * 158)].x * scale, mEquidistantCartesianCoordinates[((x / 10)) + ((y / 10) * 158)].y * scale};
     }
 
-    const CartesianCoordinateF &getTopLeftMercator() const {
-        return mMercatorCartesianCoordinates[0];
+    const CartesianCoordinateF getTopLeftMercator(float scale) const {
+        return {mMercatorCartesianCoordinates[0].x * scale, mMercatorCartesianCoordinates[0].y * scale};
     }
 
-    const CartesianCoordinateF &getTopRightMercator() const {
-        return mMercatorCartesianCoordinates[157];
+    const CartesianCoordinateF getTopRightMercator(float scale) const {
+        return {mMercatorCartesianCoordinates[157].x * scale, mMercatorCartesianCoordinates[157].y * scale};
     }
 
-    const CartesianCoordinateF &getBottomLeftMercator() const {
-        return mMercatorCartesianCoordinates[mMercatorCartesianCoordinates.size() - 158];
+    const CartesianCoordinateF getBottomLeftMercator(float scale) const {
+        return {mMercatorCartesianCoordinates[mMercatorCartesianCoordinates.size() - 158].x * scale, mMercatorCartesianCoordinates[mMercatorCartesianCoordinates.size() - 158].y * scale};
     }
 
-    const CartesianCoordinateF &getBottomRightMercator() const {
-        return mMercatorCartesianCoordinates[mMercatorCartesianCoordinates.size() - 1];
+    const CartesianCoordinateF getBottomRightMercator(float scale) const {
+        return {mMercatorCartesianCoordinates[mMercatorCartesianCoordinates.size() - 1].x * scale, mMercatorCartesianCoordinates[mMercatorCartesianCoordinates.size() - 1].y * scale};
     }
 
-    const CoordGeodetic &getCenterCoordinate() const {
+    const CoordGeodetic getCenterCoordinate() const {
         return mCenterCoordinate;
     }
 
-    const CartesianCoordinateF &getMercatorAt(unsigned int x, unsigned int y) const {
-        return mMercatorCartesianCoordinates[((x / 10)) + ((y / 10) * 158)];
+    const CartesianCoordinateF getMercatorAt(unsigned int x, unsigned int y, float scale) const {
+        return {mMercatorCartesianCoordinates[((x / 10)) + ((y / 10) * 158)].x * scale, mMercatorCartesianCoordinates[((x / 10)) + ((y / 10) * 158)].y * scale};
     }
 
 public:
-    static CartesianCoordinateF coordinateToMercatorProjection(double latitude, double longitude, double radius) {
-        return coordinateToMercatorProjection(CoordGeodetic(latitude, longitude, 0), radius);
+    static CartesianCoordinateF coordinateToMercatorProjection(double latitude, double longitude, double radius, float scale) {
+        return coordinateToMercatorProjection(CoordGeodetic(latitude, longitude, 0), radius, scale);
     }
 
-    static CartesianCoordinateF coordinateToAzimuthalEquidistantProjection(double latitude, double longitude, double centerLatitude, double centerLongitude, double radius) {
-        return coordinateToAzimuthalEquidistantProjection(CoordGeodetic(latitude, longitude, 0), CoordGeodetic(centerLatitude, centerLongitude, 0), radius);
+    static CartesianCoordinateF coordinateToAzimuthalEquidistantProjection(double latitude, double longitude, double centerLatitude, double centerLongitude, double radius, float scale) {
+        return coordinateToAzimuthalEquidistantProjection(CoordGeodetic(latitude, longitude, 0), CoordGeodetic(centerLatitude, centerLongitude, 0), radius, scale);
     }
 
-    static CartesianCoordinateF coordinateToMercatorProjection(const CoordGeodetic &coordinate, double radius) {
+    static CartesianCoordinateF coordinateToMercatorProjection(const CoordGeodetic &coordinate, double radius, float scale) {
         CartesianCoordinateF cartesianCoordinate;
         CoordGeodetic correctedCoordinate = coordinate;
 
@@ -115,14 +115,14 @@ public:
 
         cartesianCoordinate.x = radius * (M_PI + correctedCoordinate.longitude);
         cartesianCoordinate.y = radius * (M_PI - log(tan(M_PI / 4.0 + (correctedCoordinate.latitude) / 2.0)));
-        return  cartesianCoordinate;
+        return {cartesianCoordinate.x * scale, cartesianCoordinate.y * scale};
     }
 
-    static CartesianCoordinateF coordinateToAzimuthalEquidistantProjection(const CoordGeodetic &coordinate, const CoordGeodetic &centerCoordinate, double radius) {
+    static CartesianCoordinateF coordinateToAzimuthalEquidistantProjection(const CoordGeodetic &coordinate, const CoordGeodetic &centerCoordinate, double radius, float scale) {
         CartesianCoordinateF cartesianCoordinate;
         cartesianCoordinate.x = radius * (cos(coordinate.latitude) * sin(coordinate.longitude - centerCoordinate.longitude));
         cartesianCoordinate.y = -radius * (cos(centerCoordinate.latitude) * sin(coordinate.latitude) - sin(centerCoordinate.latitude) * cos(coordinate.latitude) * cos(coordinate.longitude - centerCoordinate.longitude));
-        return cartesianCoordinate;
+        return {cartesianCoordinate.x * scale, cartesianCoordinate.y * scale};
     }
 
 private:
@@ -134,12 +134,12 @@ private:
     double calculateBearingAngle(const CoordGeodetic &start, const CoordGeodetic &end);
     Matrix4x4 lookAt(const Vector3 &position, const Vector3 &target, const Vector3 &up);
 
-    static double degreeToRadian(double degree)
+    static inline double degreeToRadian(double degree)
     {
         return (M_PI * degree / 180.0);
     }
 
-    static double radioanToDegree(double radian)
+    static inline double radioanToDegree(double radian)
     {
         return radian * (180.0 / M_PI);
     }
