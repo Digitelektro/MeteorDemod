@@ -94,10 +94,15 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
     cv::Point2f srcTri[3];
     cv::Point2f dstTri[3];
 
-    double MinX = std::min(geolocationCalculator.getTopLeftMercator(scale).x, std::min(geolocationCalculator.getTopRightMercator(scale).x, std::min(geolocationCalculator.getBottomLeftMercator(scale).x, geolocationCalculator.getBottomRightMercator(scale).x)));
-    double MinY = std::min(geolocationCalculator.getTopLeftMercator(scale).y, std::min(geolocationCalculator.getTopRightMercator(scale).y, std::min(geolocationCalculator.getBottomLeftMercator(scale).y, geolocationCalculator.getBottomRightMercator(scale).y)));
-    double MaxX = std::max(geolocationCalculator.getTopLeftMercator(scale).x, std::max(geolocationCalculator.getTopRightMercator(scale).x, std::max(geolocationCalculator.getBottomLeftMercator(scale).x, geolocationCalculator.getBottomRightMercator(scale).x)));
-    double MaxY = std::max(geolocationCalculator.getTopLeftMercator(scale).y, std::max(geolocationCalculator.getTopRightMercator(scale).y, std::max(geolocationCalculator.getBottomLeftMercator(scale).y, geolocationCalculator.getBottomRightMercator(scale).y)));
+    PixelGeolocationCalculator::CartesianCoordinateF topLeft = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(geolocationCalculator.getCoordinateTopLeft(), geolocationCalculator.getSatelliteHeight(), scale);
+    PixelGeolocationCalculator::CartesianCoordinateF topRight = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(geolocationCalculator.getCoordinateTopRight(), geolocationCalculator.getSatelliteHeight(), scale);
+    PixelGeolocationCalculator::CartesianCoordinateF bottomLeft = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(geolocationCalculator.getCoordinateBottomLeft(), geolocationCalculator.getSatelliteHeight(), scale);
+    PixelGeolocationCalculator::CartesianCoordinateF bottomRight = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(geolocationCalculator.getCoordinateBottomRight(), geolocationCalculator.getSatelliteHeight(), scale);
+
+    double MinX = std::min(topLeft.x, std::min(topRight.x, std::min(bottomLeft.x, bottomRight.x)));
+    double MinY = std::min(topLeft.y, std::min(topRight.y, std::min(bottomLeft.y, bottomRight.y)));
+    double MaxX = std::max(topLeft.x, std::max(topRight.x, std::max(bottomLeft.x, bottomRight.x)));
+    double MaxY = std::max(topLeft.y, std::max(topRight.y, std::max(bottomLeft.y, bottomRight.y)));
 
     int width = static_cast<int>(std::abs(MaxX - MinX));
     int height = static_cast<int>(std::abs(MaxY - MinY));
@@ -117,9 +122,9 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
         }
         for (int x = 0; x < image.size().width - 10; x += 10)
         {
-            const PixelGeolocationCalculator::CartesianCoordinateF &p1 = geolocationCalculator.getMercatorAt(x, y, scale);
-            const PixelGeolocationCalculator::CartesianCoordinateF &p2 = geolocationCalculator.getMercatorAt(x + 10, y, scale);
-            const PixelGeolocationCalculator::CartesianCoordinateF &p3 = geolocationCalculator.getMercatorAt(x, y + 10, scale);
+            const PixelGeolocationCalculator::CartesianCoordinateF p1 = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(geolocationCalculator.getCoordinateAt(x, y), geolocationCalculator.getSatelliteHeight(), scale);
+            const PixelGeolocationCalculator::CartesianCoordinateF p2 = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(geolocationCalculator.getCoordinateAt(x + 10, y), geolocationCalculator.getSatelliteHeight(), scale);
+            const PixelGeolocationCalculator::CartesianCoordinateF p3 = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(geolocationCalculator.getCoordinateAt(x, y + 10), geolocationCalculator.getSatelliteHeight(), scale);
 
             srcTri[0] = cv::Point2f( x, y );
             srcTri[1] = cv::Point2f( x + 10, y );
@@ -154,7 +159,7 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
     cities.drawShapeMercator(newImage, xStart, yStart, scale);
 
     if(settings.drawReceiver()) {
-        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection(settings.getReceiverLatitude(), settings.getReceiverLongitude(), mEarthRadius + mAltitude, scale);
+        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({settings.getReceiverLatitude(), settings.getReceiverLongitude(), 0}, mEarthRadius + mAltitude, scale);
         coordinate.x -= xStart;
         coordinate.y -= yStart;
         cv::drawMarker(newImage, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(0, 0, 0), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness() + 1);
@@ -228,16 +233,21 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat> &images, const 
     std::list<PixelGeolocationCalculator>::const_iterator geolocationCalculator;
     for (geolocationCalculator = geolocationCalculators.begin(); geolocationCalculator != geolocationCalculators.end(); ++geolocationCalculator) {
 
-        corner = std::min(geolocationCalculator->getTopLeftMercator(scale).x, std::min(geolocationCalculator->getTopRightMercator(scale).x, std::min(geolocationCalculator->getBottomLeftMercator(scale).x, geolocationCalculator->getBottomRightMercator(scale).x)));
+        PixelGeolocationCalculator::CartesianCoordinateF topLeft = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(geolocationCalculator->getCoordinateTopLeft(), geolocationCalculator->getSatelliteHeight(), scale);
+        PixelGeolocationCalculator::CartesianCoordinateF topRight = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(geolocationCalculator->getCoordinateTopRight(), geolocationCalculator->getSatelliteHeight(), scale);
+        PixelGeolocationCalculator::CartesianCoordinateF bottomLeft = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(geolocationCalculator->getCoordinateBottomLeft(), geolocationCalculator->getSatelliteHeight(), scale);
+        PixelGeolocationCalculator::CartesianCoordinateF bottomRight = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(geolocationCalculator->getCoordinateBottomRight(), geolocationCalculator->getSatelliteHeight(), scale);
+
+        corner = std::min(topLeft.x, std::min(topRight.x, std::min(bottomLeft.x, bottomRight.x)));
         MinX = corner < MinX ? corner : MinX;
 
-        corner = std::min(geolocationCalculator->getTopLeftMercator(scale).y, std::min(geolocationCalculator->getTopRightMercator(scale).y, std::min(geolocationCalculator->getBottomLeftMercator(scale).y, geolocationCalculator->getBottomRightMercator(scale).y)));
+        corner = std::min(topLeft.y, std::min(topRight.y, std::min(bottomLeft.y, bottomRight.y)));
         MinY = corner < MinY ? corner : MinY;
 
-        corner = std::max(geolocationCalculator->getTopLeftMercator(scale).x, std::max(geolocationCalculator->getTopRightMercator(scale).x, std::max(geolocationCalculator->getBottomLeftMercator(scale).x, geolocationCalculator->getBottomRightMercator(scale).x)));
+        corner = std::max(topLeft.x, std::max(topRight.x, std::max(bottomLeft.x, bottomRight.x)));
         MaxX = corner > MaxX ? corner : MaxX;
 
-        corner = std::max(geolocationCalculator->getTopLeftMercator(scale).y, std::max(geolocationCalculator->getTopRightMercator(scale).y, std::max(geolocationCalculator->getBottomLeftMercator(scale).y, geolocationCalculator->getBottomRightMercator(scale).y)));
+        corner = std::max(topLeft.y, std::max(topRight.y, std::max(bottomLeft.y, bottomRight.y)));
         MaxY = corner > MaxY ? corner : MaxY;
     }
 
@@ -264,9 +274,9 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat> &images, const 
             }
             for (int x = 0; x < image->size().width - 10; x += 10)
             {
-                p1 = geolocationCalculator->getMercatorAt(x, y, scale);
-                p2 = geolocationCalculator->getMercatorAt(x + 10, y, scale);
-                p3 = geolocationCalculator->getMercatorAt(x, y + 10, scale);
+                const PixelGeolocationCalculator::CartesianCoordinateF p1 = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(geolocationCalculator->getCoordinateAt(x, y), geolocationCalculator->getSatelliteHeight(), scale);
+                const PixelGeolocationCalculator::CartesianCoordinateF p2 = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(geolocationCalculator->getCoordinateAt(x + 10, y), geolocationCalculator->getSatelliteHeight(), scale);
+                const PixelGeolocationCalculator::CartesianCoordinateF p3 = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(geolocationCalculator->getCoordinateAt(x, y + 10), geolocationCalculator->getSatelliteHeight(), scale);
 
                 cv::Point2f srcTri[3];
                 cv::Point2f dstTri[3];
@@ -356,7 +366,7 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat> &images, const 
     cities.drawShapeMercator(mapOverlay, xStart, yStart, scale);
 
     if(settings.drawReceiver()) {
-        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection(settings.getReceiverLatitude(), settings.getReceiverLongitude(), mEarthRadius + mAltitude, scale);
+        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({settings.getReceiverLatitude(), settings.getReceiverLongitude(), 0}, mEarthRadius + mAltitude, scale);
         coordinate.x -= xStart;
         coordinate.y -= yStart;
         cv::drawMarker(mapOverlay, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(0, 0, 0), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness() + 1);
@@ -380,10 +390,17 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeol
     cv::Point2f srcTri[3];
     cv::Point2f dstTri[3];
 
-    double MinX = std::min(geolocationCalculator.getTopLeftEquidistant(scale).x, std::min(geolocationCalculator.getTopRightEquidistant(scale).x, std::min(geolocationCalculator.getBottomLeftEquidistant(scale).x, geolocationCalculator.getBottomRightEquidistant(scale).x)));
-    double MinY = std::min(geolocationCalculator.getTopLeftEquidistant(scale).y, std::min(geolocationCalculator.getTopRightEquidistant(scale).y, std::min(geolocationCalculator.getBottomLeftEquidistant(scale).y, geolocationCalculator.getBottomRightEquidistant(scale).y)));
-    double MaxX = std::max(geolocationCalculator.getTopLeftEquidistant(scale).x, std::max(geolocationCalculator.getTopRightEquidistant(scale).x, std::max(geolocationCalculator.getBottomLeftEquidistant(scale).x, geolocationCalculator.getBottomRightEquidistant(scale).x)));
-    double MaxY = std::max(geolocationCalculator.getTopLeftEquidistant(scale).y, std::max(geolocationCalculator.getTopRightEquidistant(scale).y, std::max(geolocationCalculator.getBottomLeftEquidistant(scale).y, geolocationCalculator.getBottomRightEquidistant(scale).y)));
+   const CoordGeodetic &center = geolocationCalculator.getCenterCoordinate();
+
+    PixelGeolocationCalculator::CartesianCoordinateF topLeft = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator.getCoordinateTopLeft(), center, geolocationCalculator.getSatelliteHeight(), scale);
+    PixelGeolocationCalculator::CartesianCoordinateF topRight = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator.getCoordinateTopRight(), center, geolocationCalculator.getSatelliteHeight(), scale);
+    PixelGeolocationCalculator::CartesianCoordinateF bottomLeft = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator.getCoordinateBottomLeft(), center, geolocationCalculator.getSatelliteHeight(), scale);
+    PixelGeolocationCalculator::CartesianCoordinateF bottomRight = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator.getCoordinateBottomRight(), center, geolocationCalculator.getSatelliteHeight(), scale);
+
+    double MinX = std::min(topLeft.x, std::min(topRight.x, std::min(bottomLeft.x, bottomRight.x)));
+    double MinY = std::min(topLeft.y, std::min(topRight.y, std::min(bottomLeft.y, bottomRight.y)));
+    double MaxX = std::max(topLeft.x, std::max(topRight.x, std::max(bottomLeft.x, bottomRight.x)));
+    double MaxY = std::max(topLeft.y, std::max(topRight.y, std::max(bottomLeft.y, bottomRight.y)));
 
     int width = static_cast<int>(std::abs(MaxX - MinX));
     int height = static_cast<int>(std::abs(MaxY - MinY));
@@ -402,9 +419,9 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeol
         }
         for (int x = 0; x < image.size().width - 10; x += 10)
         {
-            const PixelGeolocationCalculator::CartesianCoordinateF &p1 = geolocationCalculator.getEquidistantAt(x, y, scale);
-            const PixelGeolocationCalculator::CartesianCoordinateF &p2 = geolocationCalculator.getEquidistantAt(x + 10, y, scale);
-            const PixelGeolocationCalculator::CartesianCoordinateF &p3 = geolocationCalculator.getEquidistantAt(x, y + 10, scale);
+            const PixelGeolocationCalculator::CartesianCoordinateF p1 = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator.getCoordinateAt(x, y), center, geolocationCalculator.getSatelliteHeight(), scale);
+            const PixelGeolocationCalculator::CartesianCoordinateF p2 = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator.getCoordinateAt(x + 10, y), center, geolocationCalculator.getSatelliteHeight(), scale);
+            const PixelGeolocationCalculator::CartesianCoordinateF p3 = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator.getCoordinateAt(x, y + 10), center, geolocationCalculator.getSatelliteHeight(), scale);
 
             srcTri[0] = cv::Point2f( x, y );
             srcTri[1] = cv::Point2f( x + 10, y );
@@ -443,7 +460,7 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeol
     cities.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude, scale);
 
     if(settings.drawReceiver()) {
-        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(settings.getReceiverLatitude(), settings.getReceiverLongitude(), centerLatitude, centerLongitude, mEarthRadius + mAltitude, scale);
+        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({settings.getReceiverLatitude(), settings.getReceiverLongitude(), 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
         coordinate.x -= xStart;
         coordinate.y -= yStart;
         cv::drawMarker(newImage, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(0, 0, 0), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness() + 1);

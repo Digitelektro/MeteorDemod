@@ -26,8 +26,6 @@ PixelGeolocationCalculator PixelGeolocationCalculator::load(const std::string &p
         calc.mCoordinates.push_back(CoordGeodetic(latitude, longitude, 0, false));
     }
 
-    calc.calculateCartesionCoordinates();
-
     return calc;
 }
 
@@ -81,8 +79,6 @@ void PixelGeolocationCalculator::calcPixelCoordinates()
             mCoordinates.push_back(coordinate);
         }
     }
-
-    calculateCartesionCoordinates();
 }
 
 void PixelGeolocationCalculator::save(const std::string &path)
@@ -107,29 +103,6 @@ void PixelGeolocationCalculator::save(const std::string &path)
     }
 
     file.close();
-}
-
-void PixelGeolocationCalculator::calculateCartesionCoordinates()
-{
-    double radius = mEarthradius + mSatelliteAltitude;
-
-    mMercatorCartesianCoordinates.clear();
-    mEquidistantCartesianCoordinates.clear();
-
-    mMercatorCartesianCoordinates.resize(mCoordinates.size());
-    mEquidistantCartesianCoordinates.resize(mCoordinates.size());
-
-    mCenterCoordinate.latitude = mCoordinates[mCoordinates.size() / 2 + 79].latitude;
-    mCenterCoordinate.longitude = mCoordinates[mCoordinates.size() / 2 + 79].longitude;
-
-    for (unsigned int i = 0; i < mMercatorCartesianCoordinates.size(); i++) {
-
-        //Azimuthal Equidistant Projection
-        mEquidistantCartesianCoordinates[i] = coordinateToAzimuthalEquidistantProjection(mCoordinates[i], mCenterCoordinate, radius, 1.0f);
-
-        //Mercator Projection
-        mMercatorCartesianCoordinates[i] = coordinateToMercatorProjection(mCoordinates[i], radius, 1.0f);
-    }
 }
 
 Vector PixelGeolocationCalculator::locationToVector(const CoordGeodetic &location)

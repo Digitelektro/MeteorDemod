@@ -10,23 +10,30 @@
 #include "vector.h"
 #include "tlereader.h"
 
+inline static CoordGeodetic operator+(const CoordGeodetic& coord1, const CoordGeodetic& coord2)
+{
+    CoordGeodetic result(0, 0, 0) ;
+    result.latitude = coord1.latitude + coord2.latitude ;
+    result.longitude = coord1.longitude + coord2.longitude;
+    return result;
+}
+
 class PixelGeolocationCalculator
 {
 public:
     template<typename T>
-    struct CartesianCoordinateT {
+    struct CartesianCoordinate {
         T x;
         T y;
     };
 
     template<typename T>
-    friend std::ostream& operator << (std::ostream &o, const CartesianCoordinateT<T> &coord) {
+    friend std::ostream& operator << (std::ostream &o, const CartesianCoordinate<T> &coord) {
         return o << "x: " << coord.x << "\ty: " << coord.y;
     }
 
-    typedef CartesianCoordinateT<int> CartesianCoordinate;
-    typedef CartesianCoordinateT<float> CartesianCoordinateF;
-    typedef CartesianCoordinateT<double> CartesianCoordinateD;
+    typedef CartesianCoordinate<float> CartesianCoordinateF;
+    typedef CartesianCoordinate<double> CartesianCoordinateD;
 
 private:
     PixelGeolocationCalculator();
@@ -44,64 +51,49 @@ public:
 public:
 
     int getGeorefMaxImageHeight() const {
-        return (mEquidistantCartesianCoordinates.size() / 158) * 10;
+        return (mCoordinates.size() / 158) * 10;
     }
 
-    const CartesianCoordinateF getTopLeftEquidistant(float scale) const {
-        return {mEquidistantCartesianCoordinates[0].x * scale, mEquidistantCartesianCoordinates[0].y * scale};
+     const CoordGeodetic &getCenterCoordinate() const {
+        return mCoordinates[mCoordinates.size() / 2 + 79];
     }
 
-    const CartesianCoordinateF getTopRightEquidistant(float scale) const {
-        return {mEquidistantCartesianCoordinates[157].x * scale, mEquidistantCartesianCoordinates[157].y * scale};
+    inline const CoordGeodetic &getCoordinateAt(unsigned int x, unsigned int y) const {
+        return mCoordinates[((x / 10)) + ((y / 10) * 158)];
     }
 
-    const CartesianCoordinateF getBottomLeftEquidistant(float scale) const {
-        return {mEquidistantCartesianCoordinates[mEquidistantCartesianCoordinates.size() - 158].x * scale, mEquidistantCartesianCoordinates[mEquidistantCartesianCoordinates.size() - 158].y * scale};
+    inline const CoordGeodetic &getCoordinateTopLeft() const {
+        return mCoordinates[0];
     }
 
-    const CartesianCoordinateF getBottomRightEquidistant(float scale) const {
-        return {mEquidistantCartesianCoordinates[mEquidistantCartesianCoordinates.size() - 1].x * scale, mEquidistantCartesianCoordinates[mEquidistantCartesianCoordinates.size() - 1].y * scale};
+    inline const CoordGeodetic &getCoordinateTopRight() const {
+        return mCoordinates[157];
     }
 
-    const CartesianCoordinateF getEquidistantAt(unsigned int x, unsigned int y, float scale) const {
-        return {mEquidistantCartesianCoordinates[((x / 10)) + ((y / 10) * 158)].x * scale, mEquidistantCartesianCoordinates[((x / 10)) + ((y / 10) * 158)].y * scale};
+    inline const CoordGeodetic &getCoordinateBottomLeft() const {
+        return mCoordinates[mCoordinates.size() - 158];
     }
 
-    const CartesianCoordinateF getTopLeftMercator(float scale) const {
-        return {mMercatorCartesianCoordinates[0].x * scale, mMercatorCartesianCoordinates[0].y * scale};
+    inline const CoordGeodetic &getCoordinateBottomRight() const {
+        return mCoordinates[mCoordinates.size() - 1];
     }
 
-    const CartesianCoordinateF getTopRightMercator(float scale) const {
-        return {mMercatorCartesianCoordinates[157].x * scale, mMercatorCartesianCoordinates[157].y * scale};
+    inline int getEarthRadius() const {
+        return mEarthradius;
     }
 
-    const CartesianCoordinateF getBottomLeftMercator(float scale) const {
-        return {mMercatorCartesianCoordinates[mMercatorCartesianCoordinates.size() - 158].x * scale, mMercatorCartesianCoordinates[mMercatorCartesianCoordinates.size() - 158].y * scale};
+    inline int getSatelliteAltitude() const {
+        return mSatelliteAltitude;
     }
 
-    const CartesianCoordinateF getBottomRightMercator(float scale) const {
-        return {mMercatorCartesianCoordinates[mMercatorCartesianCoordinates.size() - 1].x * scale, mMercatorCartesianCoordinates[mMercatorCartesianCoordinates.size() - 1].y * scale};
-    }
-
-    const CoordGeodetic getCenterCoordinate() const {
-        return mCenterCoordinate;
-    }
-
-    const CartesianCoordinateF getMercatorAt(unsigned int x, unsigned int y, float scale) const {
-        return {mMercatorCartesianCoordinates[((x / 10)) + ((y / 10) * 158)].x * scale, mMercatorCartesianCoordinates[((x / 10)) + ((y / 10) * 158)].y * scale};
+    inline int getSatelliteHeight() const {
+        return mEarthradius + mSatelliteAltitude;
     }
 
 public:
-    static CartesianCoordinateF coordinateToMercatorProjection(double latitude, double longitude, double radius, float scale) {
-        return coordinateToMercatorProjection(CoordGeodetic(latitude, longitude, 0), radius, scale);
-    }
-
-    static CartesianCoordinateF coordinateToAzimuthalEquidistantProjection(double latitude, double longitude, double centerLatitude, double centerLongitude, double radius, float scale) {
-        return coordinateToAzimuthalEquidistantProjection(CoordGeodetic(latitude, longitude, 0), CoordGeodetic(centerLatitude, centerLongitude, 0), radius, scale);
-    }
-
-    static CartesianCoordinateF coordinateToMercatorProjection(const CoordGeodetic &coordinate, double radius, float scale) {
-        CartesianCoordinateF cartesianCoordinate;
+    template<typename T>
+    static CartesianCoordinate<T> coordinateToMercatorProjection(const CoordGeodetic &coordinate, double radius, float scale) {
+        CartesianCoordinate<T> cartesianCoordinate;
         CoordGeodetic correctedCoordinate = coordinate;
 
         if (coordinate.latitude > degreeToRadian(85.05113))
@@ -118,8 +110,9 @@ public:
         return {cartesianCoordinate.x * scale, cartesianCoordinate.y * scale};
     }
 
-    static CartesianCoordinateF coordinateToAzimuthalEquidistantProjection(const CoordGeodetic &coordinate, const CoordGeodetic &centerCoordinate, double radius, float scale) {
-        CartesianCoordinateF cartesianCoordinate;
+    template<typename T>
+    static CartesianCoordinate<T> coordinateToAzimuthalEquidistantProjection(const CoordGeodetic &coordinate, const CoordGeodetic &centerCoordinate, double radius, float scale) {
+        CartesianCoordinate<T> cartesianCoordinate;
         cartesianCoordinate.x = radius * (cos(coordinate.latitude) * sin(coordinate.longitude - centerCoordinate.longitude));
         cartesianCoordinate.y = -radius * (cos(centerCoordinate.latitude) * sin(coordinate.latitude) - sin(centerCoordinate.latitude) * cos(coordinate.latitude) * cos(coordinate.longitude - centerCoordinate.longitude));
         return {cartesianCoordinate.x * scale, cartesianCoordinate.y * scale};
@@ -153,9 +146,6 @@ private:
     int mEarthradius;
     int mSatelliteAltitude;
     std::vector<CoordGeodetic> mCoordinates;
-    std::vector<CartesianCoordinateF> mMercatorCartesianCoordinates;
-    std::vector<CartesianCoordinateF> mEquidistantCartesianCoordinates;
-    CoordGeodetic mCenterCoordinate;
 
 
     static constexpr double PIXELTIME_MINUTES = 0.02564876089324618736383442265795;  //Just a rough calculation for every 10 pixel in minutes
