@@ -515,7 +515,7 @@ int main(int argc, char *argv[])
     if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
          //mThreadPool.addJob([=]() {
             SpreadImage spreadImage;
-            cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68);
+            cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68, mSettings.getProjectionScale());
             saveImage(mSettings.getOutputPath() + "composite68.jpg", composite);
         //});
     }
@@ -523,7 +523,7 @@ int main(int argc, char *argv[])
     if(images221.size() > 1 && images221.size() == geolocationCalculators221.size()) {
         //mThreadPool.addJob([=]() {
             SpreadImage spreadImage;
-            cv::Mat composite = spreadImage.mercatorProjection(images221, geolocationCalculators221);
+            cv::Mat composite = spreadImage.mercatorProjection(images221, geolocationCalculators221, mSettings.getProjectionScale());
             saveImage(mSettings.getOutputPath() + "composite221.jpg", composite);
         //});
     }
