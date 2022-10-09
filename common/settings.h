@@ -124,6 +124,8 @@ public: //getters
     bool generateComposite68() const { return mGenerateComposite68; }
     bool generateCompositeThermal() const { return mGenerateCompositeThermal; }
 
+    int getTimeOffsetM2Sec() const { return mTimeOffsetM2Sec; }
+
     int getCostasBandwidth() const { return mCostasBw; }
     int getRRCFilterOrder() const { return mRRCFilterOrder; }
     bool waitForlock() const { return mWaitForLock; }
@@ -190,6 +192,8 @@ private:
     bool mGenerateComposite221;
     bool mGenerateComposite68;
     bool mGenerateCompositeThermal;
+
+    int mTimeOffsetM2Sec;
 
     //ini section: Demodulator
     int mCostasBw;

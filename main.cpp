@@ -243,6 +243,9 @@ int main(int argc, char *argv[])
     TimeSpan passStartTime = mPacketParser.getFirstTimeStamp();
     TimeSpan passLength = mPacketParser.getLastTimeStamp() - passStartTime;
 
+    passStartTime = passStartTime.Add(TimeSpan(0, 0, mSettings.getTimeOffsetM2Sec()));
+    passLength = passLength.Add(TimeSpan(0, 0, mSettings.getTimeOffsetM2Sec()));
+
     passDate = passDate.AddHours(3); //Convert UTC 0 to Moscow time zone (UTC + 3)
 
     //Satellite's date time
