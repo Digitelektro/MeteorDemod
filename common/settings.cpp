@@ -68,6 +68,7 @@ void Settings::parseIni(const std::string &path)
     ini::extract(mIniParser.sections["Program"]["GenerateComposite125"], mGenerateComposite125, true);
     ini::extract(mIniParser.sections["Program"]["GenerateComposite221"], mGenerateComposite221, true);
     ini::extract(mIniParser.sections["Program"]["GenerateComposite68"], mGenerateComposite68, true);
+    ini::extract(mIniParser.sections["Program"]["GenerateCompositeThermal"], mGenerateCompositeThermal, true);
 
 
     ini::extract(mIniParser.sections["Demodulator"]["CostasBandwidth"], mCostasBw, 50);

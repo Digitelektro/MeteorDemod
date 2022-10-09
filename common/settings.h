@@ -120,6 +120,7 @@ public: //getters
     bool generateComposite125() const { return mGenerateComposite125; }
     bool generateComposite221() const { return mGenerateComposite221; }
     bool generateComposite68() const { return mGenerateComposite68; }
+    bool generateCompositeThermal() const { return mGenerateCompositeThermal; }
 
     int getCostasBandwidth() const { return mCostasBw; }
     int getRRCFilterOrder() const { return mRRCFilterOrder; }
@@ -184,6 +185,7 @@ private:
     bool mGenerateComposite125;
     bool mGenerateComposite221;
     bool mGenerateComposite68;
+    bool mGenerateCompositeThermal;
 
     //ini section: Demodulator
     int mCostasBw;

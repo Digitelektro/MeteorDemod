@@ -260,8 +260,8 @@ int main(int argc, char *argv[])
 
     if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel68Available()) {
         cv::Mat threatedImage1 = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
-	cv::Mat irImage = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
-	cv::Mat threatedImage2 = mPacketParser.getRGBImage(PacketParser::APID_64, PacketParser::APID_65, PacketParser::APID_68, mSettings.fillBackLines());
+        cv::Mat irImage = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
+        cv::Mat threatedImage2 = mPacketParser.getRGBImage(PacketParser::APID_64, PacketParser::APID_65, PacketParser::APID_68, mSettings.fillBackLines());
 
         cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
         cv::Mat rainOverlay = ThreatImage::irToRain(irImage, rainRef);
@@ -275,19 +275,19 @@ int main(int argc, char *argv[])
                 imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(threatedImage2, rainOverlay), "rain_125_"));
             }
 
-	    saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", threatedImage1);
-	    saveImage(mSettings.getOutputPath() + fileNameDate + "_125.bmp", threatedImage2);
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", threatedImage1);
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_125.bmp", threatedImage2);
         } else {
             std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
         }
 
         cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
-	cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
-	cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
+        cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
+        cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
 
-	saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
-	saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
-	saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
+        saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
 
         cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
         cv::Mat thermalImage = ThreatImage::irToTemperature(irImage, thermalRef);
@@ -490,6 +490,31 @@ int main(int argc, char *argv[])
             if(mSettings.mercatorProjection()) {
                 cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale());
                 saveImage(mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_68_composite.jpg", composite);
+            }
+        }
+    }
+
+    if(mSettings.generateCompositeThermal()) {
+        std::list<cv::Mat> images68;
+        std::list<PixelGeolocationCalculator> geolocationCalculators68;
+        searchForImages(images68, geolocationCalculators68, "68");
+
+        if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
+            if(mSettings.equadistantProjection() || mSettings.mercatorProjection()) {
+                for(auto &img : images68) {
+                    cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
+                    img = ThreatImage::irToTemperature(img, thermalRef);
+                }
+            }
+
+            SpreadImage spreadImage;
+            if(mSettings.equadistantProjection()) {
+                cv::Mat composite = spreadImage.equidistantProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale());
+                saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_thermal_composite.jpg", composite);
+            }
+            if(mSettings.mercatorProjection()) {
+                cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale());
+                saveImage(mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_thermal_composite.jpg", composite);
             }
         }
     }
