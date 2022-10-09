@@ -64,6 +64,8 @@ void Settings::parseIni(const std::string &path)
     ini::extract(mIniParser.sections["Program"]["NightPassTreshold"], mNightPassTreshold, 10.0f);
     ini::extract(mIniParser.sections["Program"]["ProjectionScale"], mProjectionScale, 0.75f);
     ini::extract(mIniParser.sections["Program"]["CompositeProjectionScale"], mCompositeProjectionScale, 0.75f);
+    ini::extract(mIniParser.sections["Program"]["CompositeAzimuthalEquidistantProjection"], mCompositeEquadistantProjection, true);
+    ini::extract(mIniParser.sections["Program"]["CompositeMercatorProjection"], mCompositeMercatorProjection, true);
     ini::extract(mIniParser.sections["Program"]["GenerateComposite123"], mGenerateComposite123, true);
     ini::extract(mIniParser.sections["Program"]["GenerateComposite125"], mGenerateComposite125, true);
     ini::extract(mIniParser.sections["Program"]["GenerateComposite221"], mGenerateComposite221, true);

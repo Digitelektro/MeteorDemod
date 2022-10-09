@@ -116,6 +116,8 @@ public: //getters
     float getProjectionScale() const {return mProjectionScale; }
     float getCompositeProjectionScale() const { return mCompositeProjectionScale; }
 
+    bool compositeEquadistantProjection() const { return mCompositeEquadistantProjection; }
+    bool compositeMercatorProjection() const { return mCompositeMercatorProjection; }
     bool generateComposite123() const { return mGenerateComposite123; }
     bool generateComposite125() const { return mGenerateComposite125; }
     bool generateComposite221() const { return mGenerateComposite221; }
@@ -181,6 +183,8 @@ private:
     float mProjectionScale;
     float mCompositeProjectionScale;
 
+    bool mCompositeEquadistantProjection;
+    bool mCompositeMercatorProjection;
     bool mGenerateComposite123;
     bool mGenerateComposite125;
     bool mGenerateComposite221;

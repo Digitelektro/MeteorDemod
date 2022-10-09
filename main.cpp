@@ -428,11 +428,11 @@ int main(int argc, char *argv[])
 
         if(images123.size() > 1 && images123.size() == geolocationCalculators123.size()) {
             SpreadImage spreadImage;
-            if(mSettings.equadistantProjection()) {
+            if(mSettings.compositeEquadistantProjection()) {
                 cv::Mat composite = spreadImage.equidistantProjection(images123, geolocationCalculators123, mSettings.getCompositeProjectionScale());
                 saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_123_composite.jpg", composite);
             }
-            if(mSettings.mercatorProjection()) {
+            if(mSettings.compositeMercatorProjection()) {
                 cv::Mat composite = spreadImage.mercatorProjection(images123, geolocationCalculators123, mSettings.getCompositeProjectionScale());
                 saveImage(mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_123_composite.jpg", composite);
             }
@@ -447,11 +447,11 @@ int main(int argc, char *argv[])
 
         if(images125.size() > 1 && images125.size() == geolocationCalculators125.size()) {
             SpreadImage spreadImage;
-            if(mSettings.equadistantProjection()) {
+            if(mSettings.compositeEquadistantProjection()) {
                 cv::Mat composite = spreadImage.equidistantProjection(images125, geolocationCalculators125, mSettings.getCompositeProjectionScale());
                 saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_125_composite.jpg", composite);
             }
-            if(mSettings.mercatorProjection()) {
+            if(mSettings.compositeMercatorProjection()) {
                 cv::Mat composite = spreadImage.mercatorProjection(images125, geolocationCalculators125, mSettings.getCompositeProjectionScale());
                 saveImage(mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_125_composite.jpg", composite);
             }
@@ -465,11 +465,11 @@ int main(int argc, char *argv[])
 
         if(images221.size() > 1 && images221.size() == geolocationCalculators221.size()) {
             SpreadImage spreadImage;
-            if(mSettings.equadistantProjection()) {
+            if(mSettings.compositeEquadistantProjection()) {
                 cv::Mat composite = spreadImage.equidistantProjection(images221, geolocationCalculators221, mSettings.getCompositeProjectionScale());
                 saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_221_composite.jpg", composite);
             }
-            if(mSettings.mercatorProjection()) {
+            if(mSettings.compositeMercatorProjection()) {
                 cv::Mat composite = spreadImage.mercatorProjection(images221, geolocationCalculators221, mSettings.getCompositeProjectionScale());
                 saveImage(mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_221_composite.jpg", composite);
             }
@@ -482,7 +482,7 @@ int main(int argc, char *argv[])
         searchForImages(images68, geolocationCalculators68, "68");
 
         if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
-            if(mSettings.equadistantProjection() || mSettings.mercatorProjection()) {
+            if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
                 for(auto &img : images68) {
                     cv::bitwise_not(img, img);
                     img = ThreatImage::gamma(img, 1.8);
@@ -490,11 +490,11 @@ int main(int argc, char *argv[])
             }
 
             SpreadImage spreadImage;
-            if(mSettings.equadistantProjection()) {
+            if(mSettings.compositeEquadistantProjection()) {
                 cv::Mat composite = spreadImage.equidistantProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale());
                 saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_68_composite.jpg", composite);
             }
-            if(mSettings.mercatorProjection()) {
+            if(mSettings.compositeMercatorProjection()) {
                 cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale());
                 saveImage(mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_68_composite.jpg", composite);
             }
@@ -507,7 +507,7 @@ int main(int argc, char *argv[])
         searchForImages(images68, geolocationCalculators68, "68");
 
         if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
-            if(mSettings.equadistantProjection() || mSettings.mercatorProjection()) {
+            if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
                 for(auto &img : images68) {
                     cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
                     img = ThreatImage::irToTemperature(img, thermalRef);
@@ -515,11 +515,11 @@ int main(int argc, char *argv[])
             }
 
             SpreadImage spreadImage;
-            if(mSettings.equadistantProjection()) {
+            if(mSettings.compositeEquadistantProjection()) {
                 cv::Mat composite = spreadImage.equidistantProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale());
                 saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_thermal_composite.jpg", composite);
             }
-            if(mSettings.mercatorProjection()) {
+            if(mSettings.compositeMercatorProjection()) {
                 cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale());
                 saveImage(mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_thermal_composite.jpg", composite);
             }
