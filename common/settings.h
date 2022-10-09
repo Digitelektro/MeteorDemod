@@ -114,6 +114,12 @@ public: //getters
     bool addRainOverlay() const { return mAddRainOverlay; }
     float getNightPassTreshold() const { return mNightPassTreshold; }
     float getProjectionScale() const {return mProjectionScale; }
+    float getCompositeProjectionScale() const { return mCompositeProjectionScale; }
+
+    bool generateComposite123() const { return mGenerateComposite123; }
+    bool generateComposite125() const { return mGenerateComposite125; }
+    bool generateComposite221() const { return mGenerateComposite221; }
+    bool generateComposite68() const { return mGenerateComposite68; }
 
     int getCostasBandwidth() const { return mCostasBw; }
     int getRRCFilterOrder() const { return mRRCFilterOrder; }
@@ -172,6 +178,12 @@ private:
     bool mAddRainOverlay;
     float mNightPassTreshold;
     float mProjectionScale;
+    float mCompositeProjectionScale;
+
+    bool mGenerateComposite123;
+    bool mGenerateComposite125;
+    bool mGenerateComposite221;
+    bool mGenerateComposite68;
 
     //ini section: Demodulator
     int mCostasBw;

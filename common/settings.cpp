@@ -63,6 +63,12 @@ void Settings::parseIni(const std::string &path)
     ini::extract(mIniParser.sections["Program"]["YawM2"], mM2Yaw, 0.0f);
     ini::extract(mIniParser.sections["Program"]["NightPassTreshold"], mNightPassTreshold, 10.0f);
     ini::extract(mIniParser.sections["Program"]["ProjectionScale"], mProjectionScale, 0.75f);
+    ini::extract(mIniParser.sections["Program"]["CompositeProjectionScale"], mCompositeProjectionScale, 0.75f);
+    ini::extract(mIniParser.sections["Program"]["GenerateComposite123"], mGenerateComposite123, true);
+    ini::extract(mIniParser.sections["Program"]["GenerateComposite125"], mGenerateComposite125, true);
+    ini::extract(mIniParser.sections["Program"]["GenerateComposite221"], mGenerateComposite221, true);
+    ini::extract(mIniParser.sections["Program"]["GenerateComposite68"], mGenerateComposite68, true);
+
 
     ini::extract(mIniParser.sections["Demodulator"]["CostasBandwidth"], mCostasBw, 50);
     ini::extract(mIniParser.sections["Demodulator"]["RRCFilterOrder"], mRRCFilterOrder, 64);
