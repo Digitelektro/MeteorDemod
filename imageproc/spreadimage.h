@@ -19,6 +19,7 @@ public:
     cv::Mat mercatorProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, float scale, ProgressCallback progressCallback = nullptr);
     cv::Mat mercatorProjection(const std::list<cv::Mat> &images, const std::list<PixelGeolocationCalculator> &geolocationCalculators, float scale, SpreadImage::ProgressCallback progressCallback = nullptr);
     cv::Mat equidistantProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, float scale, ProgressCallback progressCallback = nullptr);
+    cv::Mat equidistantProjection(const std::list<cv::Mat> &images, const std::list<PixelGeolocationCalculator> &geolocationCalculators, float scale, SpreadImage::ProgressCallback progressCallback = nullptr);
 
     cv::MarkerTypes stringToMarkerType(const std::string &markerType);
 

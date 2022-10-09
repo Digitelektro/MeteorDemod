@@ -3,6 +3,8 @@
 #include "settings.h"
 #include <opencv2/imgcodecs.hpp>
 #include <cmath>
+#include <numeric>
+//#include <opencv2/shape/shape_transformer.hpp>
 
 std::map<std::string, cv::MarkerTypes> SpreadImage::MarkerLookup {
     { "STAR", cv::MARKER_STAR },
@@ -328,6 +330,8 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat> &images, const 
         channels.push_back(mask);
         cv::merge(channels, mask);
 
+        cv::imwrite("mask.png", mask);
+
         mask.convertTo(mask, CV_32FC3, 1/255.0);
 
         int start0 = findImageStart(composite);
@@ -390,7 +394,7 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeol
     cv::Point2f srcTri[3];
     cv::Point2f dstTri[3];
 
-   const CoordGeodetic &center = geolocationCalculator.getCenterCoordinate();
+    const CoordGeodetic &center = geolocationCalculator.getCenterCoordinate();
 
     PixelGeolocationCalculator::CartesianCoordinateF topLeft = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator.getCoordinateTopLeft(), center, geolocationCalculator.getSatelliteHeight(), scale);
     PixelGeolocationCalculator::CartesianCoordinateF topRight = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator.getCoordinateTopRight(), center, geolocationCalculator.getSatelliteHeight(), scale);
@@ -468,6 +472,186 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeol
     }
 
     return newImage;
+}
+
+cv::Mat SpreadImage::equidistantProjection(const std::list<cv::Mat> &images, const std::list<PixelGeolocationCalculator> &geolocationCalculators, float scale, SpreadImage::ProgressCallback progressCallback)
+{
+    float MinX = std::numeric_limits<float>::max();
+    float MinY = std::numeric_limits<float>::max();
+    float MaxX = std::numeric_limits<float>::min();
+    float MaxY = std::numeric_limits<float>::min();
+    float corner;
+
+    if (images.size() != geolocationCalculators.size()) {
+        return cv::Mat();
+    }
+
+    std::list<CoordGeodetic> centerCoordinates;
+    for(const auto &c : geolocationCalculators) {
+        centerCoordinates.push_back(c.getCenterCoordinate());
+    }
+    CoordGeodetic sumOfCenterCoordinates = std::accumulate(centerCoordinates.begin(), centerCoordinates.end(), CoordGeodetic(0, 0, 0));
+
+    float centerLatitude = static_cast<float>(sumOfCenterCoordinates.latitude / centerCoordinates.size() * (180.0 / M_PI));
+    float centerLongitude = static_cast<float>(sumOfCenterCoordinates.longitude / centerCoordinates.size() * (180.0 / M_PI));
+    CoordGeodetic center = CoordGeodetic(centerLatitude, centerLongitude, 0);
+
+    std::list<PixelGeolocationCalculator>::const_iterator geolocationCalculator;
+    for (geolocationCalculator = geolocationCalculators.begin(); geolocationCalculator != geolocationCalculators.end(); ++geolocationCalculator) {
+
+        PixelGeolocationCalculator::CartesianCoordinateF topLeft = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator->getCoordinateTopLeft(), center, geolocationCalculator->getSatelliteHeight(), scale);
+        PixelGeolocationCalculator::CartesianCoordinateF topRight = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator->getCoordinateTopRight(), center, geolocationCalculator->getSatelliteHeight(), scale);
+        PixelGeolocationCalculator::CartesianCoordinateF bottomLeft = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator->getCoordinateBottomLeft(), center, geolocationCalculator->getSatelliteHeight(), scale);
+        PixelGeolocationCalculator::CartesianCoordinateF bottomRight = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator->getCoordinateBottomRight(), center, geolocationCalculator->getSatelliteHeight(),scale);
+
+        corner = std::min(topLeft.x, std::min(topRight.x, std::min(bottomLeft.x, bottomRight.x)));
+        MinX = corner < MinX ? corner : MinX;
+
+        corner = std::min(topLeft.y, std::min(topRight.y, std::min(bottomLeft.y, bottomRight.y)));
+        MinY = corner < MinY ? corner : MinY;
+
+        corner = std::max(topLeft.x, std::max(topRight.x, std::max(bottomLeft.x, bottomRight.x)));
+        MaxX = corner > MaxX ? corner : MaxX;
+
+        corner = std::max(topLeft.y, std::max(topRight.y, std::max(bottomLeft.y, bottomRight.y)));
+        MaxY = corner > MaxY ? corner : MaxY;
+    }
+
+    int width = static_cast<int>(std::abs(MaxX - MinX));
+    int height = static_cast<int>(std::abs(MaxY - MinY));
+    float xStart = std::min(MinX, MaxX);
+    float yStart = std::min(MinY, MaxY);
+
+    std::list<cv::Mat>::const_iterator image;
+    image = images.begin();
+    geolocationCalculator = geolocationCalculators.begin();
+
+    std::vector<cv::Mat> newImages;
+    PixelGeolocationCalculator::CartesianCoordinateF p1, p2, p3;
+
+    for (; image != images.end(); ++image, ++geolocationCalculator) {
+        cv::Mat newImage = cv::Mat::zeros(height, width, image->type());
+        int imageWithGeorefHeight = geolocationCalculator->getGeorefMaxImageHeight() < image->size().height ? geolocationCalculator->getGeorefMaxImageHeight() : image->size().height;
+
+        for (int y = 0; y < imageWithGeorefHeight - 10; y += 10)
+        {
+            if(progressCallback) {
+                progressCallback(static_cast<float>(y) / imageWithGeorefHeight * 100.0f);
+            }
+            for (int x = 0; x < image->size().width - 10; x += 10)
+            {
+                p1 = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator->getCoordinateAt(x, y), center, geolocationCalculator->getSatelliteHeight(), scale);
+                p2 = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator->getCoordinateAt(x + 10, y), center, geolocationCalculator->getSatelliteHeight(), scale);
+                p3 = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator->getCoordinateAt(x, y + 10), center, geolocationCalculator->getSatelliteHeight(), scale);
+
+
+                cv::Point2f srcTri[3];
+                cv::Point2f dstTri[3];
+
+                srcTri[0] = cv::Point2f( x, y );
+                srcTri[1] = cv::Point2f( x + 10, y );
+                srcTri[2] = cv::Point2f( x, y + 10 );
+
+                dstTri[0] = cv::Point2f(p1.x, p1.y);
+                dstTri[1] = cv::Point2f(p2.x, p2.y);
+                dstTri[2] = cv::Point2f(p3.x, p3.y);
+                affineTransform(*image, newImage, srcTri, dstTri, -xStart, -yStart);
+            }
+        }
+
+        newImages.push_back(newImage);
+    }
+
+    std::vector<cv::Mat>::iterator it = newImages.begin();
+
+    cv::Mat composite = it->clone();
+    ++it;
+
+    composite.convertTo(composite, CV_32FC3);
+
+    for(; it != newImages.end(); ++it) {
+        it->convertTo(*it, CV_32FC3);
+
+        cv::Mat grayScale1;
+        cv::Mat alpha1;
+        cv::bilateralFilter(composite, grayScale1, 19, 75, 75);
+        cv::cvtColor(grayScale1, grayScale1, cv::COLOR_BGR2GRAY);
+
+        cv::threshold(grayScale1, alpha1, 0, 255, cv::THRESH_BINARY);
+
+        cv::Mat grayScale2;
+        cv::Mat alpha2;
+        cv::bilateralFilter(*it, grayScale2, 19, 75, 75);
+        cv::cvtColor(grayScale2, grayScale2, cv::COLOR_BGR2GRAY);
+
+        cv::threshold(grayScale2, alpha2, 0, 255, cv::THRESH_BINARY);
+
+        cv::Mat mask;
+        cv::bitwise_and(alpha1, alpha2, mask);
+
+        std::vector<cv::Mat> channels;
+        channels.push_back(mask);
+        channels.push_back(mask);
+        channels.push_back(mask);
+        cv::merge(channels, mask);
+
+        cv::imwrite("mask.png", mask);
+
+        mask.convertTo(mask, CV_32FC3, 1/255.0);
+
+        int start0 = findImageStart(composite);
+        int start1 = findImageStart(*it);
+        bool leftToRight = start0 < start1;
+
+        cv::Mat blendmask = blendMask(mask, leftToRight);
+        cv::multiply(cv::Scalar::all(1.0)-blendmask, composite, composite);
+        blendmask = blendMask(mask, !leftToRight);
+        cv::multiply(cv::Scalar::all(1.0)-blendmask, *it, *it);
+
+        cv::add(composite, *it, composite);
+    }
+
+    cv::Mat mapOverlay = cv::Mat::zeros(height, width, composite.type());
+    Settings &settings = Settings::getInstance();
+
+    GIS::ShapeRenderer graticules(settings.getResourcesPath() + settings.getShapeGraticulesFile(), cv::Scalar(settings.getShapeGraticulesColor().B, settings.getShapeGraticulesColor().G, settings.getShapeGraticulesColor().R));
+    graticules.setThickness(settings.getShapeGraticulesThickness());
+    graticules.drawShapeEquidistant(mapOverlay, xStart, yStart, centerLatitude, centerLongitude, scale);
+
+    GIS::ShapeRenderer coastLines(settings.getResourcesPath() + settings.getShapeCoastLinesFile(), cv::Scalar(settings.getShapeCoastLinesColor().B, settings.getShapeCoastLinesColor().G, settings.getShapeCoastLinesColor().R));
+    coastLines.setThickness(settings.getShapeCoastLinesThickness());
+    coastLines.drawShapeEquidistant(mapOverlay, xStart, yStart, centerLatitude, centerLongitude, scale);
+
+    GIS::ShapeRenderer countryBorders(settings.getResourcesPath() + settings.getShapeBoundaryLinesFile(), cv::Scalar(settings.getShapeBoundaryLinesColor().B, settings.getShapeBoundaryLinesColor().G, settings.getShapeBoundaryLinesColor().R));
+    countryBorders.setThickness(settings.getShapeBoundaryLinesThickness());
+    countryBorders.drawShapeEquidistant(mapOverlay, xStart, yStart, centerLatitude, centerLongitude, scale);
+
+    GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(), cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
+    cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
+    cities.setTextFieldName(settings.getShapePopulatedPlacesTextColumnName());
+    cities.setFontScale(settings.getShapePopulatedPlacesFontScale());
+    cities.setThickness(settings.getShapePopulatedPlacesThickness());
+    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
+    cities.drawShapeEquidistant(mapOverlay, xStart, yStart, centerLatitude, centerLongitude, scale);
+
+    if(settings.drawReceiver()) {
+        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({settings.getReceiverLatitude(), settings.getReceiverLongitude(), 0}, center, mEarthRadius + mAltitude, scale);
+        coordinate.x -= xStart;
+        coordinate.y -= yStart;
+        cv::drawMarker(mapOverlay, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(0, 0, 0), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness() + 1);
+        cv::drawMarker(mapOverlay, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(settings.getReceiverColor().B, settings.getReceiverColor().G, settings.getReceiverColor().R), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness());
+    }
+
+    cv::Mat mapOverlayGrayScale;
+    cv::Mat alpha;
+    cv::cvtColor(mapOverlay, mapOverlayGrayScale, cv::COLOR_BGR2GRAY);
+    cv::threshold(mapOverlayGrayScale, alpha, 0, 255, cv::THRESH_BINARY);
+    alpha.convertTo(alpha, CV_8SC3);
+
+    //add map overlay
+    cv::bitwise_and(mapOverlay, mapOverlay, composite, alpha);
+
+    return composite;
 }
 
 void SpreadImage::affineTransform(const cv::Mat& src, cv::Mat& dst, const cv::Point2f source[], const cv::Point2f destination[], int originX, int originY)
