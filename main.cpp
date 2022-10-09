@@ -509,7 +509,7 @@ void searchForImages(std::list<cv::Mat> &imagesOut, std::list<PixelGeolocationCa
         std::time_t cftime = std::chrono::system_clock::to_time_t((ftime));
         std::time_t fileCreatedSec = now - cftime;
 
-        if(entry.path().extension() == ".gcp" && fileCreatedSec < 18000*1000) { //5h
+        if(entry.path().extension() == ".gcp" && fileCreatedSec < 18000) { //5h
             std::string folder = entry.path().parent_path().generic_string();
             std::string gcpFileName = entry.path().filename().generic_string();
             std::string fileNameBase = gcpFileName.substr(0, gcpFileName.size() - 4);
