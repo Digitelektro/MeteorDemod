@@ -482,6 +482,13 @@ int main(int argc, char *argv[])
         searchForImages(images68, geolocationCalculators68, "68");
 
         if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
+            if(mSettings.equadistantProjection() || mSettings.mercatorProjection()) {
+                for(auto &img : images68) {
+                    cv::bitwise_not(img, img);
+                    img = ThreatImage::gamma(img, 1.8);
+                }
+            }
+
             SpreadImage spreadImage;
             if(mSettings.equadistantProjection()) {
                 cv::Mat composite = spreadImage.equidistantProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale());
