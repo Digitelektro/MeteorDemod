@@ -330,8 +330,6 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat> &images, const 
         channels.push_back(mask);
         cv::merge(channels, mask);
 
-        cv::imwrite("mask.png", mask);
-
         mask.convertTo(mask, CV_32FC3, 1/255.0);
 
         int start0 = findImageStart(composite);
@@ -594,8 +592,6 @@ cv::Mat SpreadImage::equidistantProjection(const std::list<cv::Mat> &images, con
         channels.push_back(mask);
         channels.push_back(mask);
         cv::merge(channels, mask);
-
-        cv::imwrite("mask.png", mask);
 
         mask.convertTo(mask, CV_32FC3, 1/255.0);
 
