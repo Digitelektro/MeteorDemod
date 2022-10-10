@@ -235,36 +235,17 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
 
 bool GIS::ShapeRenderer::equidistantCheck(float latitude, float longitude, float centerLatitude, float centerLongitude)
 {
-    bool longResult = true;
-    bool latResult = true;
+    //Degree To radian
+    latitude = M_PI * latitude / 180.0f;
+    longitude = M_PI * longitude / 180.0f;
+    centerLatitude= M_PI * centerLatitude / 180.0f;
+    centerLongitude= M_PI * centerLongitude / 180.0f;
 
-    int minLongitude = static_cast<int>(centerLongitude - 90);
-    int maxLongitude = static_cast<int>(centerLongitude + 90);
-    int minLatitude = static_cast<int>(centerLatitude - 45);
-    int maxLatitude = static_cast<int>(centerLatitude + 45);
-
-    //Normalize
-    minLongitude = ((minLongitude + 540) % 360 - 180);
-    maxLongitude = ((maxLongitude + 540) % 360 - 180);
-    minLatitude = ((minLatitude + 270) % 180 - 90);
-    maxLatitude = ((maxLatitude + 270) % 180 - 90);
-
-    if(maxLatitude < minLatitude)
+    float deltaSigma = std::sin(centerLatitude) * std::sin(latitude) + std::cos(latitude) * std::cos(longitude - centerLongitude);
+    if (deltaSigma < 0.0)
     {
-        latResult = latitude > minLatitude || latitude < maxLatitude;
-    }
-    else
-    {
-        latResult = latitude > minLatitude && latitude < maxLatitude;
-    }
-    if(maxLongitude < minLongitude)
-    {
-        longResult = longitude < minLongitude || longitude < maxLongitude;
-    }
-    else
-    {
-        longResult = longitude > minLongitude && longitude < maxLongitude;
+        return false;
     }
 
-    return longResult && latResult;
+    return true;
 }
