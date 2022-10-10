@@ -265,14 +265,14 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat> &images, const 
     std::vector<cv::Mat> newImages;
     PixelGeolocationCalculator::CartesianCoordinateF p1, p2, p3;
 
-    for (; image != images.end(); ++image, ++geolocationCalculator) {
+    for (int i = 0; image != images.end(); ++image, ++geolocationCalculator, i++) {
         cv::Mat newImage = cv::Mat::zeros(height, width, image->type());
         int imageWithGeorefHeight = geolocationCalculator->getGeorefMaxImageHeight() < image->size().height ? geolocationCalculator->getGeorefMaxImageHeight() : image->size().height;
 
         for (int y = 0; y < imageWithGeorefHeight - 10; y += 10)
         {
             if(progressCallback) {
-                progressCallback(static_cast<float>(y) / imageWithGeorefHeight * 100.0f);
+                progressCallback((static_cast<float>(y) + (i * imageWithGeorefHeight)) / (images.size() * imageWithGeorefHeight)  * 100.0f);
             }
             for (int x = 0; x < image->size().width - 10; x += 10)
             {
@@ -529,14 +529,14 @@ cv::Mat SpreadImage::equidistantProjection(const std::list<cv::Mat> &images, con
     std::vector<cv::Mat> newImages;
     PixelGeolocationCalculator::CartesianCoordinateF p1, p2, p3;
 
-    for (; image != images.end(); ++image, ++geolocationCalculator) {
+    for (int i = 0; image != images.end(); ++image, ++geolocationCalculator, i++) {
         cv::Mat newImage = cv::Mat::zeros(height, width, image->type());
         int imageWithGeorefHeight = geolocationCalculator->getGeorefMaxImageHeight() < image->size().height ? geolocationCalculator->getGeorefMaxImageHeight() : image->size().height;
 
         for (int y = 0; y < imageWithGeorefHeight - 10; y += 10)
         {
             if(progressCallback) {
-                progressCallback(static_cast<float>(y) / imageWithGeorefHeight * 100.0f);
+                progressCallback((static_cast<float>(y) + (i * imageWithGeorefHeight)) / (images.size() * imageWithGeorefHeight)  * 100.0f);
             }
             for (int x = 0; x < image->size().width - 10; x += 10)
             {
