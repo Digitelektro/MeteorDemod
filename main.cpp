@@ -418,6 +418,7 @@ int main(int argc, char *argv[])
     std::cout << "Generate images" << std::endl;
     mThreadPool.waitForAllJobsDone();
     std::cout << "Generate images done" << std::endl;
+    imagesToSpread.clear();
 
     std::cout << "Generate composite images" << std::endl;
     std::time_t now = std::time(nullptr);

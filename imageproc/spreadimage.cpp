@@ -313,6 +313,7 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat> &images, const 
         cv::cvtColor(grayScale1, grayScale1, cv::COLOR_BGR2GRAY);
 
         cv::threshold(grayScale1, alpha1, 0, 255, cv::THRESH_BINARY);
+        grayScale1.release();
 
         cv::Mat grayScale2;
         cv::Mat alpha2;
@@ -320,9 +321,12 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat> &images, const 
         cv::cvtColor(grayScale2, grayScale2, cv::COLOR_BGR2GRAY);
 
         cv::threshold(grayScale2, alpha2, 0, 255, cv::THRESH_BINARY);
+        grayScale2.release();
 
         cv::Mat mask;
         cv::bitwise_and(alpha1, alpha2, mask);
+        alpha1.release();
+        alpha2.release();
 
         std::vector<cv::Mat> channels;
         channels.push_back(mask);
@@ -576,6 +580,7 @@ cv::Mat SpreadImage::equidistantProjection(const std::list<cv::Mat> &images, con
         cv::cvtColor(grayScale1, grayScale1, cv::COLOR_BGR2GRAY);
 
         cv::threshold(grayScale1, alpha1, 0, 255, cv::THRESH_BINARY);
+        grayScale1.release();
 
         cv::Mat grayScale2;
         cv::Mat alpha2;
@@ -583,9 +588,12 @@ cv::Mat SpreadImage::equidistantProjection(const std::list<cv::Mat> &images, con
         cv::cvtColor(grayScale2, grayScale2, cv::COLOR_BGR2GRAY);
 
         cv::threshold(grayScale2, alpha2, 0, 255, cv::THRESH_BINARY);
+        grayScale2.release();
 
         cv::Mat mask;
         cv::bitwise_and(alpha1, alpha2, mask);
+        alpha1.release();
+        alpha2.release();
 
         std::vector<cv::Mat> channels;
         channels.push_back(mask);
