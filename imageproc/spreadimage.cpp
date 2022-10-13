@@ -348,20 +348,18 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat> &images, const 
         cv::add(composite, *it, composite);
     }
 
-
-    cv::Mat mapOverlay = cv::Mat::zeros(height, width, composite.type());
     Settings &settings = Settings::getInstance();
     GIS::ShapeRenderer graticules(settings.getResourcesPath() + settings.getShapeGraticulesFile(), cv::Scalar(settings.getShapeGraticulesColor().B, settings.getShapeGraticulesColor().G, settings.getShapeGraticulesColor().R));
     graticules.setThickness(settings.getShapeGraticulesThickness());
-    graticules.drawShapeMercator(mapOverlay, xStart, yStart, scale);
+    graticules.drawShapeMercator(composite, xStart, yStart, scale);
 
     GIS::ShapeRenderer coastLines(settings.getResourcesPath() + settings.getShapeCoastLinesFile(), cv::Scalar(settings.getShapeCoastLinesColor().B, settings.getShapeCoastLinesColor().G, settings.getShapeCoastLinesColor().R));
     coastLines.setThickness(settings.getShapeCoastLinesThickness());
-    coastLines.drawShapeMercator(mapOverlay, xStart, yStart, scale);
+    coastLines.drawShapeMercator(composite, xStart, yStart, scale);
 
     GIS::ShapeRenderer countryBorders(settings.getResourcesPath() + settings.getShapeBoundaryLinesFile(), cv::Scalar(settings.getShapeBoundaryLinesColor().B, settings.getShapeBoundaryLinesColor().G, settings.getShapeBoundaryLinesColor().R));
     countryBorders.setThickness(settings.getShapeBoundaryLinesThickness());
-    countryBorders.drawShapeMercator(mapOverlay, xStart, yStart, scale);
+    countryBorders.drawShapeMercator(composite, xStart, yStart, scale);
 
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(), cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
     cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
@@ -369,24 +367,15 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat> &images, const 
     cities.setFontScale(settings.getShapePopulatedPlacesFontScale());
     cities.setThickness(settings.getShapePopulatedPlacesThickness());
     cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
-    cities.drawShapeMercator(mapOverlay, xStart, yStart, scale);
+    cities.drawShapeMercator(composite, xStart, yStart, scale);
 
     if(settings.drawReceiver()) {
         PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({settings.getReceiverLatitude(), settings.getReceiverLongitude(), 0}, mEarthRadius + mAltitude, scale);
         coordinate.x -= xStart;
         coordinate.y -= yStart;
-        cv::drawMarker(mapOverlay, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(0, 0, 0), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness() + 1);
-        cv::drawMarker(mapOverlay, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(settings.getReceiverColor().B, settings.getReceiverColor().G, settings.getReceiverColor().R), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness());
+        cv::drawMarker(composite, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(0, 0, 0), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness() + 1);
+        cv::drawMarker(composite, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(settings.getReceiverColor().B, settings.getReceiverColor().G, settings.getReceiverColor().R), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness());
     }
-
-    cv::Mat mapOverlayGrayScale;
-    cv::Mat alpha;
-    cv::cvtColor(mapOverlay, mapOverlayGrayScale, cv::COLOR_BGR2GRAY);
-    cv::threshold(mapOverlayGrayScale, alpha, 0, 255, cv::THRESH_BINARY);
-    alpha.convertTo(alpha, CV_8SC3);
-
-    //add map overlay
-    cv::bitwise_and(mapOverlay, mapOverlay, composite, alpha);
 
     return composite;
 }
@@ -615,20 +604,19 @@ cv::Mat SpreadImage::equidistantProjection(const std::list<cv::Mat> &images, con
         cv::add(composite, *it, composite);
     }
 
-    cv::Mat mapOverlay = cv::Mat::zeros(height, width, composite.type());
     Settings &settings = Settings::getInstance();
 
     GIS::ShapeRenderer graticules(settings.getResourcesPath() + settings.getShapeGraticulesFile(), cv::Scalar(settings.getShapeGraticulesColor().B, settings.getShapeGraticulesColor().G, settings.getShapeGraticulesColor().R));
     graticules.setThickness(settings.getShapeGraticulesThickness());
-    graticules.drawShapeEquidistant(mapOverlay, xStart, yStart, centerLatitude, centerLongitude, scale);
+    graticules.drawShapeEquidistant(composite, xStart, yStart, centerLatitude, centerLongitude, scale);
 
     GIS::ShapeRenderer coastLines(settings.getResourcesPath() + settings.getShapeCoastLinesFile(), cv::Scalar(settings.getShapeCoastLinesColor().B, settings.getShapeCoastLinesColor().G, settings.getShapeCoastLinesColor().R));
     coastLines.setThickness(settings.getShapeCoastLinesThickness());
-    coastLines.drawShapeEquidistant(mapOverlay, xStart, yStart, centerLatitude, centerLongitude, scale);
+    coastLines.drawShapeEquidistant(composite, xStart, yStart, centerLatitude, centerLongitude, scale);
 
     GIS::ShapeRenderer countryBorders(settings.getResourcesPath() + settings.getShapeBoundaryLinesFile(), cv::Scalar(settings.getShapeBoundaryLinesColor().B, settings.getShapeBoundaryLinesColor().G, settings.getShapeBoundaryLinesColor().R));
     countryBorders.setThickness(settings.getShapeBoundaryLinesThickness());
-    countryBorders.drawShapeEquidistant(mapOverlay, xStart, yStart, centerLatitude, centerLongitude, scale);
+    countryBorders.drawShapeEquidistant(composite, xStart, yStart, centerLatitude, centerLongitude, scale);
 
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(), cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
     cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
@@ -636,24 +624,15 @@ cv::Mat SpreadImage::equidistantProjection(const std::list<cv::Mat> &images, con
     cities.setFontScale(settings.getShapePopulatedPlacesFontScale());
     cities.setThickness(settings.getShapePopulatedPlacesThickness());
     cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
-    cities.drawShapeEquidistant(mapOverlay, xStart, yStart, centerLatitude, centerLongitude, scale);
+    cities.drawShapeEquidistant(composite, xStart, yStart, centerLatitude, centerLongitude, scale);
 
     if(settings.drawReceiver()) {
         PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({settings.getReceiverLatitude(), settings.getReceiverLongitude(), 0}, center, mEarthRadius + mAltitude, scale);
         coordinate.x -= xStart;
         coordinate.y -= yStart;
-        cv::drawMarker(mapOverlay, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(0, 0, 0), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness() + 1);
-        cv::drawMarker(mapOverlay, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(settings.getReceiverColor().B, settings.getReceiverColor().G, settings.getReceiverColor().R), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness());
+        cv::drawMarker(composite, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(0, 0, 0), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness() + 1);
+        cv::drawMarker(composite, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(settings.getReceiverColor().B, settings.getReceiverColor().G, settings.getReceiverColor().R), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness());
     }
-
-    cv::Mat mapOverlayGrayScale;
-    cv::Mat alpha;
-    cv::cvtColor(mapOverlay, mapOverlayGrayScale, cv::COLOR_BGR2GRAY);
-    cv::threshold(mapOverlayGrayScale, alpha, 0, 255, cv::THRESH_BINARY);
-    alpha.convertTo(alpha, CV_8SC3);
-
-    //add map overlay
-    cv::bitwise_and(mapOverlay, mapOverlay, composite, alpha);
 
     return composite;
 }
