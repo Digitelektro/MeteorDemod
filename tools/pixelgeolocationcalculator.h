@@ -10,26 +10,36 @@
 #include "vector.h"
 #include "tlereader.h"
 
+inline static CoordGeodetic operator+(const CoordGeodetic& coord1, const CoordGeodetic& coord2)
+{
+    CoordGeodetic result(0, 0, 0) ;
+    result.latitude = coord1.latitude + coord2.latitude ;
+    result.longitude = coord1.longitude + coord2.longitude;
+    return result;
+}
+
 class PixelGeolocationCalculator
 {
 public:
     template<typename T>
-    struct CartesianCoordinateT {
+    struct CartesianCoordinate {
         T x;
         T y;
     };
 
     template<typename T>
-    friend std::ostream& operator << (std::ostream &o, const CartesianCoordinateT<T> &coord) {
+    friend std::ostream& operator << (std::ostream &o, const CartesianCoordinate<T> &coord) {
         return o << "x: " << coord.x << "\ty: " << coord.y;
     }
 
-    typedef CartesianCoordinateT<int> CartesianCoordinate;
-    typedef CartesianCoordinateT<float> CartesianCoordinateF;
-    typedef CartesianCoordinateT<double> CartesianCoordinateD;
+    typedef CartesianCoordinate<float> CartesianCoordinateF;
+    typedef CartesianCoordinate<double> CartesianCoordinateD;
 
 private:
     PixelGeolocationCalculator();
+
+public:
+    static PixelGeolocationCalculator load(const std::string &path);
 
 public:
     PixelGeolocationCalculator(const TleReader::TLE &tle, const DateTime &passStart, const TimeSpan &passLength, double scanAngle, double roll, double pitch, double yaw, int earthRadius = 6378, int satelliteAltitude = 825);
@@ -37,69 +47,53 @@ public:
     void calcPixelCoordinates();
 
     void save(const std::string &path);
-    void load(const std::string &path);
 
 public:
 
     int getGeorefMaxImageHeight() const {
-        return (mEquidistantCartesianCoordinates.size() / 158) * 10;
+        return (mCoordinates.size() / 158) * 10;
     }
 
-    const CartesianCoordinateF &getTopLeftEquidistant() const {
-        return mEquidistantCartesianCoordinates[0];
+     const CoordGeodetic &getCenterCoordinate() const {
+        return mCoordinates[mCoordinates.size() / 2 + 79];
     }
 
-    const CartesianCoordinateF &getTopRightEquidistant() const {
-        return mEquidistantCartesianCoordinates[157];
+    inline const CoordGeodetic &getCoordinateAt(unsigned int x, unsigned int y) const {
+        return mCoordinates[((x / 10)) + ((y / 10) * 158)];
     }
 
-    const CartesianCoordinateF &getBottomLeftEquidistant() const {
-        return mEquidistantCartesianCoordinates[mEquidistantCartesianCoordinates.size() - 158];
+    inline const CoordGeodetic &getCoordinateTopLeft() const {
+        return mCoordinates[0];
     }
 
-    const CartesianCoordinateF &getBottomRightEquidistant() const {
-        return mEquidistantCartesianCoordinates[mEquidistantCartesianCoordinates.size() - 1];
+    inline const CoordGeodetic &getCoordinateTopRight() const {
+        return mCoordinates[157];
     }
 
-    const CartesianCoordinateF &getEquidistantAt(unsigned int x, unsigned int y) const {
-        return mEquidistantCartesianCoordinates[((x / 10)) + ((y / 10) * 158)];
+    inline const CoordGeodetic &getCoordinateBottomLeft() const {
+        return mCoordinates[mCoordinates.size() - 158];
     }
 
-    const CartesianCoordinateF &getTopLeftMercator() const {
-        return mMercatorCartesianCoordinates[0];
+    inline const CoordGeodetic &getCoordinateBottomRight() const {
+        return mCoordinates[mCoordinates.size() - 1];
     }
 
-    const CartesianCoordinateF &getTopRightMercator() const {
-        return mMercatorCartesianCoordinates[157];
+    inline int getEarthRadius() const {
+        return mEarthradius;
     }
 
-    const CartesianCoordinateF &getBottomLeftMercator() const {
-        return mMercatorCartesianCoordinates[mMercatorCartesianCoordinates.size() - 158];
+    inline int getSatelliteAltitude() const {
+        return mSatelliteAltitude;
     }
 
-    const CartesianCoordinateF &getBottomRightMercator() const {
-        return mMercatorCartesianCoordinates[mMercatorCartesianCoordinates.size() - 1];
-    }
-
-    const CoordGeodetic &getCenterCoordinate() const {
-        return mCenterCoordinate;
-    }
-
-    const CartesianCoordinateF &getMercatorAt(unsigned int x, unsigned int y) const {
-        return mMercatorCartesianCoordinates[((x / 10)) + ((y / 10) * 158)];
+    inline int getSatelliteHeight() const {
+        return mEarthradius + mSatelliteAltitude;
     }
 
 public:
-    static CartesianCoordinateF coordinateToMercatorProjection(double latitude, double longitude, double radius) {
-        return coordinateToMercatorProjection(CoordGeodetic(latitude, longitude, 0), radius);
-    }
-
-    static CartesianCoordinateF coordinateToAzimuthalEquidistantProjection(double latitude, double longitude, double centerLatitude, double centerLongitude, double radius) {
-        return coordinateToAzimuthalEquidistantProjection(CoordGeodetic(latitude, longitude, 0), CoordGeodetic(centerLatitude, centerLongitude, 0), radius);
-    }
-
-    static CartesianCoordinateF coordinateToMercatorProjection(const CoordGeodetic &coordinate, double radius) {
-        CartesianCoordinateF cartesianCoordinate;
+    template<typename T>
+    static CartesianCoordinate<T> coordinateToMercatorProjection(const CoordGeodetic &coordinate, double radius, float scale) {
+        CartesianCoordinate<T> cartesianCoordinate;
         CoordGeodetic correctedCoordinate = coordinate;
 
         if (coordinate.latitude > degreeToRadian(85.05113))
@@ -113,14 +107,15 @@ public:
 
         cartesianCoordinate.x = radius * (M_PI + correctedCoordinate.longitude);
         cartesianCoordinate.y = radius * (M_PI - log(tan(M_PI / 4.0 + (correctedCoordinate.latitude) / 2.0)));
-        return  cartesianCoordinate;
+        return {cartesianCoordinate.x * scale, cartesianCoordinate.y * scale};
     }
 
-    static CartesianCoordinateF coordinateToAzimuthalEquidistantProjection(const CoordGeodetic &coordinate, const CoordGeodetic &centerCoordinate, double radius) {
-        CartesianCoordinateF cartesianCoordinate;
+    template<typename T>
+    static CartesianCoordinate<T> coordinateToAzimuthalEquidistantProjection(const CoordGeodetic &coordinate, const CoordGeodetic &centerCoordinate, double radius, float scale) {
+        CartesianCoordinate<T> cartesianCoordinate;
         cartesianCoordinate.x = radius * (cos(coordinate.latitude) * sin(coordinate.longitude - centerCoordinate.longitude));
         cartesianCoordinate.y = -radius * (cos(centerCoordinate.latitude) * sin(coordinate.latitude) - sin(centerCoordinate.latitude) * cos(coordinate.latitude) * cos(coordinate.longitude - centerCoordinate.longitude));
-        return cartesianCoordinate;
+        return {cartesianCoordinate.x * scale, cartesianCoordinate.y * scale};
     }
 
 private:
@@ -132,12 +127,12 @@ private:
     double calculateBearingAngle(const CoordGeodetic &start, const CoordGeodetic &end);
     Matrix4x4 lookAt(const Vector3 &position, const Vector3 &target, const Vector3 &up);
 
-    static double degreeToRadian(double degree)
+    static inline double degreeToRadian(double degree)
     {
         return (M_PI * degree / 180.0);
     }
 
-    static double radioanToDegree(double radian)
+    static inline double radioanToDegree(double radian)
     {
         return radian * (180.0 / M_PI);
     }
@@ -151,9 +146,6 @@ private:
     int mEarthradius;
     int mSatelliteAltitude;
     std::vector<CoordGeodetic> mCoordinates;
-    std::vector<CartesianCoordinateF> mMercatorCartesianCoordinates;
-    std::vector<CartesianCoordinateF> mEquidistantCartesianCoordinates;
-    CoordGeodetic mCenterCoordinate;
 
 
     static constexpr double PIXELTIME_MINUTES = 0.02564876089324618736383442265795;  //Just a rough calculation for every 10 pixel in minutes

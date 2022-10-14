@@ -1,5 +1,33 @@
 #include "pixelgeolocationcalculator.h"
+#include "settings.h"
 #include <fstream>
+
+PixelGeolocationCalculator PixelGeolocationCalculator::load(const std::string &path)
+{
+    Settings &settings = Settings::getInstance();
+    TleReader reader (settings.getTlePath());
+    reader.processFile();
+    TleReader::TLE tle;
+    reader.getTLE("METEOR-M 2", tle);
+    PixelGeolocationCalculator calc(tle, DateTime(), TimeSpan(0), settings.getM2ScanAngle(), settings.getM2Roll(), settings.getM2Pitch(), settings.getM2Yaw());
+    std::ifstream gcpReader(path);
+
+    if(!gcpReader) {
+        std::cout << "Open GCP file failed";
+        return calc;
+    }
+
+    calc.mCoordinates.clear();
+
+    int i, n;
+    double longitude, latitude;
+    while (gcpReader >> i >> n >> latitude >> longitude)
+    {
+        calc.mCoordinates.push_back(CoordGeodetic(latitude, longitude, 0, false));
+    }
+
+    return calc;
+}
 
 PixelGeolocationCalculator::PixelGeolocationCalculator(const TleReader::TLE &tle, const DateTime &passStart, const TimeSpan &passLength, double scanAngle, double roll, double pitch, double yaw, int earthRadius, int satelliteAltitude)
     : mTle(tle.satellite, tle.line1, tle.line2)
@@ -51,8 +79,6 @@ void PixelGeolocationCalculator::calcPixelCoordinates()
             mCoordinates.push_back(coordinate);
         }
     }
-
-    calculateCartesionCoordinates();
 }
 
 void PixelGeolocationCalculator::save(const std::string &path)
@@ -77,50 +103,6 @@ void PixelGeolocationCalculator::save(const std::string &path)
     }
 
     file.close();
-}
-
-void PixelGeolocationCalculator::load(const std::string &path)
-{
-    std::ifstream gcpReader(path);
-
-    if(!gcpReader) {
-        std::cout << "Open GCP file failed";
-        return;
-    }
-
-    mCoordinates.clear();
-
-    int i, n;
-    double longitude, latitude;
-    while (gcpReader >> i >> n >> latitude >> longitude)
-    {
-        mCoordinates.push_back(CoordGeodetic(latitude, longitude, 0, false));
-    }
-
-    calculateCartesionCoordinates();
-}
-
-void PixelGeolocationCalculator::calculateCartesionCoordinates()
-{
-    double radius = mEarthradius + mSatelliteAltitude;
-
-    mMercatorCartesianCoordinates.clear();
-    mEquidistantCartesianCoordinates.clear();
-
-    mMercatorCartesianCoordinates.resize(mCoordinates.size());
-    mEquidistantCartesianCoordinates.resize(mCoordinates.size());
-
-    mCenterCoordinate.latitude = mCoordinates[mCoordinates.size() / 2 + 79].latitude;
-    mCenterCoordinate.longitude = mCoordinates[mCoordinates.size() / 2 + 79].longitude;
-
-    for (unsigned int i = 0; i < mMercatorCartesianCoordinates.size(); i++) {
-
-        //Azimuthal Equidistant Projection
-        mEquidistantCartesianCoordinates[i] = coordinateToAzimuthalEquidistantProjection(mCoordinates[i], mCenterCoordinate, radius);
-
-        //Mercator Projection
-        mMercatorCartesianCoordinates[i] = coordinateToMercatorProjection(mCoordinates[i], radius);
-    }
 }
 
 Vector PixelGeolocationCalculator::locationToVector(const CoordGeodetic &location)

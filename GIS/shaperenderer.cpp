@@ -25,7 +25,7 @@ void GIS::ShapeRenderer::setTextFieldName(const std::string &name)
     mTextFieldName = name;
 }
 
-void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float yStart)
+void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float yStart, float scale)
 {
     if(!load()) {
         return;
@@ -43,7 +43,7 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                     for(polyLineIterator->begin(); *polyLineIterator != polyLineIterator->end(); ++(*polyLineIterator)) {
                         //std::cout << polyLineIterator->point.x << " " << polyLineIterator->point.y << std::endl;
 
-                        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection(polyLineIterator->point.y, polyLineIterator->point.x, mEarthRadius + mAltitude);
+                        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({polyLineIterator->point.y, polyLineIterator->point.x, 0}, mEarthRadius + mAltitude, scale);
 
                         coordinate.x += -xStart;
                         coordinate.y += -yStart;
@@ -65,7 +65,7 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                 for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator)) {
                     ShapeReader::Point point(*recordIterator);
 
-                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection(point.y, point.x, mEarthRadius + mAltitude);
+                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({point.y, point.x, 0}, mEarthRadius + mAltitude, scale);
                     coordinate.x += -xStart;
                     coordinate.y += -yStart;
 
@@ -83,7 +83,7 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                     ShapeReader::Point point(*recordIterator);
                     std::vector<std::string> fieldValues = dbFilereader.getFieldValues(i);
 
-                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection(point.y, point.x, mEarthRadius + mAltitude);
+                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({point.y, point.x, 0}, mEarthRadius + mAltitude, scale);
                     coordinate.x += -xStart;
                     coordinate.y += -yStart;
 
@@ -124,7 +124,7 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
     }
 }
 
-void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float yStart, float centerLatitude, float centerLongitude)
+void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float yStart, float centerLatitude, float centerLongitude, float scale)
 {
     if(!load()) {
         return;
@@ -142,7 +142,7 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                     for(polyLineIterator->begin(); *polyLineIterator != polyLineIterator->end(); ++(*polyLineIterator)) {
                         //std::cout << polyLineIterator->point.x << " " << polyLineIterator->point.y << std::endl;
 
-                        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(polyLineIterator->point.y, polyLineIterator->point.x, centerLatitude, centerLongitude, mEarthRadius + mAltitude);
+                        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({polyLineIterator->point.y, polyLineIterator->point.x, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
 
                         coordinate.x += -xStart;
                         coordinate.y += -yStart;
@@ -166,7 +166,7 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                 for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator)) {
                     ShapeReader::Point point(*recordIterator);
 
-                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(point.y, point.x, centerLatitude, centerLongitude, mEarthRadius + mAltitude);
+                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({point.y, point.x, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
                     coordinate.x += -xStart;
                     coordinate.y += -yStart;
 
@@ -188,7 +188,7 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                     ShapeReader::Point point(*recordIterator);
                     std::vector<std::string> fieldValues = dbFilereader.getFieldValues(i);
 
-                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection(point.y, point.x, centerLatitude, centerLongitude, mEarthRadius + mAltitude);
+                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({point.y, point.x, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
                     coordinate.x += -xStart;
                     coordinate.y += -yStart;
 
@@ -235,36 +235,17 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
 
 bool GIS::ShapeRenderer::equidistantCheck(float latitude, float longitude, float centerLatitude, float centerLongitude)
 {
-    bool longResult = true;
-    bool latResult = true;
+    //Degree To radian
+    latitude = M_PI * latitude / 180.0f;
+    longitude = M_PI * longitude / 180.0f;
+    centerLatitude= M_PI * centerLatitude / 180.0f;
+    centerLongitude= M_PI * centerLongitude / 180.0f;
 
-    int minLongitude = static_cast<int>(centerLongitude - 90);
-    int maxLongitude = static_cast<int>(centerLongitude + 90);
-    int minLatitude = static_cast<int>(centerLatitude - 45);
-    int maxLatitude = static_cast<int>(centerLatitude + 45);
-
-    //Normalize
-    minLongitude = ((minLongitude + 540) % 360 - 180);
-    maxLongitude = ((maxLongitude + 540) % 360 - 180);
-    minLatitude = ((minLatitude + 270) % 180 - 90);
-    maxLatitude = ((maxLatitude + 270) % 180 - 90);
-
-    if(maxLatitude < minLatitude)
+    float deltaSigma = std::sin(centerLatitude) * std::sin(latitude) + std::cos(latitude) * std::cos(longitude - centerLongitude);
+    if (deltaSigma < 0.0)
     {
-        latResult = latitude > minLatitude || latitude < maxLatitude;
-    }
-    else
-    {
-        latResult = latitude > minLatitude && latitude < maxLatitude;
-    }
-    if(maxLongitude < minLongitude)
-    {
-        longResult = longitude < minLongitude || longitude < maxLongitude;
-    }
-    else
-    {
-        longResult = longitude > minLongitude && longitude < maxLongitude;
+        return false;
     }
 
-    return longResult && latResult;
+    return true;
 }

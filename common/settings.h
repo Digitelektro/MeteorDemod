@@ -113,6 +113,18 @@ public: //getters
     bool spreadImage() const { return mSpreadImage; }
     bool addRainOverlay() const { return mAddRainOverlay; }
     float getNightPassTreshold() const { return mNightPassTreshold; }
+    float getProjectionScale() const {return mProjectionScale; }
+    float getCompositeProjectionScale() const { return mCompositeProjectionScale; }
+
+    bool compositeEquadistantProjection() const { return mCompositeEquadistantProjection; }
+    bool compositeMercatorProjection() const { return mCompositeMercatorProjection; }
+    bool generateComposite123() const { return mGenerateComposite123; }
+    bool generateComposite125() const { return mGenerateComposite125; }
+    bool generateComposite221() const { return mGenerateComposite221; }
+    bool generateComposite68() const { return mGenerateComposite68; }
+    bool generateCompositeThermal() const { return mGenerateCompositeThermal; }
+
+    int getTimeOffsetM2Sec() const { return mTimeOffsetM2Sec; }
 
     int getCostasBandwidth() const { return mCostasBw; }
     int getRRCFilterOrder() const { return mRRCFilterOrder; }
@@ -170,6 +182,18 @@ private:
     bool mSpreadImage;
     bool mAddRainOverlay;
     float mNightPassTreshold;
+    float mProjectionScale;
+    float mCompositeProjectionScale;
+
+    bool mCompositeEquadistantProjection;
+    bool mCompositeMercatorProjection;
+    bool mGenerateComposite123;
+    bool mGenerateComposite125;
+    bool mGenerateComposite221;
+    bool mGenerateComposite68;
+    bool mGenerateCompositeThermal;
+
+    int mTimeOffsetM2Sec;
 
     //ini section: Demodulator
     int mCostasBw;
