@@ -309,7 +309,7 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat> &images, const 
 
         cv::Mat grayScale1;
         cv::Mat alpha1;
-        cv::bilateralFilter(composite, grayScale1, 19, 75, 75);
+        cv::medianBlur(composite, grayScale1, 5);
         cv::cvtColor(grayScale1, grayScale1, cv::COLOR_BGR2GRAY);
 
         cv::threshold(grayScale1, alpha1, 0, 255, cv::THRESH_BINARY);
@@ -317,7 +317,7 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat> &images, const 
 
         cv::Mat grayScale2;
         cv::Mat alpha2;
-        cv::bilateralFilter(*it, grayScale2, 19, 75, 75);
+        cv::medianBlur(*it, grayScale2, 5);
         cv::cvtColor(grayScale2, grayScale2, cv::COLOR_BGR2GRAY);
 
         cv::threshold(grayScale2, alpha2, 0, 255, cv::THRESH_BINARY);
@@ -565,7 +565,7 @@ cv::Mat SpreadImage::equidistantProjection(const std::list<cv::Mat> &images, con
 
         cv::Mat grayScale1;
         cv::Mat alpha1;
-        cv::bilateralFilter(composite, grayScale1, 19, 75, 75);
+        cv::medianBlur(composite, grayScale1, 5);
         cv::cvtColor(grayScale1, grayScale1, cv::COLOR_BGR2GRAY);
 
         cv::threshold(grayScale1, alpha1, 0, 255, cv::THRESH_BINARY);
@@ -573,7 +573,7 @@ cv::Mat SpreadImage::equidistantProjection(const std::list<cv::Mat> &images, con
 
         cv::Mat grayScale2;
         cv::Mat alpha2;
-        cv::bilateralFilter(*it, grayScale2, 19, 75, 75);
+        cv::medianBlur(*it, grayScale2, 5);
         cv::cvtColor(grayScale2, grayScale2, cv::COLOR_BGR2GRAY);
 
         cv::threshold(grayScale2, alpha2, 0, 255, cv::THRESH_BINARY);

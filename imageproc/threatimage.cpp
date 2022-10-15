@@ -82,6 +82,31 @@ cv::Mat ThreatImage::irToRain(const cv::Mat &irImage, const cv::Mat &ref)
     return rainImage;
 }
 
+cv::Mat ThreatImage::invertIR(const cv::Mat &image)
+{
+    cv::Mat result = cv::Mat::zeros(image.size(), image.type());
+    cv::Mat grayScale;
+    cv::Mat alpha;
+
+    cv::cvtColor(image, grayScale, cv::COLOR_BGR2GRAY);
+    std::vector<std::vector<cv::Point> > contours;
+    cv::findContours(grayScale, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+    for (std::size_t i = 0; i < contours.size(); i++) {
+        cv::drawContours(grayScale, contours, i, cv::Scalar(255, 255, 255), -1);
+    }
+
+    //create mask
+    cv::threshold(grayScale, alpha, 0, 255, cv::THRESH_BINARY);
+
+    //invert colors
+    cv::bitwise_not(image, image);
+
+    //apply mask
+    cv::bitwise_and(image, image, result, alpha);
+
+    return result;
+}
+
 cv::Mat ThreatImage::addRainOverlay(const cv::Mat &image, const cv::Mat &rain)
 {
     cv::Mat rainImage = cv::Mat::zeros(image.size(), image.type());
