@@ -7,6 +7,8 @@
 #include "deinterleaver.h"
 #include "pixelgeolocationcalculator.h"
 
+#include <map>
+#include <tuple>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -296,7 +298,7 @@ int main(int argc, char *argv[])
         cv::Mat thermalImage = ThreatImage::irToTemperature(irImage, thermalRef);
         imagesToSpread.push_back(ImageForSpread(thermalImage, "thermal_"));
 
-        cv::bitwise_not(irImage, irImage);
+        irImage = ThreatImage::invertIR(irImage);
         irImage = ThreatImage::gamma(irImage, 1.8);
         imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
 
@@ -351,7 +353,7 @@ int main(int argc, char *argv[])
         cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
         cv::Mat rainOverlay = ThreatImage::irToRain(ch68, rainRef);
 
-        cv::bitwise_not(ch68, ch68);
+        ch68 = ThreatImage::invertIR(ch68);
         ch68 = ThreatImage::gamma(ch68, 1.8);
         imagesToSpread.push_back(ImageForSpread(ch68, "IR_"));
 
@@ -506,7 +508,7 @@ int main(int argc, char *argv[])
         if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
             if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
                 for(auto &img : images68) {
-                    cv::bitwise_not(img, img);
+                    img = ThreatImage::invertIR(img);
                     img = ThreatImage::gamma(img, 1.8);
                 }
             }
@@ -569,6 +571,7 @@ int main(int argc, char *argv[])
 void searchForImages(std::list<cv::Mat> &imagesOut, std::list<PixelGeolocationCalculator> &geolocationCalculatorsOut, const std::string &channelName)
 {
     std::time_t now = std::time(nullptr);
+    std::map<std::time_t, std::tuple<std::string, std::string>> map;
 
     for(const auto & entry : fs::directory_iterator(mSettings.getOutputPath())) {
         auto ftime = fs::last_write_time(entry);
@@ -584,25 +587,27 @@ void searchForImages(std::list<cv::Mat> &imagesOut, std::list<PixelGeolocationCa
                 fs::path fileJPG(folder + "/" + fileNameBase + "_" + channelName + ".jpg");
 
                 if(fs::exists(fileJPG)) {
-                    std::cout << "" << fileJPG << " " << std::endl;
-
-                    imagesOut.emplace_back(cv::imread(fileJPG.generic_string()));
-                    geolocationCalculatorsOut.emplace_back(PixelGeolocationCalculator::load(entry.path().generic_string()));
-
+                    map[cftime] = std::make_tuple(entry.path().generic_string(), fileJPG);
                     break;
                 }
 
                 fs::path fileBMP(folder + "/" + fileNameBase + "_" + channelName + ".bmp");
 
                 if(fs::exists(fileBMP)) {
-                    std::cout << "" << fileBMP << " " << std::endl;
-
-                    imagesOut.emplace_back(cv::imread(fileBMP.generic_string()));
-                    geolocationCalculatorsOut.emplace_back(PixelGeolocationCalculator::load(entry.path().generic_string()));
+                    map[cftime] = std::make_tuple(entry.path().generic_string(), fileBMP);
 
                     break;
                 }
             } while(false);
+        }
+    }
+
+    if(map.size() > 2) {
+        for (auto const &[time, paths] : map) {
+            std::cout << std::get<1>(paths) << std::endl;
+
+            geolocationCalculatorsOut.emplace_back(PixelGeolocationCalculator::load(std::get<0>(paths)));
+            imagesOut.emplace_back(cv::imread(std::get<1>(paths)));
         }
     }
 }
