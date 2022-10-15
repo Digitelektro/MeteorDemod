@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
         cv::Mat thermalImage = ThreatImage::irToTemperature(irImage, thermalRef);
         imagesToSpread.push_back(ImageForSpread(thermalImage, "thermal_"));
 
-        cv::bitwise_not(irImage, irImage);
+        irImage = ThreatImage::invertIR(irImage);
         irImage = ThreatImage::gamma(irImage, 1.8);
         imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
 
@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
         cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
         cv::Mat rainOverlay = ThreatImage::irToRain(ch68, rainRef);
 
-        cv::bitwise_not(ch68, ch68);
+        ch68 = ThreatImage::invertIR(ch68);
         ch68 = ThreatImage::gamma(ch68, 1.8);
         imagesToSpread.push_back(ImageForSpread(ch68, "IR_"));
 
@@ -508,7 +508,7 @@ int main(int argc, char *argv[])
         if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
             if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
                 for(auto &img : images68) {
-                    cv::bitwise_not(img, img);
+                    img = ThreatImage::invertIR(img);
                     img = ThreatImage::gamma(img, 1.8);
                 }
             }

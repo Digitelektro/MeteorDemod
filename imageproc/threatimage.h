@@ -21,6 +21,7 @@ public:
     static void fillBlackLines(cv::Mat &image, int minimumHeight, int maximumHeight);
     static cv::Mat irToTemperature(const cv::Mat &irImage, const cv::Mat &ref);
     static cv::Mat irToRain(const cv::Mat &irImage, const cv::Mat &ref);
+    static cv::Mat invertIR(const cv::Mat &image);
     static cv::Mat addRainOverlay(const cv::Mat &image, const cv::Mat &rain);
     static cv::Mat gamma(const cv::Mat &image, double gamma);
     static void drawWatermark(cv::Mat image, const std::string &date);
