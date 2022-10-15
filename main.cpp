@@ -602,7 +602,7 @@ void searchForImages(std::list<cv::Mat> &imagesOut, std::list<PixelGeolocationCa
         }
     }
 
-    if(map.size() > 2) {
+    if(map.size() > 1) {
         for (auto const &[time, paths] : map) {
             std::cout << std::get<1>(paths) << std::endl;
 
