@@ -7,6 +7,8 @@
 #include "deinterleaver.h"
 #include "pixelgeolocationcalculator.h"
 
+#include <map>
+#include <tuple>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -569,6 +571,7 @@ int main(int argc, char *argv[])
 void searchForImages(std::list<cv::Mat> &imagesOut, std::list<PixelGeolocationCalculator> &geolocationCalculatorsOut, const std::string &channelName)
 {
     std::time_t now = std::time(nullptr);
+    std::map<std::time_t, std::tuple<std::string, std::string>> map;
 
     for(const auto & entry : fs::directory_iterator(mSettings.getOutputPath())) {
         auto ftime = fs::last_write_time(entry);
@@ -584,25 +587,27 @@ void searchForImages(std::list<cv::Mat> &imagesOut, std::list<PixelGeolocationCa
                 fs::path fileJPG(folder + "/" + fileNameBase + "_" + channelName + ".jpg");
 
                 if(fs::exists(fileJPG)) {
-                    std::cout << "" << fileJPG << " " << std::endl;
-
-                    imagesOut.emplace_back(cv::imread(fileJPG.generic_string()));
-                    geolocationCalculatorsOut.emplace_back(PixelGeolocationCalculator::load(entry.path().generic_string()));
-
+                    map[cftime] = std::make_tuple(entry.path().generic_string(), fileJPG);
                     break;
                 }
 
                 fs::path fileBMP(folder + "/" + fileNameBase + "_" + channelName + ".bmp");
 
                 if(fs::exists(fileBMP)) {
-                    std::cout << "" << fileBMP << " " << std::endl;
-
-                    imagesOut.emplace_back(cv::imread(fileBMP.generic_string()));
-                    geolocationCalculatorsOut.emplace_back(PixelGeolocationCalculator::load(entry.path().generic_string()));
+                    map[cftime] = std::make_tuple(entry.path().generic_string(), fileBMP);
 
                     break;
                 }
             } while(false);
+        }
+    }
+
+    if(map.size() > 2) {
+        for (auto const &[time, paths] : map) {
+            std::cout << std::get<1>(paths) << std::endl;
+
+            geolocationCalculatorsOut.emplace_back(PixelGeolocationCalculator::load(std::get<0>(paths)));
+            imagesOut.emplace_back(cv::imread(std::get<1>(paths)));
         }
     }
 }
