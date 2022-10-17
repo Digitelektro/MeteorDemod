@@ -299,7 +299,9 @@ int main(int argc, char *argv[])
         imagesToSpread.push_back(ImageForSpread(thermalImage, "thermal_"));
 
         irImage = ThreatImage::invertIR(irImage);
-        irImage = ThreatImage::gamma(irImage, 1.8);
+        irImage = ThreatImage::gamma(irImage, 1.4);
+        irImage = ThreatImage::contrast(irImage, 1.3, -40);
+        irImage = ThreatImage::sharpen(irImage);
         imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
 
         if(mSettings.addRainOverlay()) {
@@ -354,7 +356,9 @@ int main(int argc, char *argv[])
         cv::Mat rainOverlay = ThreatImage::irToRain(ch68, rainRef);
 
         ch68 = ThreatImage::invertIR(ch68);
-        ch68 = ThreatImage::gamma(ch68, 1.8);
+        ch68 = ThreatImage::gamma(ch68, 1.4);
+        ch68 = ThreatImage::contrast(ch68, 1.3, -40);
+        ch68 = ThreatImage::sharpen(ch68);
         imagesToSpread.push_back(ImageForSpread(ch68, "IR_"));
 
         if(mSettings.addRainOverlay()) {
@@ -509,7 +513,9 @@ int main(int argc, char *argv[])
             if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
                 for(auto &img : images68) {
                     img = ThreatImage::invertIR(img);
-                    img = ThreatImage::gamma(img, 1.8);
+                    img = ThreatImage::gamma(img, 1.4);
+                    img = ThreatImage::contrast(img, 1.3, -40);
+                    img = ThreatImage::sharpen(img);
                 }
             }
 

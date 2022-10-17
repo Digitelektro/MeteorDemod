@@ -141,6 +141,21 @@ cv::Mat ThreatImage::gamma(const cv::Mat &image, double gamma)
        return  newImage;
 }
 
+cv::Mat ThreatImage::sharpen(const cv::Mat &image)
+{
+    cv::Mat result(image.size().height, image.size().width, image.type());
+    cv::GaussianBlur(image, result, cv::Size(0, 0), 7);
+    cv::addWeighted(image, 1.5, result, -0.5, 0, result);
+    return result;
+}
+
+cv::Mat ThreatImage::contrast(const cv::Mat &image, double contrast, double brightness)
+{
+    cv::Mat result;
+    image.convertTo(result, image.type(), contrast, brightness);
+    return result;
+}
+
 void ThreatImage::drawWatermark(cv::Mat image, const std::string &date)
 {
     int x = 0;

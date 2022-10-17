@@ -24,6 +24,10 @@ public:
     static cv::Mat invertIR(const cv::Mat &image);
     static cv::Mat addRainOverlay(const cv::Mat &image, const cv::Mat &rain);
     static cv::Mat gamma(const cv::Mat &image, double gamma);
+    static cv::Mat sharpen(const cv::Mat &image);
+    
+    //Constrast 0.0-inf, brightnes -225 to 255
+    static cv::Mat contrast(const cv::Mat &image, double contrast, double brightness);
     static void drawWatermark(cv::Mat image, const std::string &date);
     static bool isNightPass(const cv::Mat &image, float treshold);
 
