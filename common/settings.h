@@ -123,6 +123,7 @@ public: //getters
     bool generateComposite221() const { return mGenerateComposite221; }
     bool generateComposite68() const { return mGenerateComposite68; }
     bool generateCompositeThermal() const { return mGenerateCompositeThermal; }
+    bool generateComposite68Rain() const { return mGenerateComposite68Rain; }
 
     int getTimeOffsetM2Sec() const { return mTimeOffsetM2Sec; }
 
@@ -192,6 +193,7 @@ private:
     bool mGenerateComposite221;
     bool mGenerateComposite68;
     bool mGenerateCompositeThermal;
+    bool mGenerateComposite68Rain;
 
     int mTimeOffsetM2Sec;
 

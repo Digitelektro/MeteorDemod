@@ -557,6 +557,42 @@ int main(int argc, char *argv[])
         }
     }
 
+    if(mSettings.generateComposite68Rain()) {
+        std::list<cv::Mat> images68;
+        std::list<PixelGeolocationCalculator> geolocationCalculators68;
+        searchForImages(images68, geolocationCalculators68, "68");
+
+        if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
+            if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
+                cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
+                for(auto &img : images68) {
+                    cv::Mat rainOverlay = ThreatImage::irToRain(img, rainRef);
+                    img = ThreatImage::invertIR(img);
+                    img = ThreatImage::gamma(img, 1.4);
+                    img = ThreatImage::contrast(img, 1.3, -40);
+                    img = ThreatImage::sharpen(img);
+                    img = ThreatImage::addRainOverlay(img, rainOverlay);
+                }
+            }
+
+            SpreadImage spreadImage;
+            if(mSettings.compositeEquadistantProjection()) {
+                cv::Mat composite = spreadImage.equidistantProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress){
+                    std::cout << "Generate equidistant channel 68 rain composite image " << (int)progress << "% \t\t\r" << std::flush;
+                });
+                std::cout << std::endl;
+                saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_68_rain_composite.jpg", composite);
+            }
+            if(mSettings.compositeMercatorProjection()) {
+                cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress){
+                    std::cout << "Generate mercator channel 68 rain composite image " << (int)progress << "% \t\t\r" << std::flush;
+                });
+                std::cout << std::endl;
+                saveImage(mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_68_rain_composite.jpg", composite);
+            }
+        }
+    }
+
     if(mSettings.generateCompositeThermal()) {
         std::list<cv::Mat> images68;
         std::list<PixelGeolocationCalculator> geolocationCalculators68;
@@ -564,8 +600,8 @@ int main(int argc, char *argv[])
 
         if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
             if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
+                cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
                 for(auto &img : images68) {
-                    cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
                     img = ThreatImage::irToTemperature(img, thermalRef);
                 }
             }
