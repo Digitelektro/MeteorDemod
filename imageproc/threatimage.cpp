@@ -144,7 +144,7 @@ cv::Mat ThreatImage::gamma(const cv::Mat &image, double gamma)
 cv::Mat ThreatImage::sharpen(const cv::Mat &image)
 {
     cv::Mat result(image.size().height, image.size().width, image.type());
-    cv::GaussianBlur(image, result, cv::Size(0, 0), 7);
+    cv::GaussianBlur(image, result, cv::Size(0, 0), 11);
     cv::addWeighted(image, 1.5, result, -0.5, 0, result);
     return result;
 }
