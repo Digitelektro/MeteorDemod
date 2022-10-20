@@ -161,6 +161,7 @@ void ThreatImage::drawWatermark(cv::Mat image, const std::string &date)
     int x = 0;
     int y = 0;
     Settings &settings = Settings::getInstance();
+    double fontScale = cv::getFontScaleFromHeight(cv::FONT_ITALIC, settings.getWaterMarkSize(), settings.getWaterMarkLineWidth());
 
     std::string watermarkText = settings.getWaterMarkText();
 
@@ -180,7 +181,7 @@ void ThreatImage::drawWatermark(cv::Mat image, const std::string &date)
     std::istringstream istream(watermarkText);
     while (getline(istream, line, '\n')) {
         int baseLine;
-        cv::Size textSize = cv::getTextSize(line, cv::FONT_ITALIC, settings.getWaterMarkSize(), 10, &baseLine);
+        cv::Size textSize = cv::getTextSize(line, cv::FONT_ITALIC, fontScale, settings.getWaterMarkLineWidth(), &baseLine);
         int textHeight = baseLine + textSize.height;
         int margin = textSize.height;
 
@@ -211,8 +212,8 @@ void ThreatImage::drawWatermark(cv::Mat image, const std::string &date)
             break;
         }
 
-        cv::putText(image, line, cv::Point2d(x, y), cv::FONT_HERSHEY_COMPLEX, settings.getWaterMarkSize(), cv::Scalar(0,0,0), 10+1, cv::LINE_AA);
-        cv::putText(image, line, cv::Point2d(x, y), cv::FONT_HERSHEY_COMPLEX, settings.getWaterMarkSize(), cv::Scalar(settings.getWaterMarkColor().B, settings.getWaterMarkColor().G, settings.getWaterMarkColor().R), 10, cv::LINE_AA);
+        cv::putText(image, line, cv::Point2d(x, y), cv::FONT_HERSHEY_COMPLEX, fontScale, cv::Scalar(0,0,0), settings.getWaterMarkLineWidth()+1, cv::LINE_AA);
+        cv::putText(image, line, cv::Point2d(x, y), cv::FONT_HERSHEY_COMPLEX, fontScale, cv::Scalar(settings.getWaterMarkColor().B, settings.getWaterMarkColor().G, settings.getWaterMarkColor().R), settings.getWaterMarkLineWidth(), cv::LINE_AA);
 
         n++;
     }

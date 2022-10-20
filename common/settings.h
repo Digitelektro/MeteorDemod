@@ -136,6 +136,7 @@ public: //getters
     const std::string &getWaterMarkPlace() const { return mWaterMarkPlace; }
     const HTMLColor &getWaterMarkColor() const { return mWaterMarkColor; }
     int getWaterMarkSize() const { return mWaterMarkSize; }
+    int getWaterMarkLineWidth() const { return mWaterMarkLineWidth; }
     const std::string &getWaterMarkText() const { return mWaterMarkText; }
 
     bool drawReceiver() const { return mDrawreceiver; }

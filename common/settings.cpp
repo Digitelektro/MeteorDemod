@@ -82,7 +82,8 @@ void Settings::parseIni(const std::string &path)
 
     ini::extract(mIniParser.sections["Watermark"]["Place"], mWaterMarkPlace);
     ini::extract(mIniParser.sections["Watermark"]["Color"], mWaterMarkColor, HTMLColor(0xAD880C));
-    ini::extract(mIniParser.sections["Watermark"]["Size"], mWaterMarkSize, 5);
+    ini::extract(mIniParser.sections["Watermark"]["Size"], mWaterMarkSize, 40);
+    ini::extract(mIniParser.sections["Watermark"]["Width"], mWaterMarkLineWidth, 3);
     ini::extract(mIniParser.sections["Watermark"]["Text"], mWaterMarkText);
 
     ini::extract(mIniParser.sections["ReceiverLocation"]["Draw"], mDrawreceiver, false);
