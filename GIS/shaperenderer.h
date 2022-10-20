@@ -30,8 +30,11 @@ public: //setters
     void setPointRadius(int radius) {
         mPointRadius = radius;
     }
-    void setFontScale(int scale) {
-        mFontScale = scale;
+    void setFontHeight(int height) {
+        mFontHeight = height;
+    }
+    void setFontLineWidth(int width) {
+        mFontLineWidth = width;
     }
 
 private:
@@ -45,7 +48,8 @@ private:
     std::string mTextFieldName;
     int mThicknes;
     int mPointRadius;
-    int mFontScale;
+    int mFontHeight;
+    int mFontLineWidth;
 };
 
 } //namespace GIS

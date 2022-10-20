@@ -123,6 +123,7 @@ public: //getters
     bool generateComposite221() const { return mGenerateComposite221; }
     bool generateComposite68() const { return mGenerateComposite68; }
     bool generateCompositeThermal() const { return mGenerateCompositeThermal; }
+    bool generateComposite68Rain() const { return mGenerateComposite68Rain; }
 
     int getTimeOffsetM2Sec() const { return mTimeOffsetM2Sec; }
 
@@ -135,6 +136,7 @@ public: //getters
     const std::string &getWaterMarkPlace() const { return mWaterMarkPlace; }
     const HTMLColor &getWaterMarkColor() const { return mWaterMarkColor; }
     int getWaterMarkSize() const { return mWaterMarkSize; }
+    int getWaterMarkLineWidth() const { return mWaterMarkLineWidth; }
     const std::string &getWaterMarkText() const { return mWaterMarkText; }
 
     bool drawReceiver() const { return mDrawreceiver; }
@@ -159,8 +161,8 @@ public: //getters
 
     const std::string &getShapePopulatedPlacesFile() const { return mShapePopulatedPlacesFile; }
     const HTMLColor &getShapePopulatedPlacesColor() const { return mShapePopulatedPlacesColor; }
-    int getShapePopulatedPlacesThickness() const { return mShapePopulatedPlacesThickness; }
-    int getShapePopulatedPlacesFontScale() const { return mShapePopulatedPlacesFontScale; }
+    int getShapePopulatedPlacesFontWidth() const { return mShapePopulatedPlacesFontWidth; }
+    int getShapePopulatedPlacesFontSize() const { return mShapePopulatedPlacesFontSize; }
     int getShapePopulatedPlacesPointradius() const { return mShapePopulatedPlacesPointradius; }
     const std::string &getShapePopulatedPlacesFilterColumnName() const { return mShapePopulatedPlacesFilterColumnName; }
     int getShapePopulatedPlacesNumbericFilter() const { return mShapePopulatedPlacesNumbericFilter; }
@@ -192,6 +194,7 @@ private:
     bool mGenerateComposite221;
     bool mGenerateComposite68;
     bool mGenerateCompositeThermal;
+    bool mGenerateComposite68Rain;
 
     int mTimeOffsetM2Sec;
 
@@ -207,6 +210,7 @@ private:
     std::string mWaterMarkPlace;
     HTMLColor mWaterMarkColor;
     int mWaterMarkSize;
+    int mWaterMarkLineWidth;
     std::string mWaterMarkText;
 
     //ini section: ReceiverLocation
@@ -236,8 +240,8 @@ private:
     //ini section: ShapeFilePopulatedPlaces
     std::string mShapePopulatedPlacesFile;
     HTMLColor mShapePopulatedPlacesColor;
-    int mShapePopulatedPlacesThickness;
-    int mShapePopulatedPlacesFontScale;
+    int mShapePopulatedPlacesFontWidth;
+    int mShapePopulatedPlacesFontSize;
     int mShapePopulatedPlacesPointradius;
     std::string mShapePopulatedPlacesFilterColumnName;
     int mShapePopulatedPlacesNumbericFilter;

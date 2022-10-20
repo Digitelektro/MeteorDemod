@@ -155,9 +155,9 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(), cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
     cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
     cities.setTextFieldName(settings.getShapePopulatedPlacesTextColumnName());
-    cities.setFontScale(settings.getShapePopulatedPlacesFontScale());
-    cities.setThickness(settings.getShapePopulatedPlacesThickness());
-    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
+    cities.setFontHeight(settings.getShapePopulatedPlacesFontSize() * scale);
+    cities.setFontLineWidth(settings.getShapePopulatedPlacesFontWidth());
+    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius() * scale);
     cities.drawShapeMercator(newImage, xStart, yStart, scale);
 
     if(settings.drawReceiver()) {
@@ -172,15 +172,22 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
 }
 
 // Concept for using ThinPlateSplineShapeTransform. Unfortunately it is extremly slow for big images
-/*cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, ProgressCallback progressCallback)
+/*cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, float scale, ProgressCallback progressCallback)
 {
     cv::Point2f srcTri[3];
     cv::Point2f dstTri[3];
 
-    double MinX = std::min(geolocationCalculator.getTopLeftMercator().x, std::min(geolocationCalculator.getTopRightMercator().x, std::min(geolocationCalculator.getBottomLeftMercator().x, geolocationCalculator.getBottomRightMercator().x)));
-    double MinY = std::min(geolocationCalculator.getTopLeftMercator().y, std::min(geolocationCalculator.getTopRightMercator().y, std::min(geolocationCalculator.getBottomLeftMercator().y, geolocationCalculator.getBottomRightMercator().y)));
-    double MaxX = std::max(geolocationCalculator.getTopLeftMercator().x, std::max(geolocationCalculator.getTopRightMercator().x, std::max(geolocationCalculator.getBottomLeftMercator().x, geolocationCalculator.getBottomRightMercator().x)));
-    double MaxY = std::max(geolocationCalculator.getTopLeftMercator().y, std::max(geolocationCalculator.getTopRightMercator().y, std::max(geolocationCalculator.getBottomLeftMercator().y, geolocationCalculator.getBottomRightMercator().y)));
+    const CoordGeodetic &center = geolocationCalculator.getCenterCoordinate();
+
+    PixelGeolocationCalculator::CartesianCoordinateF topLeft = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator.getCoordinateTopLeft(), center, geolocationCalculator.getSatelliteHeight(), scale);
+    PixelGeolocationCalculator::CartesianCoordinateF topRight = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator.getCoordinateTopRight(), center, geolocationCalculator.getSatelliteHeight(), scale);
+    PixelGeolocationCalculator::CartesianCoordinateF bottomLeft = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator.getCoordinateBottomLeft(), center, geolocationCalculator.getSatelliteHeight(), scale);
+    PixelGeolocationCalculator::CartesianCoordinateF bottomRight = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator.getCoordinateBottomRight(), center, geolocationCalculator.getSatelliteHeight(), scale);
+
+    double MinX = std::min(topLeft.x, std::min(topRight.x, std::min(bottomLeft.x, bottomRight.x)));
+    double MinY = std::min(topLeft.y, std::min(topRight.y, std::min(bottomLeft.y, bottomRight.y)));
+    double MaxX = std::max(topLeft.x, std::max(topRight.x, std::max(bottomLeft.x, bottomRight.x)));
+    double MaxY = std::max(topLeft.y, std::max(topRight.y, std::max(bottomLeft.y, bottomRight.y)));
 
     int width = static_cast<int>(std::abs(MaxX - MinX));
     int height = static_cast<int>(std::abs(MaxY - MinY));
@@ -190,16 +197,17 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
 
     int imageWithGeorefHeight = geolocationCalculator.getGeorefMaxImageHeight() < image.size().height ? geolocationCalculator.getGeorefMaxImageHeight() : image.size().height;
 
-    cv::Mat newImage;
-    cv::Mat paddedImage = cv::Mat::zeros(height, width, image.type());
-    image.copyTo(paddedImage.rowRange(0, image.size().height).colRange(0, image.size().width));
+    cv::Mat newImage = cv::Mat::zeros(height, width, image.type());
+    //cv::Mat paddedImage = cv::Mat::zeros(height, width, image.type());
+    //image.copyTo(paddedImage.rowRange(0, image.size().height).colRange(0, image.size().width));
 
-    auto tpsTransform = cv::createThinPlateSplineShapeTransformer();
+    auto tpsTransform = cv::createAffineTransformer(true);
     std::vector<cv::Point2f> sourcePoints, targetPoints;
 
     for (int y = 0; y < imageWithGeorefHeight; y += 50) {
         for (int x = 0; x < image.size().width; x += 50) {
-            const PixelGeolocationCalculator::CartesianCoordinateF p1 = geolocationCalculator.getMercatorAt(x, y);
+            const PixelGeolocationCalculator::CartesianCoordinateF p1 = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(geolocationCalculator.getCoordinateAt(x, y), center, geolocationCalculator.getSatelliteHeight(), scale);
+
             sourcePoints.push_back(cv::Point2f(x, y));
             targetPoints.push_back(cv::Point2f((int)(p1.x + (-xStart)), (int)(p1.y + (-yStart))));
         }
@@ -213,9 +221,40 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
     tpsTransform->estimateTransformation(targetPoints, sourcePoints, matches);
     std::vector<cv::Point2f> transPoints;
     tpsTransform->applyTransformation(sourcePoints, transPoints);
-    tpsTransform->warpImage(paddedImage, newImage, cv::INTER_LINEAR);
+    tpsTransform->warpImage(image, newImage, cv::INTER_LINEAR);
 
-    //Todo: overlays here
+    float centerLatitude = static_cast<float>(geolocationCalculator.getCenterCoordinate().latitude * (180.0 / M_PI));
+    float centerLongitude = static_cast<float>(geolocationCalculator.getCenterCoordinate().longitude * (180.0 / M_PI));
+
+    Settings &settings = Settings::getInstance();
+
+    GIS::ShapeRenderer graticules(settings.getResourcesPath() + settings.getShapeGraticulesFile(), cv::Scalar(settings.getShapeGraticulesColor().B, settings.getShapeGraticulesColor().G, settings.getShapeGraticulesColor().R));
+    graticules.setThickness(settings.getShapeGraticulesThickness());
+    graticules.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude, scale);
+
+    GIS::ShapeRenderer coastLines(settings.getResourcesPath() + settings.getShapeCoastLinesFile(), cv::Scalar(settings.getShapeCoastLinesColor().B, settings.getShapeCoastLinesColor().G, settings.getShapeCoastLinesColor().R));
+    coastLines.setThickness(settings.getShapeCoastLinesThickness());
+    coastLines.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude, scale);
+
+    GIS::ShapeRenderer countryBorders(settings.getResourcesPath() + settings.getShapeBoundaryLinesFile(), cv::Scalar(settings.getShapeBoundaryLinesColor().B, settings.getShapeBoundaryLinesColor().G, settings.getShapeBoundaryLinesColor().R));
+    countryBorders.setThickness(settings.getShapeBoundaryLinesThickness());
+    countryBorders.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude, scale);
+
+    GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(), cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
+    cities.setFontScale(settings.getShapePopulatedPlacesFontScale());
+    cities.setThickness(settings.getShapePopulatedPlacesThickness());
+    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
+    cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
+    cities.setTextFieldName(settings.getShapePopulatedPlacesTextColumnName());
+    cities.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude, scale);
+
+    if(settings.drawReceiver()) {
+        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({settings.getReceiverLatitude(), settings.getReceiverLongitude(), 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
+        coordinate.x -= xStart;
+        coordinate.y -= yStart;
+        cv::drawMarker(newImage, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(0, 0, 0), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness() + 1);
+        cv::drawMarker(newImage, cv::Point2d(coordinate.x, coordinate.y), cv::Scalar(settings.getReceiverColor().B, settings.getReceiverColor().G, settings.getReceiverColor().R), stringToMarkerType(settings.getReceiverMarkType()), settings.getReceiverSize(), settings.getReceiverThickness());
+    }
 
     return newImage;
 }*/
@@ -364,9 +403,9 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat> &images, const 
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(), cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
     cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
     cities.setTextFieldName(settings.getShapePopulatedPlacesTextColumnName());
-    cities.setFontScale(settings.getShapePopulatedPlacesFontScale());
-    cities.setThickness(settings.getShapePopulatedPlacesThickness());
-    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
+    cities.setFontHeight(settings.getShapePopulatedPlacesFontSize() * scale);
+    cities.setFontLineWidth(settings.getShapePopulatedPlacesFontWidth());
+    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius() * scale);
     cities.drawShapeMercator(composite, xStart, yStart, scale);
 
     if(settings.drawReceiver()) {
@@ -447,9 +486,9 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeol
     countryBorders.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude, scale);
 
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(), cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
-    cities.setFontScale(settings.getShapePopulatedPlacesFontScale());
-    cities.setThickness(settings.getShapePopulatedPlacesThickness());
-    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
+    cities.setFontHeight(settings.getShapePopulatedPlacesFontSize() * scale);
+    cities.setFontLineWidth(settings.getShapePopulatedPlacesFontWidth());
+    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius() * scale);
     cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
     cities.setTextFieldName(settings.getShapePopulatedPlacesTextColumnName());
     cities.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude, scale);
@@ -621,9 +660,9 @@ cv::Mat SpreadImage::equidistantProjection(const std::list<cv::Mat> &images, con
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(), cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
     cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
     cities.setTextFieldName(settings.getShapePopulatedPlacesTextColumnName());
-    cities.setFontScale(settings.getShapePopulatedPlacesFontScale());
-    cities.setThickness(settings.getShapePopulatedPlacesThickness());
-    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
+    cities.setFontHeight(settings.getShapePopulatedPlacesFontSize() * scale);
+    cities.setFontLineWidth(settings.getShapePopulatedPlacesFontWidth());
+    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius() * scale);
     cities.drawShapeEquidistant(composite, xStart, yStart, centerLatitude, centerLongitude, scale);
 
     if(settings.drawReceiver()) {

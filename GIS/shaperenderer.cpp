@@ -10,7 +10,8 @@ GIS::ShapeRenderer::ShapeRenderer(const std::string shapeFile, const cv::Scalar 
     , mAltitude(altitude)
     , mThicknes(5)
     , mPointRadius(10)
-    , mFontScale(2)
+    , mFontHeight(40)
+    , mFontLineWidth(2)
 {
 
 }
@@ -113,10 +114,11 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                     }
 
                     if(drawName) {
+                        double fontScale = cv::getFontScaleFromHeight(cv::FONT_ITALIC, mFontHeight, mFontLineWidth);
                         int baseLine;
-                        cv::Size size = cv::getTextSize(fieldValues[namePos], cv::FONT_ITALIC, mFontScale, mThicknes, &baseLine);
-                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, mFontScale, cv::Scalar(0,0,0), mThicknes+1, cv::LINE_AA);
-                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, mFontScale, mColor, mThicknes, cv::LINE_AA);
+                        cv::Size size = cv::getTextSize(fieldValues[namePos], cv::FONT_ITALIC, fontScale, mFontLineWidth, &baseLine);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, fontScale, cv::Scalar(0,0,0), mFontLineWidth+1, cv::LINE_AA);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, fontScale, mColor, mFontLineWidth, cv::LINE_AA);
                     }
                 }
             }
@@ -222,10 +224,11 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                     }
 
                     if(drawName) {
+                        double fontScale = cv::getFontScaleFromHeight(cv::FONT_ITALIC, mFontHeight, mFontLineWidth);
                         int baseLine;
-                        cv::Size size = cv::getTextSize(fieldValues[namePos], cv::FONT_ITALIC, mFontScale, mThicknes, &baseLine);
-                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, mFontScale, cv::Scalar(0,0,0), mThicknes+1, cv::LINE_AA);
-                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, mFontScale, mColor, mThicknes, cv::LINE_AA);
+                        cv::Size size = cv::getTextSize(fieldValues[namePos], cv::FONT_ITALIC, fontScale, mFontLineWidth, &baseLine);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, fontScale, cv::Scalar(0,0,0), mFontLineWidth+1, cv::LINE_AA);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, fontScale, mColor, mFontLineWidth, cv::LINE_AA);
                     }
                 }
             }
