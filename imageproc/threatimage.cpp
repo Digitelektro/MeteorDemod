@@ -161,7 +161,7 @@ void ThreatImage::drawWatermark(cv::Mat image, const std::string &date)
     int x = 0;
     int y = 0;
     Settings &settings = Settings::getInstance();
-    double fontScale = cv::getFontScaleFromHeight(cv::FONT_ITALIC, settings.getWaterMarkSize(), settings.getWaterMarkLineWidth());
+    double fontScale = cv::getFontScaleFromHeight(cv::FONT_ITALIC, settings.getWaterMarkSize() * settings.getProjectionScale(), settings.getWaterMarkLineWidth());
 
     std::string watermarkText = settings.getWaterMarkText();
 

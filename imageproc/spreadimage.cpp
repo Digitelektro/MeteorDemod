@@ -155,9 +155,9 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat &image, const PixelGeoloca
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(), cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
     cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
     cities.setTextFieldName(settings.getShapePopulatedPlacesTextColumnName());
-    cities.setFontScale(settings.getShapePopulatedPlacesFontScale());
-    cities.setThickness(settings.getShapePopulatedPlacesThickness());
-    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
+    cities.setFontHeight(settings.getShapePopulatedPlacesFontSize() * scale);
+    cities.setFontLineWidth(settings.getShapePopulatedPlacesFontWidth());
+    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius() * scale);
     cities.drawShapeMercator(newImage, xStart, yStart, scale);
 
     if(settings.drawReceiver()) {
@@ -403,9 +403,9 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat> &images, const 
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(), cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
     cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
     cities.setTextFieldName(settings.getShapePopulatedPlacesTextColumnName());
-    cities.setFontScale(settings.getShapePopulatedPlacesFontScale());
-    cities.setThickness(settings.getShapePopulatedPlacesThickness());
-    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
+    cities.setFontHeight(settings.getShapePopulatedPlacesFontSize() * scale);
+    cities.setFontLineWidth(settings.getShapePopulatedPlacesFontWidth());
+    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius() * scale);
     cities.drawShapeMercator(composite, xStart, yStart, scale);
 
     if(settings.drawReceiver()) {
@@ -486,9 +486,9 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat &image, const PixelGeol
     countryBorders.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude, scale);
 
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(), cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
-    cities.setFontScale(settings.getShapePopulatedPlacesFontScale());
-    cities.setThickness(settings.getShapePopulatedPlacesThickness());
-    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
+    cities.setFontHeight(settings.getShapePopulatedPlacesFontSize() * scale);
+    cities.setFontLineWidth(settings.getShapePopulatedPlacesFontWidth());
+    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius() * scale);
     cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
     cities.setTextFieldName(settings.getShapePopulatedPlacesTextColumnName());
     cities.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude, scale);
@@ -660,9 +660,9 @@ cv::Mat SpreadImage::equidistantProjection(const std::list<cv::Mat> &images, con
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(), cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
     cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
     cities.setTextFieldName(settings.getShapePopulatedPlacesTextColumnName());
-    cities.setFontScale(settings.getShapePopulatedPlacesFontScale());
-    cities.setThickness(settings.getShapePopulatedPlacesThickness());
-    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius());
+    cities.setFontHeight(settings.getShapePopulatedPlacesFontSize() * scale);
+    cities.setFontLineWidth(settings.getShapePopulatedPlacesFontWidth());
+    cities.setPointRadius(settings.getShapePopulatedPlacesPointradius() * scale);
     cities.drawShapeEquidistant(composite, xStart, yStart, centerLatitude, centerLongitude, scale);
 
     if(settings.drawReceiver()) {

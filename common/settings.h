@@ -161,8 +161,8 @@ public: //getters
 
     const std::string &getShapePopulatedPlacesFile() const { return mShapePopulatedPlacesFile; }
     const HTMLColor &getShapePopulatedPlacesColor() const { return mShapePopulatedPlacesColor; }
-    int getShapePopulatedPlacesThickness() const { return mShapePopulatedPlacesThickness; }
-    int getShapePopulatedPlacesFontScale() const { return mShapePopulatedPlacesFontScale; }
+    int getShapePopulatedPlacesFontWidth() const { return mShapePopulatedPlacesFontWidth; }
+    int getShapePopulatedPlacesFontSize() const { return mShapePopulatedPlacesFontSize; }
     int getShapePopulatedPlacesPointradius() const { return mShapePopulatedPlacesPointradius; }
     const std::string &getShapePopulatedPlacesFilterColumnName() const { return mShapePopulatedPlacesFilterColumnName; }
     int getShapePopulatedPlacesNumbericFilter() const { return mShapePopulatedPlacesNumbericFilter; }
@@ -210,6 +210,7 @@ private:
     std::string mWaterMarkPlace;
     HTMLColor mWaterMarkColor;
     int mWaterMarkSize;
+    int mWaterMarkLineWidth;
     std::string mWaterMarkText;
 
     //ini section: ReceiverLocation
@@ -239,8 +240,8 @@ private:
     //ini section: ShapeFilePopulatedPlaces
     std::string mShapePopulatedPlacesFile;
     HTMLColor mShapePopulatedPlacesColor;
-    int mShapePopulatedPlacesThickness;
-    int mShapePopulatedPlacesFontScale;
+    int mShapePopulatedPlacesFontWidth;
+    int mShapePopulatedPlacesFontSize;
     int mShapePopulatedPlacesPointradius;
     std::string mShapePopulatedPlacesFilterColumnName;
     int mShapePopulatedPlacesNumbericFilter;
