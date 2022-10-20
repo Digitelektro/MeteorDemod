@@ -141,11 +141,27 @@ cv::Mat ThreatImage::gamma(const cv::Mat &image, double gamma)
        return  newImage;
 }
 
+cv::Mat ThreatImage::sharpen(const cv::Mat &image)
+{
+    cv::Mat result(image.size().height, image.size().width, image.type());
+    cv::GaussianBlur(image, result, cv::Size(0, 0), 11);
+    cv::addWeighted(image, 1.5, result, -0.5, 0, result);
+    return result;
+}
+
+cv::Mat ThreatImage::contrast(const cv::Mat &image, double contrast, double brightness)
+{
+    cv::Mat result;
+    image.convertTo(result, image.type(), contrast, brightness);
+    return result;
+}
+
 void ThreatImage::drawWatermark(cv::Mat image, const std::string &date)
 {
     int x = 0;
     int y = 0;
     Settings &settings = Settings::getInstance();
+    double fontScale = cv::getFontScaleFromHeight(cv::FONT_ITALIC, settings.getWaterMarkSize() * settings.getProjectionScale(), settings.getWaterMarkLineWidth());
 
     std::string watermarkText = settings.getWaterMarkText();
 
@@ -165,7 +181,7 @@ void ThreatImage::drawWatermark(cv::Mat image, const std::string &date)
     std::istringstream istream(watermarkText);
     while (getline(istream, line, '\n')) {
         int baseLine;
-        cv::Size textSize = cv::getTextSize(line, cv::FONT_ITALIC, settings.getWaterMarkSize(), 10, &baseLine);
+        cv::Size textSize = cv::getTextSize(line, cv::FONT_ITALIC, fontScale, settings.getWaterMarkLineWidth(), &baseLine);
         int textHeight = baseLine + textSize.height;
         int margin = textSize.height;
 
@@ -196,8 +212,8 @@ void ThreatImage::drawWatermark(cv::Mat image, const std::string &date)
             break;
         }
 
-        cv::putText(image, line, cv::Point2d(x, y), cv::FONT_HERSHEY_COMPLEX, settings.getWaterMarkSize(), cv::Scalar(0,0,0), 10+1, cv::LINE_AA);
-        cv::putText(image, line, cv::Point2d(x, y), cv::FONT_HERSHEY_COMPLEX, settings.getWaterMarkSize(), cv::Scalar(settings.getWaterMarkColor().B, settings.getWaterMarkColor().G, settings.getWaterMarkColor().R), 10, cv::LINE_AA);
+        cv::putText(image, line, cv::Point2d(x, y), cv::FONT_HERSHEY_COMPLEX, fontScale, cv::Scalar(0,0,0), settings.getWaterMarkLineWidth()+1, cv::LINE_AA);
+        cv::putText(image, line, cv::Point2d(x, y), cv::FONT_HERSHEY_COMPLEX, fontScale, cv::Scalar(settings.getWaterMarkColor().B, settings.getWaterMarkColor().G, settings.getWaterMarkColor().R), settings.getWaterMarkLineWidth(), cv::LINE_AA);
 
         n++;
     }

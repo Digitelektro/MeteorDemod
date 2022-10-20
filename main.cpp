@@ -272,6 +272,9 @@ int main(int argc, char *argv[])
         cv::Mat rainOverlay = ThreatImage::irToRain(irImage, rainRef);
 
         if(!ThreatImage::isNightPass(threatedImage1, mSettings.getNightPassTreshold())) {
+            threatedImage1 = ThreatImage::sharpen(threatedImage1);
+            threatedImage2 = ThreatImage::sharpen(threatedImage2);
+
             imagesToSpread.push_back(ImageForSpread(threatedImage1, "221_"));
             imagesToSpread.push_back(ImageForSpread(threatedImage2, "125_"));
 
@@ -299,7 +302,9 @@ int main(int argc, char *argv[])
         imagesToSpread.push_back(ImageForSpread(thermalImage, "thermal_"));
 
         irImage = ThreatImage::invertIR(irImage);
-        irImage = ThreatImage::gamma(irImage, 1.8);
+        irImage = ThreatImage::gamma(irImage, 1.4);
+        irImage = ThreatImage::contrast(irImage, 1.3, -40);
+        irImage = ThreatImage::sharpen(irImage);
         imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
 
         if(mSettings.addRainOverlay()) {
@@ -311,6 +316,9 @@ int main(int argc, char *argv[])
         cv::Mat threatedImage2 = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
 
         if(!ThreatImage::isNightPass(threatedImage1, mSettings.getNightPassTreshold())) {
+            threatedImage1 = ThreatImage::sharpen(threatedImage1);
+            threatedImage2 = ThreatImage::sharpen(threatedImage2);
+
             imagesToSpread.push_back(ImageForSpread(threatedImage1, "321_"));
             saveImage(mSettings.getOutputPath() + fileNameDate + "_321.bmp", threatedImage1);
 
@@ -335,6 +343,8 @@ int main(int argc, char *argv[])
         cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
 
         if(!ThreatImage::isNightPass(threatedImage, mSettings.getNightPassTreshold())) {
+            threatedImage = ThreatImage::sharpen(threatedImage);
+
             imagesToSpread.push_back(ImageForSpread(threatedImage, "221_"));
             saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", threatedImage);
         } else {
@@ -354,7 +364,9 @@ int main(int argc, char *argv[])
         cv::Mat rainOverlay = ThreatImage::irToRain(ch68, rainRef);
 
         ch68 = ThreatImage::invertIR(ch68);
-        ch68 = ThreatImage::gamma(ch68, 1.8);
+        ch68 = ThreatImage::gamma(ch68, 1.4);
+        ch68 = ThreatImage::contrast(ch68, 1.3, -40);
+        ch68 = ThreatImage::sharpen(ch68);
         imagesToSpread.push_back(ImageForSpread(ch68, "IR_"));
 
         if(mSettings.addRainOverlay()) {
@@ -433,6 +445,12 @@ int main(int argc, char *argv[])
         searchForImages(images123, geolocationCalculators123, "123");
 
         if(images123.size() > 1 && images123.size() == geolocationCalculators123.size()) {
+            if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
+                for(auto &img : images123) {
+                    img = ThreatImage::sharpen(img);
+                }
+            }
+
             SpreadImage spreadImage;
             if(mSettings.compositeEquadistantProjection()) {
                 cv::Mat composite = spreadImage.equidistantProjection(images123, geolocationCalculators123, mSettings.getCompositeProjectionScale(), [](float progress){
@@ -483,6 +501,12 @@ int main(int argc, char *argv[])
 
         if(images221.size() > 1 && images221.size() == geolocationCalculators221.size()) {
             SpreadImage spreadImage;
+            if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
+                for(auto &img : images221) {
+                    img = ThreatImage::sharpen(img);
+                }
+            }
+
             if(mSettings.compositeEquadistantProjection()) {
                 cv::Mat composite = spreadImage.equidistantProjection(images221, geolocationCalculators221, mSettings.getCompositeProjectionScale(), [](float progress){
                     std::cout << "Generate equidistant channel 221 composite image " << (int)progress << "% \t\t\r" << std::flush;
@@ -509,7 +533,9 @@ int main(int argc, char *argv[])
             if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
                 for(auto &img : images68) {
                     img = ThreatImage::invertIR(img);
-                    img = ThreatImage::gamma(img, 1.8);
+                    img = ThreatImage::gamma(img, 1.4);
+                    img = ThreatImage::contrast(img, 1.3, -40);
+                    img = ThreatImage::sharpen(img);
                 }
             }
 
@@ -531,6 +557,42 @@ int main(int argc, char *argv[])
         }
     }
 
+    if(mSettings.generateComposite68Rain()) {
+        std::list<cv::Mat> images68;
+        std::list<PixelGeolocationCalculator> geolocationCalculators68;
+        searchForImages(images68, geolocationCalculators68, "68");
+
+        if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
+            if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
+                cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
+                for(auto &img : images68) {
+                    cv::Mat rainOverlay = ThreatImage::irToRain(img, rainRef);
+                    img = ThreatImage::invertIR(img);
+                    img = ThreatImage::gamma(img, 1.4);
+                    img = ThreatImage::contrast(img, 1.3, -40);
+                    img = ThreatImage::sharpen(img);
+                    img = ThreatImage::addRainOverlay(img, rainOverlay);
+                }
+            }
+
+            SpreadImage spreadImage;
+            if(mSettings.compositeEquadistantProjection()) {
+                cv::Mat composite = spreadImage.equidistantProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress){
+                    std::cout << "Generate equidistant channel 68 rain composite image " << (int)progress << "% \t\t\r" << std::flush;
+                });
+                std::cout << std::endl;
+                saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_68_rain_composite.jpg", composite);
+            }
+            if(mSettings.compositeMercatorProjection()) {
+                cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress){
+                    std::cout << "Generate mercator channel 68 rain composite image " << (int)progress << "% \t\t\r" << std::flush;
+                });
+                std::cout << std::endl;
+                saveImage(mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_68_rain_composite.jpg", composite);
+            }
+        }
+    }
+
     if(mSettings.generateCompositeThermal()) {
         std::list<cv::Mat> images68;
         std::list<PixelGeolocationCalculator> geolocationCalculators68;
@@ -538,8 +600,8 @@ int main(int argc, char *argv[])
 
         if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
             if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
+                cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
                 for(auto &img : images68) {
-                    cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
                     img = ThreatImage::irToTemperature(img, thermalRef);
                 }
             }
@@ -578,7 +640,7 @@ void searchForImages(std::list<cv::Mat> &imagesOut, std::list<PixelGeolocationCa
         std::time_t cftime = std::chrono::system_clock::to_time_t((ftime));
         std::time_t fileCreatedSec = now - cftime;
 
-        if(entry.path().extension() == ".gcp" && fileCreatedSec < 18000) { //5h
+        if(entry.path().extension() == ".gcp" && fileCreatedSec < 21600) { //6h
             std::string folder = entry.path().parent_path().generic_string();
             std::string gcpFileName = entry.path().filename().generic_string();
             std::string fileNameBase = gcpFileName.substr(0, gcpFileName.size() - 4);
