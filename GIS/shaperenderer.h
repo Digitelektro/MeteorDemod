@@ -20,8 +20,8 @@ public:
     void addNumericFilter(const std::string name, int value);
     void setTextFieldName(const std::string &name);
 
-    void drawShapeMercator(cv::Mat &src, float xStart, float yStart);
-    void drawShapeEquidistant(cv::Mat &src, float xStart, float yStart, float centerLatitude, float centerLongitude);
+    void drawShapeMercator(cv::Mat &src, float xStart, float yStart, float scale);
+    void drawShapeEquidistant(cv::Mat &src, float xStart, float yStart, float centerLatitude, float centerLongitude, float scale);
 
 public: //setters
     void setThickness(int thickness) {
@@ -30,8 +30,11 @@ public: //setters
     void setPointRadius(int radius) {
         mPointRadius = radius;
     }
-    void setFontScale(int scale) {
-        mFontScale = scale;
+    void setFontHeight(int height) {
+        mFontHeight = height;
+    }
+    void setFontLineWidth(int width) {
+        mFontLineWidth = width;
     }
 
 private:
@@ -45,7 +48,8 @@ private:
     std::string mTextFieldName;
     int mThicknes;
     int mPointRadius;
-    int mFontScale;
+    int mFontHeight;
+    int mFontLineWidth;
 };
 
 } //namespace GIS

@@ -61,7 +61,18 @@ void Settings::parseIni(const std::string &path)
     ini::extract(mIniParser.sections["Program"]["RollM2"], mM2Roll, -2.9f);
     ini::extract(mIniParser.sections["Program"]["PitchM2"], mM2Pitch, 0.3f);
     ini::extract(mIniParser.sections["Program"]["YawM2"], mM2Yaw, 0.0f);
+    ini::extract(mIniParser.sections["Program"]["TimeOffsetM2"], mTimeOffsetM2Sec, 0);
     ini::extract(mIniParser.sections["Program"]["NightPassTreshold"], mNightPassTreshold, 10.0f);
+    ini::extract(mIniParser.sections["Program"]["ProjectionScale"], mProjectionScale, 0.75f);
+    ini::extract(mIniParser.sections["Program"]["CompositeProjectionScale"], mCompositeProjectionScale, 0.75f);
+    ini::extract(mIniParser.sections["Program"]["CompositeAzimuthalEquidistantProjection"], mCompositeEquadistantProjection, true);
+    ini::extract(mIniParser.sections["Program"]["CompositeMercatorProjection"], mCompositeMercatorProjection, false);
+    ini::extract(mIniParser.sections["Program"]["GenerateComposite123"], mGenerateComposite123, true);
+    ini::extract(mIniParser.sections["Program"]["GenerateComposite125"], mGenerateComposite125, true);
+    ini::extract(mIniParser.sections["Program"]["GenerateComposite221"], mGenerateComposite221, true);
+    ini::extract(mIniParser.sections["Program"]["GenerateComposite68"], mGenerateComposite68, true);
+    ini::extract(mIniParser.sections["Program"]["GenerateCompositeThermal"], mGenerateCompositeThermal, true);
+    ini::extract(mIniParser.sections["Program"]["GenerateComposite68Rain"], mGenerateComposite68Rain, true);
 
     ini::extract(mIniParser.sections["Demodulator"]["CostasBandwidth"], mCostasBw, 50);
     ini::extract(mIniParser.sections["Demodulator"]["RRCFilterOrder"], mRRCFilterOrder, 64);
@@ -71,7 +82,8 @@ void Settings::parseIni(const std::string &path)
 
     ini::extract(mIniParser.sections["Watermark"]["Place"], mWaterMarkPlace);
     ini::extract(mIniParser.sections["Watermark"]["Color"], mWaterMarkColor, HTMLColor(0xAD880C));
-    ini::extract(mIniParser.sections["Watermark"]["Size"], mWaterMarkSize, 5);
+    ini::extract(mIniParser.sections["Watermark"]["Size"], mWaterMarkSize, 80);
+    ini::extract(mIniParser.sections["Watermark"]["Width"], mWaterMarkLineWidth, 3);
     ini::extract(mIniParser.sections["Watermark"]["Text"], mWaterMarkText);
 
     ini::extract(mIniParser.sections["ReceiverLocation"]["Draw"], mDrawreceiver, false);
@@ -84,20 +96,20 @@ void Settings::parseIni(const std::string &path)
 
     ini::extract(mIniParser.sections["ShapeFileGraticules"]["FileName"], mShapeGraticulesFile);
     ini::extract(mIniParser.sections["ShapeFileGraticules"]["Color"], mShapeGraticulesColor, HTMLColor(0xC8C8C8));
-    ini::extract(mIniParser.sections["ShapeFileGraticules"]["Thickness"], mShapeGraticulesThickness, 5);
+    ini::extract(mIniParser.sections["ShapeFileGraticules"]["Thickness"], mShapeGraticulesThickness, 1);
 
     ini::extract(mIniParser.sections["ShapeFileCoastLines"]["FileName"], mShapeCoastLinesFile);
     ini::extract(mIniParser.sections["ShapeFileCoastLines"]["Color"], mShapeCoastLinesColor, HTMLColor(0x808000));
-    ini::extract(mIniParser.sections["ShapeFileCoastLines"]["Thickness"], mShapeCoastLinesThickness, 5);
+    ini::extract(mIniParser.sections["ShapeFileCoastLines"]["Thickness"], mShapeCoastLinesThickness, 2);
 
     ini::extract(mIniParser.sections["ShapeFileBoundaryLines"]["FileName"], mShapeBoundaryLinesFile);
     ini::extract(mIniParser.sections["ShapeFileBoundaryLines"]["Color"], mShapeBoundaryLinesColor, HTMLColor(0xC8C8C8));
-    ini::extract(mIniParser.sections["ShapeFileBoundaryLines"]["Thickness"], mShapeBoundaryLinesThickness, 5);
+    ini::extract(mIniParser.sections["ShapeFileBoundaryLines"]["Thickness"], mShapeBoundaryLinesThickness, 2);
 
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["FileName"], mShapePopulatedPlacesFile);
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["Color"], mShapePopulatedPlacesColor, HTMLColor(0x5A42F5));
-    ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["Thickness"], mShapePopulatedPlacesThickness, 5);
-    ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["FontScale"], mShapePopulatedPlacesFontScale, 2);
+    ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["Width"], mShapePopulatedPlacesFontWidth, 2);
+    ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["Size"], mShapePopulatedPlacesFontSize, 40);
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["PointRadius"], mShapePopulatedPlacesPointradius, 10);
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["FilterColumnName"], mShapePopulatedPlacesFilterColumnName, std::string("ADM0CAP"));
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["NumericFilter"], mShapePopulatedPlacesNumbericFilter, 1);

@@ -92,10 +92,6 @@ Other settings can be found in the settings.ini file.
 
 ## Development
 Master branch is for the latest stable version, beta branch for beta versions, development is ongoing on other branches.
-
-## Future developments
- - Composite output from multiple passes
- 
  
 ## Example Outputs
 
@@ -118,3 +114,7 @@ Master branch is for the latest stable version, beta branch for beta versions, d
 ### Temperature Image
 
 ![Temperature Image](media/equidistant_thermal.jpg)
+
+### Composite IR Image
+
+![IR Composite Image](media/equidistant_ir_composite.jpg)
