@@ -649,14 +649,14 @@ void searchForImages(std::list<cv::Mat> &imagesOut, std::list<PixelGeolocationCa
                 fs::path fileJPG(folder + "/" + fileNameBase + "_" + channelName + ".jpg");
 
                 if(fs::exists(fileJPG)) {
-                    map[cftime] = std::make_tuple(entry.path().generic_string(), fileJPG);
+                    map[cftime] = std::make_tuple(entry.path().generic_string(), fileJPG.generic_string());
                     break;
                 }
 
                 fs::path fileBMP(folder + "/" + fileNameBase + "_" + channelName + ".bmp");
 
                 if(fs::exists(fileBMP)) {
-                    map[cftime] = std::make_tuple(entry.path().generic_string(), fileBMP);
+                    map[cftime] = std::make_tuple(entry.path().generic_string(), fileBMP.generic_string());
 
                     break;
                 }

@@ -79,7 +79,25 @@ cv::Mat ThreatImage::irToRain(const cv::Mat &irImage, const cv::Mat &ref)
         }
     }
 
-    return rainImage;
+    cv::Mat result = cv::Mat::zeros(irImage.size(), irImage.type());
+    cv::Mat grayScale;
+    cv::Mat alpha;
+
+    cv::cvtColor(irImage, grayScale, cv::COLOR_BGR2GRAY);
+    std::vector<std::vector<cv::Point> > contours;
+    cv::findContours(grayScale, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+    for (std::size_t i = 0; i < contours.size(); i++) {
+        cv::drawContours(grayScale, contours, i, cv::Scalar(255, 255, 255), -1);
+    }
+
+    //create alpha mask
+    cv::threshold(grayScale, alpha, 0, 255, cv::THRESH_BINARY);
+
+    //apply mask
+    cv::bitwise_and(rainImage, rainImage, result, alpha);
+
+
+    return result;
 }
 
 cv::Mat ThreatImage::invertIR(const cv::Mat &image)
