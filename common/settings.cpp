@@ -33,7 +33,7 @@ Settings::Settings()
     mSettingsList.push_back(SettingsData("--diff",  "-diff", "Use differential decoding (Maybe required for newer satellites)"));
     mSettingsList.push_back(SettingsData("--int",  "-int", "Deinterleave (Maybe required for newer satellites)"));
     mSettingsList.push_back(SettingsData("--brokenM2",  "-b", "Broken M2 modulation"));
-    mSettingsList.push_back(SettingsData("--compmaxage",  "-c", "Maximum image age in second for creating composite image"));
+    mSettingsList.push_back(SettingsData("--compmaxage",  "-c", "Maximum image age in hours for creating composite image"));
 }
 
 void Settings::parseArgs(int argc, char **argv)
@@ -152,14 +152,14 @@ std::string Settings::getTlePath() const
     return std::string();
 }
 
-int Settings::getCompositeMaxAgeSec() const {
+int Settings::getCompositeMaxAgeHours() const {
     if(mArgs.count("-c")) {
         return atoi(mArgs.at("-c").c_str());
     }
     if(mArgs.count("--compmaxage")) {
         return atoi(mArgs.at("-compmaxage").c_str());
     }
-    return 21600;   //default 6H
+    return 6;   //default 6H
 }
 
 std::string Settings::getResourcesPath() const

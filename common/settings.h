@@ -92,7 +92,7 @@ public:
 public: //getters
     std::string getInputFilePath() const;
     std::string getTlePath() const;
-    int getCompositeMaxAgeSec() const;
+    int getCompositeMaxAgeHours() const;
 
     std::string getResourcesPath() const;
     std::string getOutputPath() const;
