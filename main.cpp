@@ -236,203 +236,202 @@ int main(int argc, char *argv[])
     std::cout << "Decoded packets:" << decodedPacketCounter << std::endl;
 
     if(decodedPacketCounter == 0) {
-        std::cout << "No data received, exiting..." << std::endl;
-        return 0;
-    }
+        std::cout << "No data received, try to make composite images" << std::endl;
+    } else {
+        DateTime passStart;
+        DateTime passDate = mSettings.getPassDate();
+        TimeSpan passStartTime = mPacketParser.getFirstTimeStamp();
+        TimeSpan passLength = mPacketParser.getLastTimeStamp() - passStartTime;
 
-    DateTime passStart;
-    DateTime passDate = mSettings.getPassDate();
-    TimeSpan passStartTime = mPacketParser.getFirstTimeStamp();
-    TimeSpan passLength = mPacketParser.getLastTimeStamp() - passStartTime;
+        passStartTime = passStartTime.Add(TimeSpan(0, 0, mSettings.getTimeOffsetM2Sec()));
+        passLength = passLength.Add(TimeSpan(0, 0, mSettings.getTimeOffsetM2Sec()));
 
-    passStartTime = passStartTime.Add(TimeSpan(0, 0, mSettings.getTimeOffsetM2Sec()));
-    passLength = passLength.Add(TimeSpan(0, 0, mSettings.getTimeOffsetM2Sec()));
+        passDate = passDate.AddHours(3); //Convert UTC 0 to Moscow time zone (UTC + 3)
 
-    passDate = passDate.AddHours(3); //Convert UTC 0 to Moscow time zone (UTC + 3)
+        //Satellite's date time
+        passStart.Initialise(passDate.Year(), passDate.Month(), passDate.Day(), passStartTime.Hours(), passStartTime.Minutes(), passStartTime.Seconds(), passStartTime.Microseconds());
+        //Convert satellite's Moscow time zone to UTC 0
+        passStart = passStart.AddHours(-3);
 
-    //Satellite's date time
-    passStart.Initialise(passDate.Year(), passDate.Month(), passDate.Day(), passStartTime.Hours(), passStartTime.Minutes(), passStartTime.Seconds(), passStartTime.Microseconds());
-    //Convert satellite's Moscow time zone to UTC 0
-    passStart = passStart.AddHours(-3);
+        std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute()) + "-" + std::to_string(passStart.Second());
 
-    std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute()) + "-" + std::to_string(passStart.Second());
+        PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getM2ScanAngle(), mSettings.getM2Roll(), mSettings.getM2Pitch(), mSettings.getM2Yaw());
+        calc.calcPixelCoordinates();
+        calc.save(mSettings.getOutputPath() + fileNameDate + ".gcp");
 
-    PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getM2ScanAngle(), mSettings.getM2Roll(), mSettings.getM2Pitch(), mSettings.getM2Yaw());
-    calc.calcPixelCoordinates();
-    calc.save(mSettings.getOutputPath() + fileNameDate + ".gcp");
+        std::list<ImageForSpread> imagesToSpread;
 
-    std::list<ImageForSpread> imagesToSpread;
+        if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel68Available()) {
+            cv::Mat threatedImage1 = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
+            cv::Mat irImage = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
+            cv::Mat threatedImage2 = mPacketParser.getRGBImage(PacketParser::APID_64, PacketParser::APID_65, PacketParser::APID_68, mSettings.fillBackLines());
 
-    if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel68Available()) {
-        cv::Mat threatedImage1 = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
-        cv::Mat irImage = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
-        cv::Mat threatedImage2 = mPacketParser.getRGBImage(PacketParser::APID_64, PacketParser::APID_65, PacketParser::APID_68, mSettings.fillBackLines());
+            cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
+            cv::Mat rainOverlay = ThreatImage::irToRain(irImage, rainRef);
 
-        cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
-        cv::Mat rainOverlay = ThreatImage::irToRain(irImage, rainRef);
+            if(!ThreatImage::isNightPass(threatedImage1, mSettings.getNightPassTreshold())) {
+                threatedImage1 = ThreatImage::sharpen(threatedImage1);
+                threatedImage2 = ThreatImage::sharpen(threatedImage2);
 
-        if(!ThreatImage::isNightPass(threatedImage1, mSettings.getNightPassTreshold())) {
-            threatedImage1 = ThreatImage::sharpen(threatedImage1);
-            threatedImage2 = ThreatImage::sharpen(threatedImage2);
+                imagesToSpread.push_back(ImageForSpread(threatedImage1, "221_"));
+                imagesToSpread.push_back(ImageForSpread(threatedImage2, "125_"));
 
-            imagesToSpread.push_back(ImageForSpread(threatedImage1, "221_"));
-            imagesToSpread.push_back(ImageForSpread(threatedImage2, "125_"));
+                if(mSettings.addRainOverlay()) {
+                    imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(threatedImage1, rainOverlay), "rain_221_"));
+                    imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(threatedImage2, rainOverlay), "rain_125_"));
+                }
 
-            if(mSettings.addRainOverlay()) {
-                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(threatedImage1, rainOverlay), "rain_221_"));
-                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(threatedImage2, rainOverlay), "rain_125_"));
+                saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", threatedImage1);
+                saveImage(mSettings.getOutputPath() + fileNameDate + "_125.bmp", threatedImage2);
+            } else {
+                std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
             }
 
-            saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", threatedImage1);
-            saveImage(mSettings.getOutputPath() + fileNameDate + "_125.bmp", threatedImage2);
+            cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
+            cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
+            cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
+
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
+
+            cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
+            cv::Mat thermalImage = ThreatImage::irToTemperature(irImage, thermalRef);
+            imagesToSpread.push_back(ImageForSpread(thermalImage, "thermal_"));
+
+            irImage = ThreatImage::invertIR(irImage);
+            irImage = ThreatImage::gamma(irImage, 1.4);
+            irImage = ThreatImage::contrast(irImage, 1.3, -40);
+            irImage = ThreatImage::sharpen(irImage);
+            imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
+
+            if(mSettings.addRainOverlay()) {
+                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(irImage, rainOverlay), "rain_IR_"));
+            }
+
+        } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel66Available()) {
+            cv::Mat threatedImage1 = mPacketParser.getRGBImage(PacketParser::APID_66, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
+            cv::Mat threatedImage2 = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
+
+            if(!ThreatImage::isNightPass(threatedImage1, mSettings.getNightPassTreshold())) {
+                threatedImage1 = ThreatImage::sharpen(threatedImage1);
+                threatedImage2 = ThreatImage::sharpen(threatedImage2);
+
+                imagesToSpread.push_back(ImageForSpread(threatedImage1, "321_"));
+                saveImage(mSettings.getOutputPath() + fileNameDate + "_321.bmp", threatedImage1);
+
+                imagesToSpread.push_back(ImageForSpread(threatedImage2, "221_"));
+                saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", threatedImage2);
+            } else {
+                std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
+            }
+
+            mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
+            mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
+            mPacketParser.getChannelImage(PacketParser::APID_66, mSettings.fillBackLines());
+
+            cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
+            cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
+            cv::Mat ch66 = mPacketParser.getChannelImage(PacketParser::APID_66, mSettings.fillBackLines());
+
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_66.bmp", ch66);
+        } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available()) {
+            cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
+
+            if(!ThreatImage::isNightPass(threatedImage, mSettings.getNightPassTreshold())) {
+                threatedImage = ThreatImage::sharpen(threatedImage);
+
+                imagesToSpread.push_back(ImageForSpread(threatedImage, "221_"));
+                saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", threatedImage);
+            } else {
+                std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
+            }
+
+            cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
+            cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
+
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
+        } else if(mPacketParser.isChannel68Available()) {
+            cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
+
+            cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
+            cv::Mat rainOverlay = ThreatImage::irToRain(ch68, rainRef);
+
+            ch68 = ThreatImage::invertIR(ch68);
+            ch68 = ThreatImage::gamma(ch68, 1.4);
+            ch68 = ThreatImage::contrast(ch68, 1.3, -40);
+            ch68 = ThreatImage::sharpen(ch68);
+            imagesToSpread.push_back(ImageForSpread(ch68, "IR_"));
+
+            if(mSettings.addRainOverlay()) {
+                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(ch68, rainOverlay), "rain_IR_"));
+            }
         } else {
-            std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
+            std::cout << "No usable channel data found!" << std::endl;
+
+            return 0;
         }
 
-        cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
-        cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
-        cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
+        std::ostringstream oss;
+        oss << std::setfill('0') << std::setw(2) << passStart.Day() << "/" << std::setw(2) << passStart.Month() << "/" << passStart.Year() << " " << std::setw(2) << passStart.Hour() << ":" << std::setw(2) << passStart.Minute() << ":" << std::setw(2) << passStart.Second() << " UTC";
+        std::string dateStr = oss.str();
 
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
+        std::list<ImageForSpread>::const_iterator it;
+        for(it = imagesToSpread.begin(); it != imagesToSpread.end(); ++it) {
+            std::string fileName = (*it).fileNameBase + fileNameDate + "." + mSettings.getOutputFormat();
 
-        cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
-        cv::Mat thermalImage = ThreatImage::irToTemperature(irImage, thermalRef);
-        imagesToSpread.push_back(ImageForSpread(thermalImage, "thermal_"));
+            if(mSettings.spreadImage()) {
+                mThreadPool.addJob([=]() {
+                    SpreadImage spreadImage;
+                    cv::Mat strechedImg = spreadImage.stretch((*it).image);
 
-        irImage = ThreatImage::invertIR(irImage);
-        irImage = ThreatImage::gamma(irImage, 1.4);
-        irImage = ThreatImage::contrast(irImage, 1.3, -40);
-        irImage = ThreatImage::sharpen(irImage);
-        imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
+                    if(!strechedImg.empty()) {
+                        ThreatImage::drawWatermark(strechedImg, dateStr);
+                        saveImage(mSettings.getOutputPath() + std::string("spread_") + fileName, strechedImg);
+                    } else {
+                        std::cout << "Failed to strech image" << std::endl;
+                    }
+                });
+            }
 
-        if(mSettings.addRainOverlay()) {
-            imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(irImage, rainOverlay), "rain_IR_"));
+            if(mSettings.mercatorProjection()) {
+                mThreadPool.addJob([=]() {
+                    SpreadImage spreadImage;
+                    cv::Mat mercator = spreadImage.mercatorProjection((*it).image, calc, mSettings.getProjectionScale());
+
+                    if(!mercator.empty()) {
+                        ThreatImage::drawWatermark(mercator, dateStr);
+                        saveImage(mSettings.getOutputPath() + std::string("mercator_") + fileName, mercator);
+                    } else {
+                        std::cout << "Failed to create mercator projection" << std::endl;
+                    }
+                });
+            }
+
+            if(mSettings.equadistantProjection()) {
+                mThreadPool.addJob([=]() {
+                    SpreadImage spreadImage;
+                    cv::Mat equidistant = spreadImage.equidistantProjection((*it).image, calc, mSettings.getProjectionScale());
+
+                    if(!equidistant.empty()) {
+                        ThreatImage::drawWatermark(equidistant, dateStr);
+                        saveImage(mSettings.getOutputPath() + std::string("equidistant_") + fileName, equidistant);
+                    } else {
+                        std::cout << "Failed to create equidistant projection" << std::endl;
+                    }
+                });
+            }
         }
 
-    } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available() && mPacketParser.isChannel66Available()) {
-        cv::Mat threatedImage1 = mPacketParser.getRGBImage(PacketParser::APID_66, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
-        cv::Mat threatedImage2 = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
-
-        if(!ThreatImage::isNightPass(threatedImage1, mSettings.getNightPassTreshold())) {
-            threatedImage1 = ThreatImage::sharpen(threatedImage1);
-            threatedImage2 = ThreatImage::sharpen(threatedImage2);
-
-            imagesToSpread.push_back(ImageForSpread(threatedImage1, "321_"));
-            saveImage(mSettings.getOutputPath() + fileNameDate + "_321.bmp", threatedImage1);
-
-            imagesToSpread.push_back(ImageForSpread(threatedImage2, "221_"));
-            saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", threatedImage2);
-        } else {
-            std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
-        }
-
-        mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
-        mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
-        mPacketParser.getChannelImage(PacketParser::APID_66, mSettings.fillBackLines());
-
-        cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
-        cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
-        cv::Mat ch66 = mPacketParser.getChannelImage(PacketParser::APID_66, mSettings.fillBackLines());
-
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_66.bmp", ch66);
-    } else if(mPacketParser.isChannel64Available() && mPacketParser.isChannel65Available()) {
-        cv::Mat threatedImage = mPacketParser.getRGBImage(PacketParser::APID_65, PacketParser::APID_65, PacketParser::APID_64, mSettings.fillBackLines());
-
-        if(!ThreatImage::isNightPass(threatedImage, mSettings.getNightPassTreshold())) {
-            threatedImage = ThreatImage::sharpen(threatedImage);
-
-            imagesToSpread.push_back(ImageForSpread(threatedImage, "221_"));
-            saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", threatedImage);
-        } else {
-            std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
-        }
-
-        cv::Mat ch64 = mPacketParser.getChannelImage(PacketParser::APID_64, mSettings.fillBackLines());
-        cv::Mat ch65 = mPacketParser.getChannelImage(PacketParser::APID_65, mSettings.fillBackLines());
-
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
-    } else if(mPacketParser.isChannel68Available()) {
-        cv::Mat ch68 = mPacketParser.getChannelImage(PacketParser::APID_68, mSettings.fillBackLines());
-        saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
-
-        cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
-        cv::Mat rainOverlay = ThreatImage::irToRain(ch68, rainRef);
-
-        ch68 = ThreatImage::invertIR(ch68);
-        ch68 = ThreatImage::gamma(ch68, 1.4);
-        ch68 = ThreatImage::contrast(ch68, 1.3, -40);
-        ch68 = ThreatImage::sharpen(ch68);
-        imagesToSpread.push_back(ImageForSpread(ch68, "IR_"));
-
-        if(mSettings.addRainOverlay()) {
-            imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(ch68, rainOverlay), "rain_IR_"));
-        }
-    } else {
-        std::cout << "No usable channel data found!" << std::endl;
-
-        return 0;
+        std::cout << "Generate images" << std::endl;
+        mThreadPool.waitForAllJobsDone();
+        std::cout << "Generate images done" << std::endl;
+        imagesToSpread.clear();
     }
-
-    std::ostringstream oss;
-    oss << std::setfill('0') << std::setw(2) << passStart.Day() << "/" << std::setw(2) << passStart.Month() << "/" << passStart.Year() << " " << std::setw(2) << passStart.Hour() << ":" << std::setw(2) << passStart.Minute() << ":" << std::setw(2) << passStart.Second() << " UTC";
-    std::string dateStr = oss.str();
-
-    std::list<ImageForSpread>::const_iterator it;
-    for(it = imagesToSpread.begin(); it != imagesToSpread.end(); ++it) {
-        std::string fileName = (*it).fileNameBase + fileNameDate + "." + mSettings.getOutputFormat();
-
-        if(mSettings.spreadImage()) {
-            mThreadPool.addJob([=]() {
-                SpreadImage spreadImage;
-                cv::Mat strechedImg = spreadImage.stretch((*it).image);
-
-                if(!strechedImg.empty()) {
-                    ThreatImage::drawWatermark(strechedImg, dateStr);
-                    saveImage(mSettings.getOutputPath() + std::string("spread_") + fileName, strechedImg);
-                } else {
-                    std::cout << "Failed to strech image" << std::endl;
-                }
-            });
-        }
-
-        if(mSettings.mercatorProjection()) {
-            mThreadPool.addJob([=]() {
-                SpreadImage spreadImage;
-                cv::Mat mercator = spreadImage.mercatorProjection((*it).image, calc, mSettings.getProjectionScale());
-
-                if(!mercator.empty()) {
-                    ThreatImage::drawWatermark(mercator, dateStr);
-                    saveImage(mSettings.getOutputPath() + std::string("mercator_") + fileName, mercator);
-                } else {
-                    std::cout << "Failed to create mercator projection" << std::endl;
-                }
-            });
-        }
-
-        if(mSettings.equadistantProjection()) {
-            mThreadPool.addJob([=]() {
-                SpreadImage spreadImage;
-                cv::Mat equidistant = spreadImage.equidistantProjection((*it).image, calc, mSettings.getProjectionScale());
-
-                if(!equidistant.empty()) {
-                    ThreatImage::drawWatermark(equidistant, dateStr);
-                    saveImage(mSettings.getOutputPath() + std::string("equidistant_") + fileName, equidistant);
-                } else {
-                    std::cout << "Failed to create equidistant projection" << std::endl;
-                }
-            });
-        }
-    }
-
-    std::cout << "Generate images" << std::endl;
-    mThreadPool.waitForAllJobsDone();
-    std::cout << "Generate images done" << std::endl;
-    imagesToSpread.clear();
 
     std::cout << "Generate composite images" << std::endl;
     std::time_t now = std::time(nullptr);
@@ -640,7 +639,7 @@ void searchForImages(std::list<cv::Mat> &imagesOut, std::list<PixelGeolocationCa
         std::time_t cftime = std::chrono::system_clock::to_time_t((ftime));
         std::time_t fileCreatedSec = now - cftime;
 
-        if(entry.path().extension() == ".gcp" && fileCreatedSec < 21600) { //6h
+        if(entry.path().extension() == ".gcp" && fileCreatedSec < mSettings.getCompositeMaxAgeSec()) {
             std::string folder = entry.path().parent_path().generic_string();
             std::string gcpFileName = entry.path().filename().generic_string();
             std::string fileNameBase = gcpFileName.substr(0, gcpFileName.size() - 4);
