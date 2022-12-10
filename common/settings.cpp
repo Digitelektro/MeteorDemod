@@ -37,8 +37,25 @@ Settings::Settings() {
 }
 
 void Settings::parseArgs(int argc, char** argv) {
-    for(int i = 1; i < (argc - 1); i += 2) {
-        mArgs.insert(std::make_pair(argv[i], argv[i + 1]));
+    if(argc == 1) {
+        throw std::runtime_error("Invalid number or arguments, at least one argument shall be provided!");
+    } else {
+        for(int i = 1; i < argc; i++) {
+            if(i + 1 < argc) {
+                if(*argv[i + 1] == '-') {
+                    mArgs.insert(std::make_pair(argv[i], "true"));
+                } else {
+                    mArgs.insert(std::make_pair(argv[i], argv[i + 1]));
+                    i++;
+                }
+            } else {
+                if(*argv[i] == '-') {
+                    mArgs.insert(std::make_pair(argv[i], "true"));
+                } else {
+                    mArgs.insert(std::make_pair("-o", argv[i]));
+                }
+            }
+        }
     }
 }
 
@@ -172,13 +189,20 @@ std::string Settings::getResourcesPath() const {
 }
 
 std::string Settings::getOutputPath() const {
+    std::string path{"./"};
+
     if(mArgs.count("-o")) {
-        return mArgs.at("-o");
+        path = mArgs.at("-o");
     }
     if(mArgs.count("--output")) {
-        return mArgs.at("--output");
+        path = mArgs.at("--output");
     }
-    return std::string("./");
+
+    if(path.back() != '/') {
+        path += '/';
+    }
+
+    return path;
 }
 
 std::string Settings::getOutputFormat() const {
@@ -271,7 +295,7 @@ bool Settings::differentialDecode() const {
     bool result = false;
 
     if(mArgs.count("--diff")) {
-        std::istringstream(mArgs.at("--diff")) >> result;
+        result = true;
     }
 
     return result;
@@ -281,7 +305,7 @@ bool Settings::deInterleave() const {
     bool result = false;
 
     if(mArgs.count("--int")) {
-        std::istringstream(mArgs.at("--int")) >> result;
+        result = true;
     }
 
     return result;
@@ -291,10 +315,10 @@ bool Settings::getBrokenM2Modulation() const {
     bool result = false;
 
     if(mArgs.count("-b")) {
-        std::istringstream(mArgs.at("-b")) >> result;
+        result = true;
     }
     if(mArgs.count("--brokenM2")) {
-        std::istringstream(mArgs.at("--brokenM2")) >> result;
+        result = true;
     }
 
     return result;

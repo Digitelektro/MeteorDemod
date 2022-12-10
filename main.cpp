@@ -67,24 +67,15 @@ static Settings& mSettings = Settings::getInstance();
 static ThreadPool mThreadPool(std::thread::hardware_concurrency());
 
 int main(int argc, char* argv[]) {
-    if(argc < 5) {
-        std::cout << "Invalid number of arguments, exiting..." << std::endl;
-        std::cout << mSettings.getHelp() << std::endl;
-        return -1;
-    }
-
     mSettings.parseArgs(argc, argv);
     mSettings.parseIni(mSettings.getResourcesPath() + "settings.ini");
 
-    mThreadPool.start();
-
-    TleReader reader(mSettings.getTlePath());
-    TleReader::TLE tle;
-    reader.processFile();
-    if(!reader.getTLE("METEOR-M 2", tle)) {
-        std::cout << "TLE data not found in TLE file, exiting..." << std::endl;
-        return -1;
+    if(mSettings.showHelp()) {
+        std::cout << mSettings.getHelp() << std::endl;
+        return 0;
     }
+
+    mThreadPool.start();
 
     do {
         std::string inputPath = mSettings.getInputFilePath();
@@ -125,7 +116,7 @@ int main(int argc, char* argv[]) {
 
         std::ifstream binaryData(inputPath, std::ifstream::binary);
         if(!binaryData) {
-            std::cout << "Opening file '" << inputPath << "' failed!";
+            std::cout << "Opening input file '" << inputPath << "' failed!";
             break;
         }
 
@@ -216,11 +207,12 @@ int main(int argc, char* argv[]) {
     } while(false);
 
     std::cout << std::endl;
-    std::cout << "Decoded packets:" << decodedPacketCounter << std::endl;
 
     if(decodedPacketCounter == 0) {
         std::cout << "No data received, try to make composite images" << std::endl;
     } else {
+        std::cout << "Decoded packets:" << decodedPacketCounter << std::endl;
+
         DateTime passStart;
         DateTime passDate = mSettings.getPassDate();
         TimeSpan passStartTime = mPacketParser.getFirstTimeStamp();
@@ -238,10 +230,6 @@ int main(int argc, char* argv[]) {
 
         std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute()) + "-"
                                    + std::to_string(passStart.Second());
-
-        PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getM2ScanAngle(), mSettings.getM2Roll(), mSettings.getM2Pitch(), mSettings.getM2Yaw());
-        calc.calcPixelCoordinates();
-        calc.save(mSettings.getOutputPath() + fileNameDate + ".gcp");
 
         std::list<ImageForSpread> imagesToSpread;
 
@@ -359,6 +347,18 @@ int main(int argc, char* argv[]) {
 
             return 0;
         }
+
+        TleReader reader(mSettings.getTlePath());
+        TleReader::TLE tle;
+        reader.processFile();
+        if(!reader.getTLE("METEOR-M 2", tle)) {
+            std::cout << "TLE data not found in TLE file, unable to create projected images..." << std::endl;
+            return -1;
+        }
+
+        PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getM2ScanAngle(), mSettings.getM2Roll(), mSettings.getM2Pitch(), mSettings.getM2Yaw());
+        calc.calcPixelCoordinates();
+        calc.save(mSettings.getOutputPath() + fileNameDate + ".gcp");
 
         std::ostringstream oss;
         oss << std::setfill('0') << std::setw(2) << passStart.Day() << "/" << std::setw(2) << passStart.Month() << "/" << passStart.Year() << " " << std::setw(2) << passStart.Hour() << ":" << std::setw(2) << passStart.Minute() << ":"

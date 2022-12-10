@@ -96,6 +96,10 @@ class Settings {
     bool deInterleave() const;
     bool getBrokenM2Modulation() const;
 
+    bool showHelp() const {
+        return mArgs.count("-h") > 0 || mArgs.count("--help") > 0;
+    }
+
     int getJpegQuality() const {
         return mJpegQuality;
     }
@@ -267,6 +271,9 @@ class Settings {
     }
     const std::string& getShapePopulatedPlacesTextColumnName() const {
         return mShapePopulatedPlacesTextColumnName;
+    }
+    void resetArgs() {
+        mArgs.clear();
     }
 
   private:
