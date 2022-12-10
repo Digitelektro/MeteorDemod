@@ -1,37 +1,36 @@
 #ifndef DSP_POLYPHASEBANK_H
 #define DSP_POLYPHASEBANK_H
 
+#include <complex.h>
+
 #include <memory>
 #include <vector>
-#include <complex.h>
 
 namespace DSP {
 
-template<typename T>
+template <typename T>
 class PolyphaseBank {
-public:
+  public:
     PolyphaseBank()
         : mPhaseCount(0)
         , mTapsSize(0)
-        , mTapsPerPhase(0) {
+        , mTapsPerPhase(0) {}
 
-    }
-
-    inline void buildPolyphaseBank(int phaseCount, T *taps, int tapsCount) {
+    inline void buildPolyphaseBank(int phaseCount, T* taps, int tapsCount) {
         mPhaseCount = phaseCount;
         mTapsSize = tapsCount;
         mTapsPerPhase = (tapsCount + mPhaseCount - 1) / phaseCount;
         mPases.resize(mPhaseCount);
 
         // Allocate phases
-        for (int i = 0; i < mPhaseCount; i++) {
+        for(int i = 0; i < mPhaseCount; i++) {
             mPases[i].resize(mTapsPerPhase);
             std::fill(mPases[i].begin(), mPases[i].end(), 0);
         }
 
         // Fill phases
         int totTapCount = mPhaseCount * mTapsPerPhase;
-        for (int i = 0; i < totTapCount; i++) {
+        for(int i = 0; i < totTapCount; i++) {
             mPases[(mPhaseCount - 1) - (i % mPhaseCount)][i / mPhaseCount] = (i < mTapsSize) ? taps[i] : 0;
         }
     }
@@ -43,14 +42,14 @@ public:
             return res;
         }
 
-        for(auto &element : mPases[phase]) {
+        for(auto& element : mPases[phase]) {
             res += (*input++) * element;
         }
 
-       return res;
+        return res;
     }
 
-private:
+  private:
     int mPhaseCount;
     int mTapsSize;
     int mTapsPerPhase;

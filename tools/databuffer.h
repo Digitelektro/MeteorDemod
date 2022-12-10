@@ -1,47 +1,44 @@
 #ifndef DATABUFFER_H
 #define DATABUFFER_H
 
-#include <vector>
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
-template<size_t N>
+#include <vector>
+
+template <size_t N>
 void byteswap_array(uint8_t (&bytes)[N]) {
-  // Optimize this with a platform-specific API as desired.
-  for (uint8_t *p = bytes, *end = bytes + N - 1; p < end; ++p, --end) {
-    uint8_t tmp = *p;
-    *p = *end;
-    *end = tmp;
-  }
+    // Optimize this with a platform-specific API as desired.
+    for(uint8_t *p = bytes, *end = bytes + N - 1; p < end; ++p, --end) {
+        uint8_t tmp = *p;
+        *p = *end;
+        *end = tmp;
+    }
 }
 
-template<typename T>
+template <typename T>
 T byteswap(T value) {
-  byteswap_array(*reinterpret_cast<uint8_t (*)[sizeof(value)]>(&value));
-  return value;
+    byteswap_array(*reinterpret_cast<uint8_t(*)[sizeof(value)]>(&value));
+    return value;
 }
 
-enum Endianness {
-    BigEndian,
-    LittleEndian
-};
+enum Endianness { BigEndian, LittleEndian };
 
 class DataBuffer {
-public:
+  public:
     DataBuffer(size_t size)
-        : mBuffer(size) {
-    }
+        : mBuffer(size) {}
     virtual ~DataBuffer() {}
 
-public:
+  public:
     template <typename T>
-    bool valueAtIndex(size_t &index, T &result, Endianness endiannes) const {
+    bool valueAtIndex(size_t& index, T& result, Endianness endiannes) const {
         if(mBuffer.size() < (index + sizeof(T))) {
             return false;
         }
 
-        const T *p = reinterpret_cast<const T*>(&(mBuffer[index]));
+        const T* p = reinterpret_cast<const T*>(&(mBuffer[index]));
 
         if(endiannes == BigEndian) {
             result = byteswap(*p);
@@ -55,7 +52,7 @@ public:
     }
 
     template <typename T, size_t N>
-    bool valueAtIndex(size_t &index, T (&result)[N], Endianness endiannes) const {
+    bool valueAtIndex(size_t& index, T (&result)[N], Endianness endiannes) const {
         if(mBuffer.size() < (index + N)) {
             return false;
         }
@@ -71,20 +68,20 @@ public:
         return true;
     }
 
-public:
+  public:
     size_t size() const {
-        return  mBuffer.size();
+        return mBuffer.size();
     }
 
-    uint8_t *buffer() {
+    uint8_t* buffer() {
         return mBuffer.data();
     }
 
-    const uint8_t *constBuffer() const {
+    const uint8_t* constBuffer() const {
         return mBuffer.data();
     }
 
-protected:
+  protected:
     std::vector<uint8_t> mBuffer;
 };
 

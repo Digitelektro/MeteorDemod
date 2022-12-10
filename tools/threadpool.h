@@ -1,26 +1,23 @@
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
 
-#include <vector>
-#include <queue>
-#include <functional>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-
 #include <chrono>
+#include <condition_variable>
+#include <functional>
 #include <iostream>
+#include <mutex>
+#include <thread>
+#include <vector>
+
+#include <queue>
 
 
-class ThreadPool
-{
-private:
+class ThreadPool {
+  private:
     class JobCounter {
-    public:
-        JobCounter (int count_ = 0)
-            : mCount(count_)
-        {
-        }
+      public:
+        JobCounter(int count_ = 0)
+            : mCount(count_) {}
 
         void operator++(int) {
             std::unique_lock<std::mutex> lock(mMutex);
@@ -48,34 +45,34 @@ private:
             return mCount;
         }
 
-    private:
+      private:
         mutable std::mutex mMutex;
         std::condition_variable mCv;
         int mCount;
     };
 
-public:
+  public:
     typedef std::function<void()> JobFunction_t;
 
-public:
+  public:
     ThreadPool(int numOfThreads);
     ~ThreadPool();
 
-    ThreadPool(const ThreadPool &other) = delete;
-    ThreadPool(ThreadPool &&other) = delete;
-    ThreadPool &operator=(const ThreadPool &other) = delete;
-    ThreadPool &operator=(ThreadPool &&other) = delete;
+    ThreadPool(const ThreadPool& other) = delete;
+    ThreadPool(ThreadPool&& other) = delete;
+    ThreadPool& operator=(const ThreadPool& other) = delete;
+    ThreadPool& operator=(ThreadPool&& other) = delete;
 
     void start();
     void stop();
-    void waitForAllJobsDone(){
+    void waitForAllJobsDone() {
         mJobCounter.wait();
     };
 
     void addJob(JobFunction_t task);
 
-    template<typename T>
-    void addJob(void(T::*handler)(), T *instance) {
+    template <typename T>
+    void addJob(void (T::*handler)(), T* instance) {
         addJob(std::bind(handler, instance));
     }
 
@@ -83,7 +80,7 @@ public:
         return mJobCounter.getCount();
     }
 
-private:
+  private:
     int mNumberOfThreads;
     bool mIsRuning;
     std::vector<std::thread> mThreads;
@@ -92,20 +89,19 @@ private:
     std::condition_variable mConditionVariable;
     JobCounter mJobCounter;
 
-private:
+  private:
     void threadLoop();
 };
 
 class ThreadPoolTest {
-public:
-    ThreadPoolTest() : mThreadPool(std::thread::hardware_concurrency()) {
-
-    }
+  public:
+    ThreadPoolTest()
+        : mThreadPool(std::thread::hardware_concurrency()) {}
 
     void start() {
         mThreadPool.start();
         for(int i = 0; i < 20; i++) {
-            mThreadPool.addJob([i](){
+            mThreadPool.addJob([i]() {
                 std::cout << "Thread started :" << i << std::endl;
                 std::this_thread::sleep_for(std::chrono::milliseconds(2000));
                 std::cout << "Thread end :" << i << std::endl;
@@ -118,9 +114,8 @@ public:
         mThreadPool.stop();
     }
 
-private:
+  private:
     ThreadPool mThreadPool;
-
 };
 
 #endif // THREADPOOL_H

@@ -2,26 +2,26 @@
 #define DSP_MM_H
 
 #include <functional>
+
 #include "phasecontrolloop.h"
 #include "polyphasebank.h"
 
 namespace DSP {
 
-class MM
-{
-public:
+class MM {
+  public:
     using complex = std::complex<float>;
 
-public:
+  public:
     MM(float omega, float omegaGain, float muGain, float omegaRelLimit, int interpPhaseCount = 128, int interpTapCount = 8);
     ~MM() = default;
 
-    int process(int count, const complex *in, std::function<void(complex)> callback);
+    int process(int count, const complex* in, std::function<void(complex)> callback);
 
-protected:
+  protected:
     void generateInterpTaps();
 
-private:
+  private:
     int mInterpPhaseCount;
     int mInterpTapCount;
     PhaseControlLoop mPcl;
@@ -34,13 +34,13 @@ private:
     complex mc2T;
 
     int mOffset;
-    std::unique_ptr<complex[]>mBuffer;
-    complex *mpBufStart;
+    std::unique_ptr<complex[]> mBuffer;
+    complex* mpBufStart;
     PolyphaseBank<float> mInterpBank;
 
-private:
-    static inline complex step(const complex &value) {
-         return {(value.real() > 0.0f) ? 1.0f : -1.0f, (value.imag() > 0.0f) ? 1.0f : -1.0f};
+  private:
+    static inline complex step(const complex& value) {
+        return {(value.real() > 0.0f) ? 1.0f : -1.0f, (value.imag() > 0.0f) ? 1.0f : -1.0f};
     }
 };
 

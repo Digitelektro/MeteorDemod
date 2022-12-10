@@ -1,25 +1,21 @@
 #include "dbfilereader.h"
+
 #include <fstream>
 
 namespace GIS {
 
-DbFileReader::DbFileReader(const std::string &filePath)
+DbFileReader::DbFileReader(const std::string& filePath)
     : mFilePath(filePath)
     , mIsLoaded(false)
-    , mLargestRecordSize(0)
-{
+    , mLargestRecordSize(0) {}
 
-}
-
-DbFileReader::~DbFileReader()
-{
+DbFileReader::~DbFileReader() {
     if(mBinaryData.is_open()) {
         mBinaryData.close();
     }
 }
 
-bool DbFileReader::load()
-{
+bool DbFileReader::load() {
     bool success = true;
 
     if(mIsLoaded) {
@@ -53,7 +49,7 @@ bool DbFileReader::load()
                 break;
             }
 
-            //End of fields marker
+            // End of fields marker
             if(fieldDescriptorBuffer.constBuffer()[0] == 0x0D) {
                 break;
             }
@@ -73,8 +69,7 @@ bool DbFileReader::load()
     return success;
 }
 
-void DbFileReader::test()
-{
+void DbFileReader::test() {
     std::cout << mFileHeader << std::endl;
     std::cout << std::endl;
 
@@ -90,8 +85,7 @@ void DbFileReader::test()
     }
 }
 
-std::vector<std::string> DbFileReader::getFieldValues(uint32_t record) const
-{
+std::vector<std::string> DbFileReader::getFieldValues(uint32_t record) const {
     std::vector<std::string> attributeValues;
     char isRecordDeleted;
     do {
@@ -133,19 +127,17 @@ std::vector<std::string> DbFileReader::getFieldValues(uint32_t record) const
     return attributeValues;
 }
 
-DbFileReader::Header::Header(const DataBuffer &buffer)
-{
+DbFileReader::Header::Header(const DataBuffer& buffer) {
     size_t index = 0;
     buffer.valueAtIndex(index, type, LittleEndian);
     buffer.valueAtIndex(index, lastUpdated, LittleEndian);
     buffer.valueAtIndex(index, numberOfRecords, LittleEndian);
     buffer.valueAtIndex(index, headerSize, LittleEndian);
     buffer.valueAtIndex(index, recordSize, LittleEndian);
-    buffer.valueAtIndex(index, _reserved,  LittleEndian);
+    buffer.valueAtIndex(index, _reserved, LittleEndian);
 }
 
-DbFileReader::Field::Field(const DataBuffer &buffer)
-{
+DbFileReader::Field::Field(const DataBuffer& buffer) {
     size_t index = 0;
     buffer.valueAtIndex(index, fieldName, LittleEndian);
     buffer.valueAtIndex(index, fieldtype, LittleEndian);
@@ -159,4 +151,4 @@ DbFileReader::Field::Field(const DataBuffer &buffer)
     buffer.valueAtIndex(index, _reserved3, LittleEndian);
 }
 
-} //namespace
+} // namespace GIS

@@ -1,76 +1,58 @@
+#include <chrono>
+#include <ctime>
+#include <experimental/filesystem>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <opencv2/imgcodecs.hpp>
+#include <sstream>
+#include <tuple>
+
 #include "DSP/meteordemodulator.h"
 #include "DSP/wavreader.h"
-#include "correlation.h"
-#include "packetparser.h"
-#include "reedsolomon.h"
-#include "viterbi.h"
-#include "deinterleaver.h"
-#include "pixelgeolocationcalculator.h"
-
-#include <map>
-#include <tuple>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <ctime>
-#include <chrono>
-#include <experimental/filesystem>
-#include <opencv2/imgcodecs.hpp>
-
-#include "spreadimage.h"
 #include "GIS/shapereader.h"
 #include "GIS/shaperenderer.h"
-#include "tlereader.h"
+#include "correlation.h"
+#include "deinterleaver.h"
+#include "packetparser.h"
+#include "pixelgeolocationcalculator.h"
+#include "reedsolomon.h"
 #include "settings.h"
+#include "spreadimage.h"
 #include "threadpool.h"
+#include "tlereader.h"
+#include "viterbi.h"
 
 namespace fs = std::experimental::filesystem;
 
 struct ImageForSpread {
     ImageForSpread(cv::Mat img, std::string fileNamebase)
         : image(img)
-        , fileNameBase(fileNamebase) {
-    }
+        , fileNameBase(fileNamebase) {}
 
     cv::Mat image;
     std::string fileNameBase;
 };
 
-void searchForImages(std::list<cv::Mat> &imagesOut, std::list<PixelGeolocationCalculator> &geolocationCalculatorsOut, const std::string &channelName);
-void saveImage(const std::string fileName, const cv::Mat &image);
-void writeSymbolToFile(std::ostream &stream, const Wavreader::complex &sample);
+void searchForImages(std::list<cv::Mat>& imagesOut, std::list<PixelGeolocationCalculator>& geolocationCalculatorsOut, const std::string& channelName);
+void saveImage(const std::string fileName, const cv::Mat& image);
+void writeSymbolToFile(std::ostream& stream, const Wavreader::complex& sample);
 int mean(int cur, int prev);
-void differentialDecode(int8_t *data, int64_t len);
+void differentialDecode(int8_t* data, int64_t len);
 int8_t clamp(float x);
 
 static std::mutex saveImageMutex;
 
 static uint16_t intSqrtTable[32768];
 
-static const uint8_t PRAND[] = {
-    0xff, 0x48, 0x0e, 0xc0, 0x9a, 0x0d, 0x70, 0xbc, 0x8e, 0x2c, 0x93, 0xad, 0xa7,
-    0xb7, 0x46, 0xce, 0x5a, 0x97, 0x7d, 0xcc, 0x32, 0xa2, 0xbf, 0x3e, 0x0a,
-    0x10, 0xf1, 0x88, 0x94, 0xcd, 0xea, 0xb1, 0xfe, 0x90, 0x1d, 0x81, 0x34,
-    0x1a, 0xe1, 0x79, 0x1c, 0x59, 0x27, 0x5b, 0x4f, 0x6e, 0x8d, 0x9c, 0xb5,
-    0x2e, 0xfb, 0x98, 0x65, 0x45, 0x7e, 0x7c, 0x14, 0x21, 0xe3, 0x11, 0x29,
-    0x9b, 0xd5, 0x63, 0xfd, 0x20, 0x3b, 0x02, 0x68, 0x35, 0xc2, 0xf2, 0x38,
-    0xb2, 0x4e, 0xb6, 0x9e, 0xdd, 0x1b, 0x39, 0x6a, 0x5d, 0xf7, 0x30, 0xca,
-    0x8a, 0xfc, 0xf8, 0x28, 0x43, 0xc6, 0x22, 0x53, 0x37, 0xaa, 0xc7, 0xfa,
-    0x40, 0x76, 0x04, 0xd0, 0x6b, 0x85, 0xe4, 0x71, 0x64, 0x9d, 0x6d, 0x3d,
-    0xba, 0x36, 0x72, 0xd4, 0xbb, 0xee, 0x61, 0x95, 0x15, 0xf9, 0xf0, 0x50,
-    0x87, 0x8c, 0x44, 0xa6, 0x6f, 0x55, 0x8f, 0xf4, 0x80, 0xec, 0x09, 0xa0,
-    0xd7, 0x0b, 0xc8, 0xe2, 0xc9, 0x3a, 0xda, 0x7b, 0x74, 0x6c, 0xe5, 0xa9,
-    0x77, 0xdc, 0xc3, 0x2a, 0x2b, 0xf3, 0xe0, 0xa1, 0x0f, 0x18, 0x89, 0x4c,
-    0xde, 0xab, 0x1f, 0xe9, 0x01, 0xd8, 0x13, 0x41, 0xae, 0x17, 0x91, 0xc5,
-    0x92, 0x75, 0xb4, 0xf6, 0xe8, 0xd9, 0xcb, 0x52, 0xef, 0xb9, 0x86, 0x54,
-    0x57, 0xe7, 0xc1, 0x42, 0x1e, 0x31, 0x12, 0x99, 0xbd, 0x56, 0x3f, 0xd2,
-    0x03, 0xb0, 0x26, 0x83, 0x5c, 0x2f, 0x23, 0x8b, 0x24, 0xeb, 0x69, 0xed,
-    0xd1, 0xb3, 0x96, 0xa5, 0xdf, 0x73, 0x0c, 0xa8, 0xaf, 0xcf, 0x82, 0x84,
-    0x3c, 0x62, 0x25, 0x33, 0x7a, 0xac, 0x7f, 0xa4, 0x07, 0x60, 0x4d, 0x06,
-    0xb8, 0x5e, 0x47, 0x16, 0x49, 0xd6, 0xd3, 0xdb, 0xa3, 0x67, 0x2d, 0x4b,
-    0xbe, 0xe6, 0x19, 0x51, 0x5f, 0x9f, 0x05, 0x08, 0x78, 0xc4, 0x4a, 0x66,
-    0xf5, 0x58
-};
+static const uint8_t PRAND[]
+    = {0xff, 0x48, 0x0e, 0xc0, 0x9a, 0x0d, 0x70, 0xbc, 0x8e, 0x2c, 0x93, 0xad, 0xa7, 0xb7, 0x46, 0xce, 0x5a, 0x97, 0x7d, 0xcc, 0x32, 0xa2, 0xbf, 0x3e, 0x0a, 0x10, 0xf1, 0x88, 0x94, 0xcd, 0xea, 0xb1, 0xfe, 0x90, 0x1d, 0x81, 0x34,
+       0x1a, 0xe1, 0x79, 0x1c, 0x59, 0x27, 0x5b, 0x4f, 0x6e, 0x8d, 0x9c, 0xb5, 0x2e, 0xfb, 0x98, 0x65, 0x45, 0x7e, 0x7c, 0x14, 0x21, 0xe3, 0x11, 0x29, 0x9b, 0xd5, 0x63, 0xfd, 0x20, 0x3b, 0x02, 0x68, 0x35, 0xc2, 0xf2, 0x38, 0xb2,
+       0x4e, 0xb6, 0x9e, 0xdd, 0x1b, 0x39, 0x6a, 0x5d, 0xf7, 0x30, 0xca, 0x8a, 0xfc, 0xf8, 0x28, 0x43, 0xc6, 0x22, 0x53, 0x37, 0xaa, 0xc7, 0xfa, 0x40, 0x76, 0x04, 0xd0, 0x6b, 0x85, 0xe4, 0x71, 0x64, 0x9d, 0x6d, 0x3d, 0xba, 0x36,
+       0x72, 0xd4, 0xbb, 0xee, 0x61, 0x95, 0x15, 0xf9, 0xf0, 0x50, 0x87, 0x8c, 0x44, 0xa6, 0x6f, 0x55, 0x8f, 0xf4, 0x80, 0xec, 0x09, 0xa0, 0xd7, 0x0b, 0xc8, 0xe2, 0xc9, 0x3a, 0xda, 0x7b, 0x74, 0x6c, 0xe5, 0xa9, 0x77, 0xdc, 0xc3,
+       0x2a, 0x2b, 0xf3, 0xe0, 0xa1, 0x0f, 0x18, 0x89, 0x4c, 0xde, 0xab, 0x1f, 0xe9, 0x01, 0xd8, 0x13, 0x41, 0xae, 0x17, 0x91, 0xc5, 0x92, 0x75, 0xb4, 0xf6, 0xe8, 0xd9, 0xcb, 0x52, 0xef, 0xb9, 0x86, 0x54, 0x57, 0xe7, 0xc1, 0x42,
+       0x1e, 0x31, 0x12, 0x99, 0xbd, 0x56, 0x3f, 0xd2, 0x03, 0xb0, 0x26, 0x83, 0x5c, 0x2f, 0x23, 0x8b, 0x24, 0xeb, 0x69, 0xed, 0xd1, 0xb3, 0x96, 0xa5, 0xdf, 0x73, 0x0c, 0xa8, 0xaf, 0xcf, 0x82, 0x84, 0x3c, 0x62, 0x25, 0x33, 0x7a,
+       0xac, 0x7f, 0xa4, 0x07, 0x60, 0x4d, 0x06, 0xb8, 0x5e, 0x47, 0x16, 0x49, 0xd6, 0xd3, 0xdb, 0xa3, 0x67, 0x2d, 0x4b, 0xbe, 0xe6, 0x19, 0x51, 0x5f, 0x9f, 0x05, 0x08, 0x78, 0xc4, 0x4a, 0x66, 0xf5, 0x58};
 
 static uint8_t dataTodecode[16384];
 static uint8_t viterbiResult[1024];
@@ -81,15 +63,14 @@ static Correlation mCorrelation;
 static Viterbi mViterbi;
 static PacketParser mPacketParser;
 static ReedSolomon mReedSolomon;
-static Settings &mSettings = Settings::getInstance();
+static Settings& mSettings = Settings::getInstance();
 static ThreadPool mThreadPool(std::thread::hardware_concurrency());
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char* argv[]) {
     if(argc < 5) {
         std::cout << "Invalid number of arguments, exiting..." << std::endl;
         std::cout << mSettings.getHelp() << std::endl;
-        return  -1;
+        return -1;
     }
 
     mSettings.parseArgs(argc, argv);
@@ -112,7 +93,7 @@ int main(int argc, char *argv[])
             std::cout << "Input is a .wav file, processing it..." << std::endl;
 
             const std::string outputPath = inputPath.substr(0, inputPath.find_last_of(".") + 1) + "s";
-            std::ofstream  outputStream;
+            std::ofstream outputStream;
             outputStream.open(outputPath, std::ios::binary);
 
             if(!outputStream.is_open()) {
@@ -133,7 +114,7 @@ int main(int argc, char *argv[])
 
 
             DSP::MeteorDemodulator decoder(mode, mSettings.getSymbolRate(), mSettings.getCostasBandwidth(), mSettings.getRRCFilterOrder(), mSettings.waitForlock(), mSettings.getBrokenM2Modulation());
-            decoder.process(wavReader, [&outputStream](const Wavreader::complex &sample, float) {
+            decoder.process(wavReader, [&outputStream](const Wavreader::complex& sample, float) {
                 writeSymbolToFile(outputStream, sample);
             });
 
@@ -142,23 +123,23 @@ int main(int argc, char *argv[])
             inputPath = outputPath;
         }
 
-        std::ifstream binaryData (inputPath, std::ifstream::binary);
+        std::ifstream binaryData(inputPath, std::ifstream::binary);
         if(!binaryData) {
             std::cout << "Opening file '" << inputPath << "' failed!";
             break;
         }
 
-        binaryData.seekg (0, binaryData.end);
+        binaryData.seekg(0, binaryData.end);
         int64_t fileLength = binaryData.tellg();
-        binaryData.seekg (0, binaryData.beg);
+        binaryData.seekg(0, binaryData.beg);
 
-        uint8_t *softBits = new uint8_t[fileLength];
+        uint8_t* softBits = new uint8_t[fileLength];
         if(!softBits) {
             std::cout << "Memory allocation failed" << std::endl;
             break;
         }
 
-        binaryData.read (reinterpret_cast<char*>(softBits),fileLength);
+        binaryData.read(reinterpret_cast<char*>(softBits), fileLength);
 
         if(mSettings.deInterleave()) {
             std::cout << "Deinterleaving..." << std::endl;
@@ -191,28 +172,30 @@ int main(int argc, char *argv[])
 
                 mViterbi.decodeSoft(dataTodecode, viterbiResult, 16384);
 
-                uint32_t last_sync_ = *reinterpret_cast<uint32_t *>(viterbiResult);
+                uint32_t last_sync_ = *reinterpret_cast<uint32_t*>(viterbiResult);
 
-                if (Correlation::countBits(last_sync_ ^ 0xE20330E5) < Correlation::countBits(last_sync_ ^ 0x1DFCCF1A)) {
-                    for (int j = 4; j < 1024; j++) {
+                if(Correlation::countBits(last_sync_ ^ 0xE20330E5) < Correlation::countBits(last_sync_ ^ 0x1DFCCF1A)) {
+                    for(int j = 4; j < 1024; j++) {
                         viterbiResult[j] = viterbiResult[j] ^ 0xFF;
                     }
                     last_sync_ = last_sync_ ^ 0xFFFFFFFF;
                 }
 
-                for (int j = 0; j < 1024-4; j++) {
-                    viterbiResult[j+4] = viterbiResult[j+4] ^ PRAND[j % 255];
+                for(int j = 0; j < 1024 - 4; j++) {
+                    viterbiResult[j + 4] = viterbiResult[j + 4] ^ PRAND[j % 255];
                 }
 
                 for(int i = 0; i < 4; i++) {
-                    mReedSolomon.deinterleave(viterbiResult + 4, i , 4);
+                    mReedSolomon.deinterleave(viterbiResult + 4, i, 4);
                     rsResult[i] = mReedSolomon.decode();
                     mReedSolomon.interleave(decodedPacket, i, 4);
                 }
 
-                std::cout << "Pos:" << (correlationResult.pos + processedBits) << " | Phase:" << phaseShift << " | synch:" << std::hex << last_sync_ << " | RS: (" << std::dec << rsResult[0] << ", " << rsResult[1] << ", " << rsResult[2] << ", "  << rsResult[3] << ")"  << "\t\t\r" << std::flush;
+                std::cout << "Pos:" << (correlationResult.pos + processedBits) << " | Phase:" << phaseShift << " | synch:" << std::hex << last_sync_ << " | RS: (" << std::dec << rsResult[0] << ", " << rsResult[1] << ", " << rsResult[2]
+                          << ", " << rsResult[3] << ")"
+                          << "\t\t\r" << std::flush;
 
-                packetOk = (rsResult[0] != -1) && (rsResult[1] != -1) &&(rsResult[2] != -1) && (rsResult[3] != -1);
+                packetOk = (rsResult[0] != -1) && (rsResult[1] != -1) && (rsResult[2] != -1) && (rsResult[3] != -1);
 
                 if(packetOk) {
                     mPacketParser.parseFrame(decodedPacket, 892);
@@ -221,7 +204,7 @@ int main(int argc, char *argv[])
                 }
             } while(packetOk);
 
-            return (processedBits > 0) ? processedBits-1 : 0;
+            return (processedBits > 0) ? processedBits - 1 : 0;
         });
 
         delete[] softBits;
@@ -230,7 +213,7 @@ int main(int argc, char *argv[])
             binaryData.close();
         }
 
-    } while (false);
+    } while(false);
 
     std::cout << std::endl;
     std::cout << "Decoded packets:" << decodedPacketCounter << std::endl;
@@ -246,14 +229,15 @@ int main(int argc, char *argv[])
         passStartTime = passStartTime.Add(TimeSpan(0, 0, mSettings.getTimeOffsetM2Sec()));
         passLength = passLength.Add(TimeSpan(0, 0, mSettings.getTimeOffsetM2Sec()));
 
-        passDate = passDate.AddHours(3); //Convert UTC 0 to Moscow time zone (UTC + 3)
+        passDate = passDate.AddHours(3); // Convert UTC 0 to Moscow time zone (UTC + 3)
 
-        //Satellite's date time
+        // Satellite's date time
         passStart.Initialise(passDate.Year(), passDate.Month(), passDate.Day(), passStartTime.Hours(), passStartTime.Minutes(), passStartTime.Seconds(), passStartTime.Microseconds());
-        //Convert satellite's Moscow time zone to UTC 0
+        // Convert satellite's Moscow time zone to UTC 0
         passStart = passStart.AddHours(-3);
 
-        std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute()) + "-" + std::to_string(passStart.Second());
+        std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute()) + "-"
+                                   + std::to_string(passStart.Second());
 
         PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getM2ScanAngle(), mSettings.getM2Roll(), mSettings.getM2Pitch(), mSettings.getM2Yaw());
         calc.calcPixelCoordinates();
@@ -377,7 +361,8 @@ int main(int argc, char *argv[])
         }
 
         std::ostringstream oss;
-        oss << std::setfill('0') << std::setw(2) << passStart.Day() << "/" << std::setw(2) << passStart.Month() << "/" << passStart.Year() << " " << std::setw(2) << passStart.Hour() << ":" << std::setw(2) << passStart.Minute() << ":" << std::setw(2) << passStart.Second() << " UTC";
+        oss << std::setfill('0') << std::setw(2) << passStart.Day() << "/" << std::setw(2) << passStart.Month() << "/" << passStart.Year() << " " << std::setw(2) << passStart.Hour() << ":" << std::setw(2) << passStart.Minute() << ":"
+            << std::setw(2) << passStart.Second() << " UTC";
         std::string dateStr = oss.str();
 
         std::list<ImageForSpread>::const_iterator it;
@@ -445,27 +430,26 @@ int main(int argc, char *argv[])
 
         if(images123.size() > 1 && images123.size() == geolocationCalculators123.size()) {
             if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
-                for(auto &img : images123) {
+                for(auto& img : images123) {
                     img = ThreatImage::sharpen(img);
                 }
             }
 
             SpreadImage spreadImage;
             if(mSettings.compositeEquadistantProjection()) {
-                cv::Mat composite = spreadImage.equidistantProjection(images123, geolocationCalculators123, mSettings.getCompositeProjectionScale(), [](float progress){
+                cv::Mat composite = spreadImage.equidistantProjection(images123, geolocationCalculators123, mSettings.getCompositeProjectionScale(), [](float progress) {
                     std::cout << "Generate equidistant channel 123 composite image " << (int)progress << "% \t\t\r" << std::flush;
                 });
                 std::cout << std::endl;
                 saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_123_composite.jpg", composite);
             }
             if(mSettings.compositeMercatorProjection()) {
-                cv::Mat composite = spreadImage.mercatorProjection(images123, geolocationCalculators123, mSettings.getCompositeProjectionScale(), [](float progress){
+                cv::Mat composite = spreadImage.mercatorProjection(images123, geolocationCalculators123, mSettings.getCompositeProjectionScale(), [](float progress) {
                     std::cout << "Generate mercator channel 123 composite image " << (int)progress << "% \t\t\r" << std::flush;
                 });
                 std::cout << std::endl;
                 saveImage(mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_123_composite.jpg", composite);
             }
-            
         }
     }
 
@@ -477,14 +461,14 @@ int main(int argc, char *argv[])
         if(images125.size() > 1 && images125.size() == geolocationCalculators125.size()) {
             SpreadImage spreadImage;
             if(mSettings.compositeEquadistantProjection()) {
-                cv::Mat composite = spreadImage.equidistantProjection(images125, geolocationCalculators125, mSettings.getCompositeProjectionScale(), [](float progress){
+                cv::Mat composite = spreadImage.equidistantProjection(images125, geolocationCalculators125, mSettings.getCompositeProjectionScale(), [](float progress) {
                     std::cout << "Generate equidistant channel 125 composite image " << (int)progress << "% \t\t\r" << std::flush;
                 });
                 std::cout << std::endl;
                 saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_125_composite.jpg", composite);
             }
             if(mSettings.compositeMercatorProjection()) {
-                cv::Mat composite = spreadImage.mercatorProjection(images125, geolocationCalculators125, mSettings.getCompositeProjectionScale(), [](float progress){
+                cv::Mat composite = spreadImage.mercatorProjection(images125, geolocationCalculators125, mSettings.getCompositeProjectionScale(), [](float progress) {
                     std::cout << "Generate mercator channel 125 composite image " << (int)progress << "% \t\t\r" << std::flush;
                 });
                 std::cout << std::endl;
@@ -501,20 +485,20 @@ int main(int argc, char *argv[])
         if(images221.size() > 1 && images221.size() == geolocationCalculators221.size()) {
             SpreadImage spreadImage;
             if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
-                for(auto &img : images221) {
+                for(auto& img : images221) {
                     img = ThreatImage::sharpen(img);
                 }
             }
 
             if(mSettings.compositeEquadistantProjection()) {
-                cv::Mat composite = spreadImage.equidistantProjection(images221, geolocationCalculators221, mSettings.getCompositeProjectionScale(), [](float progress){
+                cv::Mat composite = spreadImage.equidistantProjection(images221, geolocationCalculators221, mSettings.getCompositeProjectionScale(), [](float progress) {
                     std::cout << "Generate equidistant channel 221 composite image " << (int)progress << "% \t\t\r" << std::flush;
                 });
                 std::cout << std::endl;
                 saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_221_composite.jpg", composite);
             }
             if(mSettings.compositeMercatorProjection()) {
-                cv::Mat composite = spreadImage.mercatorProjection(images221, geolocationCalculators221, mSettings.getCompositeProjectionScale(), [](float progress){
+                cv::Mat composite = spreadImage.mercatorProjection(images221, geolocationCalculators221, mSettings.getCompositeProjectionScale(), [](float progress) {
                     std::cout << "Generate mercator channel 221 composite image " << (int)progress << "% \t\t\r" << std::flush;
                 });
                 std::cout << std::endl;
@@ -530,7 +514,7 @@ int main(int argc, char *argv[])
 
         if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
             if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
-                for(auto &img : images68) {
+                for(auto& img : images68) {
                     img = ThreatImage::invertIR(img);
                     img = ThreatImage::gamma(img, 1.4);
                     img = ThreatImage::contrast(img, 1.3, -40);
@@ -540,14 +524,14 @@ int main(int argc, char *argv[])
 
             SpreadImage spreadImage;
             if(mSettings.compositeEquadistantProjection()) {
-                cv::Mat composite = spreadImage.equidistantProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress){
+                cv::Mat composite = spreadImage.equidistantProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress) {
                     std::cout << "Generate equidistant channel 68 composite image " << (int)progress << "% \t\t\r" << std::flush;
                 });
                 std::cout << std::endl;
                 saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_68_composite.jpg", composite);
             }
             if(mSettings.compositeMercatorProjection()) {
-                cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress){
+                cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress) {
                     std::cout << "Generate mercator channel 68 composite image " << (int)progress << "% \t\t\r" << std::flush;
                 });
                 std::cout << std::endl;
@@ -564,7 +548,7 @@ int main(int argc, char *argv[])
         if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
             if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
                 cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
-                for(auto &img : images68) {
+                for(auto& img : images68) {
                     cv::Mat rainOverlay = ThreatImage::irToRain(img, rainRef);
                     img = ThreatImage::invertIR(img);
                     img = ThreatImage::gamma(img, 1.4);
@@ -576,14 +560,14 @@ int main(int argc, char *argv[])
 
             SpreadImage spreadImage;
             if(mSettings.compositeEquadistantProjection()) {
-                cv::Mat composite = spreadImage.equidistantProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress){
+                cv::Mat composite = spreadImage.equidistantProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress) {
                     std::cout << "Generate equidistant channel 68 rain composite image " << (int)progress << "% \t\t\r" << std::flush;
                 });
                 std::cout << std::endl;
                 saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_68_rain_composite.jpg", composite);
             }
             if(mSettings.compositeMercatorProjection()) {
-                cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress){
+                cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress) {
                     std::cout << "Generate mercator channel 68 rain composite image " << (int)progress << "% \t\t\r" << std::flush;
                 });
                 std::cout << std::endl;
@@ -600,21 +584,21 @@ int main(int argc, char *argv[])
         if(images68.size() > 1 && images68.size() == geolocationCalculators68.size()) {
             if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
                 cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
-                for(auto &img : images68) {
+                for(auto& img : images68) {
                     img = ThreatImage::irToTemperature(img, thermalRef);
                 }
             }
 
             SpreadImage spreadImage;
             if(mSettings.compositeEquadistantProjection()) {
-                cv::Mat composite = spreadImage.equidistantProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress){
+                cv::Mat composite = spreadImage.equidistantProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress) {
                     std::cout << "Generate equidistant thermal composite image " << (int)progress << "% \t\t\r" << std::flush;
                 });
                 std::cout << std::endl;
                 saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_thermal_composite.jpg", composite);
             }
             if(mSettings.compositeMercatorProjection()) {
-                cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress){
+                cv::Mat composite = spreadImage.mercatorProjection(images68, geolocationCalculators68, mSettings.getCompositeProjectionScale(), [](float progress) {
                     std::cout << "Generate mercator thermal composite image " << (int)progress << "% \t\t\r" << std::flush;
                 });
                 std::cout << std::endl;
@@ -629,12 +613,11 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void searchForImages(std::list<cv::Mat> &imagesOut, std::list<PixelGeolocationCalculator> &geolocationCalculatorsOut, const std::string &channelName)
-{
+void searchForImages(std::list<cv::Mat>& imagesOut, std::list<PixelGeolocationCalculator>& geolocationCalculatorsOut, const std::string& channelName) {
     std::time_t now = std::time(nullptr);
     std::map<std::time_t, std::tuple<std::string, std::string>> map;
 
-    for(const auto & entry : fs::directory_iterator(mSettings.getOutputPath())) {
+    for(const auto& entry : fs::directory_iterator(mSettings.getOutputPath())) {
         auto ftime = fs::last_write_time(entry);
         std::time_t cftime = std::chrono::system_clock::to_time_t((ftime));
         std::time_t fileCreatedSec = now - cftime;
@@ -664,7 +647,7 @@ void searchForImages(std::list<cv::Mat> &imagesOut, std::list<PixelGeolocationCa
     }
 
     if(map.size() > 1) {
-        for (auto const &[time, paths] : map) {
+        for(auto const& [time, paths] : map) {
             std::cout << std::get<1>(paths) << std::endl;
 
             geolocationCalculatorsOut.emplace_back(PixelGeolocationCalculator::load(std::get<0>(paths)));
@@ -673,9 +656,8 @@ void searchForImages(std::list<cv::Mat> &imagesOut, std::list<PixelGeolocationCa
     }
 }
 
-void saveImage(const std::string fileName, const cv::Mat &image)
-{
-    std::unique_lock<decltype(saveImageMutex)>lock(saveImageMutex);
+void saveImage(const std::string fileName, const cv::Mat& image) {
+    std::unique_lock<decltype(saveImageMutex)> lock(saveImageMutex);
 
     std::vector<int> compression_params;
     compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
@@ -683,13 +665,12 @@ void saveImage(const std::string fileName, const cv::Mat &image)
 
     try {
         cv::imwrite(fileName, image, compression_params);
-    } catch (const cv::Exception& ex) {
+    } catch(const cv::Exception& ex) {
         std::cout << "Saving image " << fileName << " failed. error: " << ex.what() << std::endl;
     }
 }
 
-void writeSymbolToFile(std::ostream &stream, const Wavreader::complex &sample)
-{
+void writeSymbolToFile(std::ostream& stream, const Wavreader::complex& sample) {
     int8_t outBuffer[2];
 
     outBuffer[0] = clamp(std::real(sample) * 127);
@@ -698,32 +679,30 @@ void writeSymbolToFile(std::ostream &stream, const Wavreader::complex &sample)
     stream.write(reinterpret_cast<char*>(outBuffer), sizeof(outBuffer));
 }
 
-int mean(int cur, int prev)
-{
+int mean(int cur, int prev) {
     int v = cur * prev;
     int result = 0;
 
-    if (v > 32767 || v < -32767) {
+    if(v > 32767 || v < -32767) {
         return 0;
     }
 
-    if (v >=0) {
+    if(v >= 0) {
         result = intSqrtTable[v];
     } else {
-        result =-intSqrtTable[-v];
+        result = -intSqrtTable[-v];
     }
 
     return result;
 }
 
-void differentialDecode(int8_t *data, int64_t len)
-{
+void differentialDecode(int8_t* data, int64_t len) {
     int a;
     int b;
     int prevA;
     int prevB;
 
-    if (len < 2) {
+    if(len < 2) {
         return;
     }
 
@@ -738,26 +717,25 @@ void differentialDecode(int8_t *data, int64_t len)
     for(int64_t i = 0; i < (len / 2); i++) {
         a = data[i * 2 + 0];
         b = data[i * 2 + 1];
-        data[i*2+0] = mean(a, prevA);
-        data[i*2+1] = mean(-b, prevB);
+        data[i * 2 + 0] = mean(a, prevA);
+        data[i * 2 + 1] = mean(-b, prevB);
         prevA = a;
         prevB = b;
     }
 }
 
 // Clamp a real value to a int8_t
-int8_t clamp(float x)
-{
-    if (x < -128.0) {
+int8_t clamp(float x) {
+    if(x < -128.0) {
         return -128;
     }
-    if (x > 127.0) {
+    if(x > 127.0) {
         return 127;
     }
-    if (x > 0 && x < 1) {
+    if(x > 0 && x < 1) {
         return 1;
     }
-    if (x > -1 && x < 0) {
+    if(x > -1 && x < 0) {
         return -1;
     }
     return static_cast<int8_t>(x);

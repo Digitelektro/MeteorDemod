@@ -189,7 +189,7 @@ SpaceBeforeCpp11BracedList: false
 SpaceBeforeCtorInitializerColon: true
 ### not available in v6
 SpaceBeforeInheritanceColon: true
-SpaceBeforeParens: ControlStatements
+SpaceBeforeParens: Never
 ### not available in v6
 SpaceBeforeRangeBasedForLoopColon: true
 ### not available in v6

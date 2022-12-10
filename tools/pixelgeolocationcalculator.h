@@ -1,80 +1,79 @@
 #ifndef PIXELGEOLOCATIONCALCULATOR_H
 #define PIXELGEOLOCATIONCALCULATOR_H
-#include <string>
-#include <math.h>
-#include <list>
-#include <vector>
-#include <SGP4.h>
 #include <CoordGeodetic.h>
-#include "matrix.h"
-#include "vector.h"
-#include "tlereader.h"
+#include <SGP4.h>
+#include <math.h>
 
-inline static CoordGeodetic operator+(const CoordGeodetic& coord1, const CoordGeodetic& coord2)
-{
-    CoordGeodetic result(0, 0, 0) ;
-    result.latitude = coord1.latitude + coord2.latitude ;
+#include <list>
+#include <string>
+#include <vector>
+
+#include "matrix.h"
+#include "tlereader.h"
+#include "vector.h"
+
+inline static CoordGeodetic operator+(const CoordGeodetic& coord1, const CoordGeodetic& coord2) {
+    CoordGeodetic result(0, 0, 0);
+    result.latitude = coord1.latitude + coord2.latitude;
     result.longitude = coord1.longitude + coord2.longitude;
     return result;
 }
 
-class PixelGeolocationCalculator
-{
-public:
-    template<typename T>
+class PixelGeolocationCalculator {
+  public:
+    template <typename T>
     struct CartesianCoordinate {
         T x;
         T y;
     };
 
-    template<typename T>
-    friend std::ostream& operator << (std::ostream &o, const CartesianCoordinate<T> &coord) {
+    template <typename T>
+    friend std::ostream& operator<<(std::ostream& o, const CartesianCoordinate<T>& coord) {
         return o << "x: " << coord.x << "\ty: " << coord.y;
     }
 
     typedef CartesianCoordinate<float> CartesianCoordinateF;
     typedef CartesianCoordinate<double> CartesianCoordinateD;
 
-private:
+  private:
     PixelGeolocationCalculator();
 
-public:
-    static PixelGeolocationCalculator load(const std::string &path);
+  public:
+    static PixelGeolocationCalculator load(const std::string& path);
 
-public:
-    PixelGeolocationCalculator(const TleReader::TLE &tle, const DateTime &passStart, const TimeSpan &passLength, double scanAngle, double roll, double pitch, double yaw, int earthRadius = 6378, int satelliteAltitude = 825);
+  public:
+    PixelGeolocationCalculator(const TleReader::TLE& tle, const DateTime& passStart, const TimeSpan& passLength, double scanAngle, double roll, double pitch, double yaw, int earthRadius = 6378, int satelliteAltitude = 825);
 
     void calcPixelCoordinates();
 
-    void save(const std::string &path);
+    void save(const std::string& path);
 
-public:
-
+  public:
     int getGeorefMaxImageHeight() const {
         return (mCoordinates.size() / 158) * 10;
     }
 
-     const CoordGeodetic &getCenterCoordinate() const {
+    const CoordGeodetic& getCenterCoordinate() const {
         return mCoordinates[mCoordinates.size() / 2 + 79];
     }
 
-    inline const CoordGeodetic &getCoordinateAt(unsigned int x, unsigned int y) const {
+    inline const CoordGeodetic& getCoordinateAt(unsigned int x, unsigned int y) const {
         return mCoordinates[((x / 10)) + ((y / 10) * 158)];
     }
 
-    inline const CoordGeodetic &getCoordinateTopLeft() const {
+    inline const CoordGeodetic& getCoordinateTopLeft() const {
         return mCoordinates[0];
     }
 
-    inline const CoordGeodetic &getCoordinateTopRight() const {
+    inline const CoordGeodetic& getCoordinateTopRight() const {
         return mCoordinates[157];
     }
 
-    inline const CoordGeodetic &getCoordinateBottomLeft() const {
+    inline const CoordGeodetic& getCoordinateBottomLeft() const {
         return mCoordinates[mCoordinates.size() - 158];
     }
 
-    inline const CoordGeodetic &getCoordinateBottomRight() const {
+    inline const CoordGeodetic& getCoordinateBottomRight() const {
         return mCoordinates[mCoordinates.size() - 1];
     }
 
@@ -90,18 +89,15 @@ public:
         return mEarthradius + mSatelliteAltitude;
     }
 
-public:
-    template<typename T>
-    static CartesianCoordinate<T> coordinateToMercatorProjection(const CoordGeodetic &coordinate, double radius, float scale) {
+  public:
+    template <typename T>
+    static CartesianCoordinate<T> coordinateToMercatorProjection(const CoordGeodetic& coordinate, double radius, float scale) {
         CartesianCoordinate<T> cartesianCoordinate;
         CoordGeodetic correctedCoordinate = coordinate;
 
-        if (coordinate.latitude > degreeToRadian(85.05113))
-        {
+        if(coordinate.latitude > degreeToRadian(85.05113)) {
             correctedCoordinate.latitude = degreeToRadian(85.05113);
-        }
-        else if (coordinate.latitude < degreeToRadian(-85.05113))
-        {
+        } else if(coordinate.latitude < degreeToRadian(-85.05113)) {
             correctedCoordinate.latitude = degreeToRadian(-85.05113);
         }
 
@@ -110,34 +106,32 @@ public:
         return {cartesianCoordinate.x * scale, cartesianCoordinate.y * scale};
     }
 
-    template<typename T>
-    static CartesianCoordinate<T> coordinateToAzimuthalEquidistantProjection(const CoordGeodetic &coordinate, const CoordGeodetic &centerCoordinate, double radius, float scale) {
+    template <typename T>
+    static CartesianCoordinate<T> coordinateToAzimuthalEquidistantProjection(const CoordGeodetic& coordinate, const CoordGeodetic& centerCoordinate, double radius, float scale) {
         CartesianCoordinate<T> cartesianCoordinate;
         cartesianCoordinate.x = radius * (cos(coordinate.latitude) * sin(coordinate.longitude - centerCoordinate.longitude));
         cartesianCoordinate.y = -radius * (cos(centerCoordinate.latitude) * sin(coordinate.latitude) - sin(centerCoordinate.latitude) * cos(coordinate.latitude) * cos(coordinate.longitude - centerCoordinate.longitude));
         return {cartesianCoordinate.x * scale, cartesianCoordinate.y * scale};
     }
 
-private:
+  private:
     void calculateCartesionCoordinates();
-    Vector locationToVector(const CoordGeodetic &location);
-    CoordGeodetic vectorToLocation(const Vector &vector);
-    CoordGeodetic los_to_earth(const CoordGeodetic &position, double roll, double pitch, double yaw);
-    CoordGeodetic los_to_earth(const Vector &position, double roll, double pitch, double yaw);
-    double calculateBearingAngle(const CoordGeodetic &start, const CoordGeodetic &end);
-    Matrix4x4 lookAt(const Vector3 &position, const Vector3 &target, const Vector3 &up);
+    Vector locationToVector(const CoordGeodetic& location);
+    CoordGeodetic vectorToLocation(const Vector& vector);
+    CoordGeodetic los_to_earth(const CoordGeodetic& position, double roll, double pitch, double yaw);
+    CoordGeodetic los_to_earth(const Vector& position, double roll, double pitch, double yaw);
+    double calculateBearingAngle(const CoordGeodetic& start, const CoordGeodetic& end);
+    Matrix4x4 lookAt(const Vector3& position, const Vector3& target, const Vector3& up);
 
-    static inline double degreeToRadian(double degree)
-    {
+    static inline double degreeToRadian(double degree) {
         return (M_PI * degree / 180.0);
     }
 
-    static inline double radioanToDegree(double radian)
-    {
+    static inline double radioanToDegree(double radian) {
         return radian * (180.0 / M_PI);
     }
 
-private:
+  private:
     Tle mTle;
     SGP4 mSgp4;
     DateTime mPassStart;
@@ -148,7 +142,7 @@ private:
     std::vector<CoordGeodetic> mCoordinates;
 
 
-    static constexpr double PIXELTIME_MINUTES = 0.02564876089324618736383442265795;  //Just a rough calculation for every 10 pixel in minutes
+    static constexpr double PIXELTIME_MINUTES = 0.02564876089324618736383442265795; // Just a rough calculation for every 10 pixel in minutes
     static constexpr double PIXELTIME_MS = 154.0;
 };
 

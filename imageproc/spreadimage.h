@@ -5,32 +5,32 @@
 #include <map>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
+
 #include "pixelgeolocationcalculator.h"
 
-class SpreadImage
-{
-public:
+class SpreadImage {
+  public:
     typedef std::function<void(float)> ProgressCallback;
 
-public:
+  public:
     explicit SpreadImage(int earthRadius = 6378, int altitude = 825);
-    cv::Mat stretch(const cv::Mat &image);
+    cv::Mat stretch(const cv::Mat& image);
 
-    cv::Mat mercatorProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, float scale, ProgressCallback progressCallback = nullptr);
-    cv::Mat mercatorProjection(const std::list<cv::Mat> &images, const std::list<PixelGeolocationCalculator> &geolocationCalculators, float scale, SpreadImage::ProgressCallback progressCallback = nullptr);
-    cv::Mat equidistantProjection(const cv::Mat &image, const PixelGeolocationCalculator &geolocationCalculator, float scale, ProgressCallback progressCallback = nullptr);
-    cv::Mat equidistantProjection(const std::list<cv::Mat> &images, const std::list<PixelGeolocationCalculator> &geolocationCalculators, float scale, SpreadImage::ProgressCallback progressCallback = nullptr);
+    cv::Mat mercatorProjection(const cv::Mat& image, const PixelGeolocationCalculator& geolocationCalculator, float scale, ProgressCallback progressCallback = nullptr);
+    cv::Mat mercatorProjection(const std::list<cv::Mat>& images, const std::list<PixelGeolocationCalculator>& geolocationCalculators, float scale, SpreadImage::ProgressCallback progressCallback = nullptr);
+    cv::Mat equidistantProjection(const cv::Mat& image, const PixelGeolocationCalculator& geolocationCalculator, float scale, ProgressCallback progressCallback = nullptr);
+    cv::Mat equidistantProjection(const std::list<cv::Mat>& images, const std::list<PixelGeolocationCalculator>& geolocationCalculators, float scale, SpreadImage::ProgressCallback progressCallback = nullptr);
 
-    cv::MarkerTypes stringToMarkerType(const std::string &markerType);
+    cv::MarkerTypes stringToMarkerType(const std::string& markerType);
 
-private:
+  private:
     void affineTransform(const cv::Mat& src, cv::Mat& dst, const cv::Point2f source[], const cv::Point2f destination[], int originX, int originY);
-    cv::Mat blendMask(const cv::Mat &mask, bool leftToRight);
-    int findImageStart(const cv::Mat &img);
+    cv::Mat blendMask(const cv::Mat& mask, bool leftToRight);
+    int findImageStart(const cv::Mat& img);
 
-private:
+  private:
     int mEarthRadius;
-    int mAltitude;                         // Meteor MN2 orbit altitude
+    int mAltitude; // Meteor MN2 orbit altitude
     double mTheta;
     double mPhi;
     int mInc;
@@ -39,7 +39,7 @@ private:
     double mScanAngle;
     static std::map<std::string, cv::MarkerTypes> MarkerLookup;
 
-    static constexpr int SWATH = 2800;     // Meteor M2M swath width
+    static constexpr int SWATH = 2800; // Meteor M2M swath width
 };
 
 #endif // SPREADIMAGE_H
