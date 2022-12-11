@@ -8,13 +8,9 @@ PacketParser::PacketParser()
     , mPartialPacket(false)
     , mFirstTimeStamp(0)
     , mLastTimeStamp(0)
-    , mFirstTime(true)
-{
+    , mFirstTime(true) {}
 
-}
-
-void PacketParser::parseFrame(const uint8_t *frame, int len)
-{
+void PacketParser::parseFrame(const uint8_t* frame, int len) {
     int n;
 
     uint16_t w = (frame[0] << 8) | frame[1];
@@ -28,12 +24,13 @@ void PacketParser::parseFrame(const uint8_t *frame, int len)
     uint8_t hdr_mark = w >> 11;
     uint16_t hdr_off = w & 0x7ff;
 
-    if (ver == 0 || fid == 0) return;  // Empty packet
+    if(ver == 0 || fid == 0)
+        return; // Empty packet
 
     int data_len = len - 10;
-    if (frameCount == mLastFrame + 1) {
-        if (mPartialPacket) {
-            if (hdr_off == PACKET_FULL_MARK) {
+    if(frameCount == mLastFrame + 1) {
+        if(mPartialPacket) {
+            if(hdr_off == PACKET_FULL_MARK) {
                 hdr_off = len - 10;
                 std::move(frame + 10, frame + 10 + hdr_off, mPacketBuffer.begin() + mPacketOff);
                 mPacketOff += hdr_off;
@@ -43,7 +40,7 @@ void PacketParser::parseFrame(const uint8_t *frame, int len)
             }
         }
     } else {
-        if (hdr_off == PACKET_FULL_MARK) {
+        if(hdr_off == PACKET_FULL_MARK) {
             return;
         }
         mPartialPacket = false;
@@ -53,9 +50,9 @@ void PacketParser::parseFrame(const uint8_t *frame, int len)
 
     data_len -= hdr_off;
     int off = hdr_off;
-    while (data_len > 0) {
+    while(data_len > 0) {
         n = parsePartial(frame + 10 + off, data_len);
-        if (mPartialPacket) {
+        if(mPartialPacket) {
             mPacketOff = data_len;
             std::move(frame + 10 + off, frame + 10 + off + mPacketOff, mPacketBuffer.begin());
             break;
@@ -66,27 +63,25 @@ void PacketParser::parseFrame(const uint8_t *frame, int len)
     }
 }
 
-int PacketParser::parsePartial(const uint8_t *packet, int len)
-{
-    if (len < 6) {
+int PacketParser::parsePartial(const uint8_t* packet, int len) {
+    if(len < 6) {
         mPartialPacket = true;
         return 0;
-      }
+    }
 
-      int len_pck = (packet[4] << 8) | packet[5];
-      if (len_pck >= len - 6) {
+    int len_pck = (packet[4] << 8) | packet[5];
+    if(len_pck >= len - 6) {
         mPartialPacket = true;
         return 0;
-      }
+    }
 
-      parseAPD(packet, len_pck + 1);
+    parseAPD(packet, len_pck + 1);
 
-      mPartialPacket = false;
-      return len_pck + 6 + 1;
+    mPartialPacket = false;
+    return len_pck + 6 + 1;
 }
 
-void PacketParser::parseAPD(const uint8_t *packet, int len)
-{
+void PacketParser::parseAPD(const uint8_t* packet, int len) {
     uint16_t w = (packet[0] << 8) | packet[1];
     int sec = (w >> 11) & 1;
     int apd = w & 0x7ff;
@@ -96,15 +91,14 @@ void PacketParser::parseAPD(const uint8_t *packet, int len)
 
     int ms = (packet[8] << 24) | (packet[9] << 16) | (packet[10] << 8) | packet[11];
 
-    if (apd == 70) {
+    if(apd == 70) {
         parse70(packet + 14, len - 14);
     } else {
         actAPD(packet + 14, len - 14, apd, pck_cnt);
     }
 }
 
-void PacketParser::actAPD(const uint8_t *packet, int len, int apd, int pck_cnt)
-{
+void PacketParser::actAPD(const uint8_t* packet, int len, int apd, int pck_cnt) {
     int mcu_id = packet[0];
     int scan_hdr = (packet[1] << 8) | packet[2];
     int seg_hdr = (packet[3] << 8) | packet[4];
@@ -113,8 +107,7 @@ void PacketParser::actAPD(const uint8_t *packet, int len, int apd, int pck_cnt)
     decMCUs(packet + 6, len - 6, apd, pck_cnt, mcu_id, q);
 }
 
-void PacketParser::parse70(const uint8_t *packet, int len)
-{
+void PacketParser::parse70(const uint8_t* packet, int len) {
     static int prevY;
     static TimeSpan prevtimeStamp(0);
 
@@ -127,9 +120,9 @@ void PacketParser::parse70(const uint8_t *packet, int len)
     int s = packet[10];
     int ms = packet[11] * 4;
 
-    mLastTimeStamp = TimeSpan(0, h, m , s, ms * 1000);
+    mLastTimeStamp = TimeSpan(0, h, m, s, ms * 1000);
     mLastHeightAtTimeStamp = getLastY();
-    if (mFirstTime) {
+    if(mFirstTime) {
         mFirstTime = false;
         mFirstTimeStamp = mLastTimeStamp;
         mFirstHeightAtTimeStamp = getLastY();
@@ -137,14 +130,13 @@ void PacketParser::parse70(const uint8_t *packet, int len)
         int lines = mLastHeightAtTimeStamp - prevY;
         TimeSpan elapsedTime = mLastTimeStamp - prevtimeStamp;
 
-        //std::cout << "Lines between timestamp : " << lines << " Time elapsed " << elapsedTime << " PixelTime:" << TimeSpan(elapsedTime.Ticks() / lines) << std::endl;
+        // std::cout << "Lines between timestamp : " << lines << " Time elapsed " << elapsedTime << " PixelTime:" << TimeSpan(elapsedTime.Ticks() / lines) << std::endl;
     }
 
     prevY = getLastY();
     prevtimeStamp = mLastTimeStamp;
 
-    //std::cout << "LastHeight: " << mLastHeightAtTimeStamp << " " << mLastTimeStamp << std::endl;
+    // std::cout << "LastHeight: " << mLastHeightAtTimeStamp << " " << mLastTimeStamp << std::endl;
 
-    //std::cout << "Onboard time: " << h << ":" << m << ":" << s << "." << ms;
+    // std::cout << "Onboard time: " << h << ":" << m << ":" << s << "." << ms;
 }
-

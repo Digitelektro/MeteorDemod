@@ -13,29 +13,37 @@
 #include <sstream>
 #include <string>
 
-//Original source code: https://github.com/mcmtroffaes/inipp
+// Original source code: https://github.com/mcmtroffaes/inipp
 
 namespace ini {
 
 // trim functions based on http://stackoverflow.com/a/217605
 
 template <class CharT>
-inline void ltrim(std::basic_string<CharT> & s, const std::locale & loc) {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [&loc](CharT ch) { return !std::isspace(ch, loc); }));
+inline void ltrim(std::basic_string<CharT>& s, const std::locale& loc) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [&loc](CharT ch) {
+                return !std::isspace(ch, loc);
+            }));
 }
 
 template <class CharT>
-inline void rtrim(std::basic_string<CharT> & s, const std::locale & loc) {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [&loc](CharT ch) { return !std::isspace(ch, loc); }).base(), s.end());
+inline void rtrim(std::basic_string<CharT>& s, const std::locale& loc) {
+    s.erase(std::find_if(s.rbegin(),
+                         s.rend(),
+                         [&loc](CharT ch) {
+                             return !std::isspace(ch, loc);
+                         })
+                .base(),
+            s.end());
 }
 
 // string replacement function based on http://stackoverflow.com/a/3418285
 
 template <class CharT>
-inline bool replace(std::basic_string<CharT> & str, const std::basic_string<CharT> & from, const std::basic_string<CharT> & to) {
+inline bool replace(std::basic_string<CharT>& str, const std::basic_string<CharT>& from, const std::basic_string<CharT>& to) {
     auto changed = false;
     size_t start_pos = 0;
-    while ((start_pos = str.find(from, start_pos)) != std::basic_string<CharT>::npos) {
+    while((start_pos = str.find(from, start_pos)) != std::basic_string<CharT>::npos) {
         str.replace(start_pos, from.length(), to);
         start_pos += to.length();
         changed = true;
@@ -44,30 +52,28 @@ inline bool replace(std::basic_string<CharT> & str, const std::basic_string<Char
 }
 
 template <typename CharT, typename T>
-inline bool extract(const std::basic_string<CharT> & value, T & dst, const T &defaultValue) {
+inline bool extract(const std::basic_string<CharT>& value, T& dst, const T& defaultValue) {
     CharT c;
-    std::basic_istringstream<CharT> is{ value };
+    std::basic_istringstream<CharT> is{value};
     T result;
-    if ((is >> std::boolalpha >> result) && !(is >> c)) {
+    if((is >> std::boolalpha >> result) && !(is >> c)) {
         dst = result;
         return true;
-    }
-    else {
+    } else {
         dst = defaultValue;
         return false;
     }
 }
 
 template <typename CharT>
-inline bool extract(const std::basic_string<CharT> & value, std::basic_string<CharT> & dst) {
+inline bool extract(const std::basic_string<CharT>& value, std::basic_string<CharT>& dst) {
     dst = value;
     return true;
 }
 
-template<class CharT>
-class Format
-{
-public:
+template <class CharT>
+class Format {
+  public:
     // used for generating
     const CharT char_section_start;
     const CharT char_section_end;
@@ -75,10 +81,18 @@ public:
     const CharT char_comment;
 
     // used for parsing
-    virtual bool is_section_start(CharT ch) const { return ch == char_section_start; }
-    virtual bool is_section_end(CharT ch) const { return ch == char_section_end; }
-    virtual bool is_assign(CharT ch) const { return ch == char_assign; }
-    virtual bool is_comment(CharT ch) const { return ch == char_comment; }
+    virtual bool is_section_start(CharT ch) const {
+        return ch == char_section_start;
+    }
+    virtual bool is_section_end(CharT ch) const {
+        return ch == char_section_end;
+    }
+    virtual bool is_assign(CharT ch) const {
+        return ch == char_assign;
+    }
+    virtual bool is_comment(CharT ch) const {
+        return ch == char_comment;
+    }
 
     // used for interpolation
     const CharT char_interpol;
@@ -96,7 +110,8 @@ public:
         , char_interpol_sep(interpol_sep)
         , char_interpol_end(interpol_end) {}
 
-    Format() : Format('[', ']', '=', ';', '$', '{', ':', '}') {}
+    Format()
+        : Format('[', ']', '=', ';', '$', '{', ':', '}') {}
 
     const std::basic_string<CharT> local_symbol(const std::basic_string<CharT>& name) const {
         return char_interpol + (char_interpol_start + name + char_interpol_end);
@@ -107,10 +122,9 @@ public:
     }
 };
 
-template<class CharT>
-class IniParser
-{
-public:
+template <class CharT>
+class IniParser {
+  public:
     using String = std::basic_string<CharT>;
     using Section = std::map<String, String>;
     using Sections = std::map<String, Section>;
@@ -119,50 +133,51 @@ public:
     std::list<String> errors;
     std::shared_ptr<Format<CharT>> format;
 
-    IniParser() : format(std::make_shared<Format<CharT>>()) {}
-    IniParser(std::shared_ptr<Format<CharT>> fmt) : format(fmt) {}
+    IniParser()
+        : format(std::make_shared<Format<CharT>>()) {}
+    IniParser(std::shared_ptr<Format<CharT>> fmt)
+        : format(fmt) {}
 
     void generate(std::basic_ostream<CharT>& os) const {
-        for (auto const & sec : sections) {
+        for(auto const& sec : sections) {
             os << format->char_section_start << sec.first << format->char_section_end << std::endl;
-            for (auto const & val : sec.second) {
+            for(auto const& val : sec.second) {
                 os << val.first << format->char_assign << val.second << std::endl;
             }
             os << std::endl;
         }
     }
 
-    void parse(std::basic_istream<CharT> & is) {
+    void parse(std::basic_istream<CharT>& is) {
         String line;
         String section;
         const std::locale loc{"C"};
-        while (std::getline(is, line)) {
+        while(std::getline(is, line)) {
             ltrim(line, loc);
             rtrim(line, loc);
             const auto length = line.length();
-            if (length > 0) {
-                const auto pos = std::find_if(line.begin(), line.end(), [this](CharT ch) { return format->is_assign(ch); });
-                const auto & front = line.front();
-                if (format->is_comment(front)) {
-                }
-                else if (format->is_section_start(front)) {
-                    if (format->is_section_end(line.back()))
+            if(length > 0) {
+                const auto pos = std::find_if(line.begin(), line.end(), [this](CharT ch) {
+                    return format->is_assign(ch);
+                });
+                const auto& front = line.front();
+                if(format->is_comment(front)) {
+                } else if(format->is_section_start(front)) {
+                    if(format->is_section_end(line.back()))
                         section = line.substr(1, length - 2);
                     else
                         errors.push_back(line);
-                }
-                else if (pos != line.begin() && pos != line.end()) {
+                } else if(pos != line.begin() && pos != line.end()) {
                     String variable(line.begin(), pos);
                     String value(pos + 1, line.end());
                     rtrim(variable, loc);
                     ltrim(value, loc);
-                    auto & sec = sections[section];
-                    if (sec.find(variable) == sec.end())
+                    auto& sec = sections[section];
+                    if(sec.find(variable) == sec.end())
                         sec.insert(std::make_pair(variable, value));
                     else
                         errors.push_back(line);
-                }
-                else {
+                } else {
                     errors.push_back(line);
                 }
             }

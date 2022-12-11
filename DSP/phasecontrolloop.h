@@ -7,19 +7,17 @@ namespace DSP {
 
 class MM;
 
-class PhaseControlLoop
-{
+class PhaseControlLoop {
     friend class MM;
 
-public:
+  public:
     PhaseControlLoop(float bandWidth, float phase, float minPhase, float maxPhase, float freq, float minFreq, float maxFreq, bool clampPhase = true);
     PhaseControlLoop(float alpha, float beta, float phase, float minPhase, float maxPhase, float freq, float minFreq, float maxFreq, bool clampPhase = true);
 
     float normalizePhase(float diff) {
-        if (diff > M_PI) {
+        if(diff > M_PI) {
             diff -= 2.0f * M_PI;
-        }
-        else if (diff <= -M_PI) {
+        } else if(diff <= -M_PI) {
             diff += 2.0f * M_PI;
         }
         return diff;
@@ -37,7 +35,7 @@ public:
         }
     }
 
-public:
+  public:
     void setBandWidth(float bandWidth) {
         float damping = sqrtf(2.0f) / 2.0f;
         float denom = 1.0f + 2.0f * damping * bandWidth + bandWidth * bandWidth;
@@ -45,7 +43,7 @@ public:
         mBeta = (4 * bandWidth * bandWidth) / denom;
     }
 
-public:
+  public:
     float getPhase() const {
         return mPhase;
     }
@@ -53,25 +51,25 @@ public:
         return mFreq;
     }
 
-protected:
+  protected:
     void clampFreq() {
-        if (mFreq > mMaxFreq) {
+        if(mFreq > mMaxFreq) {
             mFreq = mMaxFreq;
-        } else if (mFreq < mMinFreq) {
+        } else if(mFreq < mMinFreq) {
             mFreq = mMinFreq;
         }
     }
 
     void clampPhase() {
-        while (mPhase > mMaxPhase) {
+        while(mPhase > mMaxPhase) {
             mPhase -= mPhaseDelta;
         }
-        while (mPhase < mMinPhase) {
+        while(mPhase < mMinPhase) {
             mPhase += mPhaseDelta;
         }
     }
 
-protected:
+  protected:
     float mAlpha;
     float mBeta;
     float mFreq;
@@ -84,6 +82,6 @@ protected:
     bool mClampPhase;
 };
 
-} //namespace DSP
+} // namespace DSP
 
 #endif // PHASECONTROLLOOP_H

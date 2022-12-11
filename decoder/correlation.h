@@ -2,41 +2,32 @@
 #define CORRELATION_H
 
 #include <stdint.h>
+
 #include <functional>
 
-class Correlation
-{
-public:
+class Correlation {
+  public:
     struct CorellationResult {
         uint32_t corr;
         uint32_t pos;
     };
 
-    enum PhaseShift {
-        PhaseShift_0 = 0,
-        PhaseShift_1,
-        PhaseShift_2,
-        PhaseShift_3,
-        PhaseShift_4,
-        PhaseShift_5,
-        PhaseShift_6,
-        PhaseShift_7
-    };
+    enum PhaseShift { PhaseShift_0 = 0, PhaseShift_1, PhaseShift_2, PhaseShift_3, PhaseShift_4, PhaseShift_5, PhaseShift_6, PhaseShift_7 };
 
-public:
-    typedef std::function<uint32_t(CorellationResult &, PhaseShift)>CorrelationCallback;
+  public:
+    typedef std::function<uint32_t(CorellationResult&, PhaseShift)> CorrelationCallback;
 
-public:
+  public:
     Correlation();
 
-    void correlate(const uint8_t *softBits, int64_t size, CorrelationCallback callback);
+    void correlate(const uint8_t* softBits, int64_t size, CorrelationCallback callback);
     uint8_t rotateIQ(uint8_t data, PhaseShift phaseShift);
 
-private:
+  private:
     void initKernels();
     uint32_t hardCorrelate(uint8_t dataByte, uint8_t wordByte);
 
-private:
+  private:
     uint8_t mRotateIqTable[256];
     uint8_t mRotateIqTableInverted[256];
     uint8_t mKernelUW0[64];
@@ -48,7 +39,7 @@ private:
     uint8_t mKernelUW6[64];
     uint8_t mKernelUW7[64];
 
-private:
+  private:
     static constexpr uint64_t UW0 = 0xFCA2B63DB00D9794;
     static constexpr uint64_t UW1 = 0x56FBD394DAA4C1C2;
     static constexpr uint64_t UW2 = 0x035D49C24FF2686B;
@@ -60,11 +51,10 @@ private:
 
     static constexpr uint8_t CORRELATION_LIMIT = 54;
 
-public:
-    static void rotateSoftIqInPlace(uint8_t *data, uint32_t length, PhaseShift phaseShift);
+  public:
+    static void rotateSoftIqInPlace(uint8_t* data, uint32_t length, PhaseShift phaseShift);
 
-    static int countBits(uint32_t i)
-    {
+    static int countBits(uint32_t i) {
         i = i - ((i >> 1) & 0x55555555);
         i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
         return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;

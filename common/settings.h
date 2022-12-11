@@ -1,58 +1,50 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include <map>
 #include <list>
+#include <map>
 
 #include "DateTime.h"
 #include "iniparser.h"
 
-class Settings
-{
-private:
+class Settings {
+  private:
     struct SettingsData {
         SettingsData(const std::string arg, const std::string argShort, const std::string help)
             : argName(arg)
             , argNameShort(argShort)
-            , helpText(help) {
-
-        }
+            , helpText(help) {}
         std::string argName;
         std::string argNameShort;
         std::string helpText;
     };
 
-public:
+  public:
     struct HTMLColor {
 
         HTMLColor()
             : R(0)
             , G(0)
-            , B(0)
-        {
-
-        }
+            , B(0) {}
 
         HTMLColor(int32_t rgb)
             : R(0)
             , G(0)
-            , B(0)
-        {
+            , B(0) {
             R = static_cast<uint8_t>((rgb & 0xFF0000) >> 16);
             G = static_cast<uint8_t>((rgb & 0xFF00) >> 8);
             B = static_cast<uint8_t>(rgb & 0xFF);
         }
 
-        HTMLColor(const std::string &hex)
+        HTMLColor(const std::string& hex)
             : R(0)
             , G(0)
-            , B(0)
-        {
+            , B(0) {
             int32_t rgb = 0;
 
             try {
-                rgb = std::stoi(hex.substr(1, hex.length()-1) , nullptr, 16);
-            } catch (...) {
+                rgb = std::stoi(hex.substr(1, hex.length() - 1), nullptr, 16);
+            } catch(...) {
                 std::cout << "Unable to parse color code: " << hex << std::endl;
             }
 
@@ -66,7 +58,7 @@ public:
         uint8_t B;
     };
 
-    friend std::istream &operator>>(std::istream& is, HTMLColor &color) {
+    friend std::istream& operator>>(std::istream& is, HTMLColor& color) {
         std::string rgb;
         is >> rgb;
         if(!rgb.empty()) {
@@ -76,22 +68,23 @@ public:
     }
 
 
-public:
-    static Settings &getInstance();
+  public:
+    static Settings& getInstance();
 
-private:
+  private:
     Settings();
     Settings(Settings const&);
     void operator=(Settings const&);
 
-public:
-    void parseArgs(int argc, char **argv);
-    void parseIni(const std::string &path);
+  public:
+    void parseArgs(int argc, char** argv);
+    void parseIni(const std::string& path);
     std::string getHelp() const;
 
-public: //getters
+  public: // getters
     std::string getInputFilePath() const;
     std::string getTlePath() const;
+    int getCompositeMaxAgeHours() const;
 
     std::string getResourcesPath() const;
     std::string getOutputPath() const;
@@ -103,77 +96,192 @@ public: //getters
     bool deInterleave() const;
     bool getBrokenM2Modulation() const;
 
-    int getJpegQuality() const { return mJpegQuality; }
-    float getM2ScanAngle() const { return mScanAngleM2; }
-    float getM2Roll() const { return mM2Roll; }
-    float getM2Pitch() const { return mM2Pitch; }
-    float getM2Yaw() const { return mM2Yaw; }
-    bool equadistantProjection() const { return mEquidistantProjection; }
-    bool mercatorProjection() const { return mMercatorProjection; }
-    bool spreadImage() const { return mSpreadImage; }
-    bool addRainOverlay() const { return mAddRainOverlay; }
-    float getNightPassTreshold() const { return mNightPassTreshold; }
-    float getProjectionScale() const {return mProjectionScale; }
-    float getCompositeProjectionScale() const { return mCompositeProjectionScale; }
+    bool showHelp() const {
+        return mArgs.count("-h") > 0 || mArgs.count("--help") > 0;
+    }
 
-    bool compositeEquadistantProjection() const { return mCompositeEquadistantProjection; }
-    bool compositeMercatorProjection() const { return mCompositeMercatorProjection; }
-    bool generateComposite123() const { return mGenerateComposite123; }
-    bool generateComposite125() const { return mGenerateComposite125; }
-    bool generateComposite221() const { return mGenerateComposite221; }
-    bool generateComposite68() const { return mGenerateComposite68; }
-    bool generateCompositeThermal() const { return mGenerateCompositeThermal; }
-    bool generateComposite68Rain() const { return mGenerateComposite68Rain; }
+    int getJpegQuality() const {
+        return mJpegQuality;
+    }
+    float getM2ScanAngle() const {
+        return mScanAngleM2;
+    }
+    float getM2Roll() const {
+        return mM2Roll;
+    }
+    float getM2Pitch() const {
+        return mM2Pitch;
+    }
+    float getM2Yaw() const {
+        return mM2Yaw;
+    }
+    bool equadistantProjection() const {
+        return mEquidistantProjection;
+    }
+    bool mercatorProjection() const {
+        return mMercatorProjection;
+    }
+    bool spreadImage() const {
+        return mSpreadImage;
+    }
+    bool addRainOverlay() const {
+        return mAddRainOverlay;
+    }
+    float getNightPassTreshold() const {
+        return mNightPassTreshold;
+    }
+    float getProjectionScale() const {
+        return mProjectionScale;
+    }
+    float getCompositeProjectionScale() const {
+        return mCompositeProjectionScale;
+    }
 
-    int getTimeOffsetM2Sec() const { return mTimeOffsetM2Sec; }
+    bool compositeEquadistantProjection() const {
+        return mCompositeEquadistantProjection;
+    }
+    bool compositeMercatorProjection() const {
+        return mCompositeMercatorProjection;
+    }
+    bool generateComposite123() const {
+        return mGenerateComposite123;
+    }
+    bool generateComposite125() const {
+        return mGenerateComposite125;
+    }
+    bool generateComposite221() const {
+        return mGenerateComposite221;
+    }
+    bool generateComposite68() const {
+        return mGenerateComposite68;
+    }
+    bool generateCompositeThermal() const {
+        return mGenerateCompositeThermal;
+    }
+    bool generateComposite68Rain() const {
+        return mGenerateComposite68Rain;
+    }
 
-    int getCostasBandwidth() const { return mCostasBw; }
-    int getRRCFilterOrder() const { return mRRCFilterOrder; }
-    bool waitForlock() const { return mWaitForLock; }
+    int getTimeOffsetM2Sec() const {
+        return mTimeOffsetM2Sec;
+    }
 
-    bool fillBackLines() const { return mFillBackLines; }
+    int getCostasBandwidth() const {
+        return mCostasBw;
+    }
+    int getRRCFilterOrder() const {
+        return mRRCFilterOrder;
+    }
+    bool waitForlock() const {
+        return mWaitForLock;
+    }
 
-    const std::string &getWaterMarkPlace() const { return mWaterMarkPlace; }
-    const HTMLColor &getWaterMarkColor() const { return mWaterMarkColor; }
-    int getWaterMarkSize() const { return mWaterMarkSize; }
-    int getWaterMarkLineWidth() const { return mWaterMarkLineWidth; }
-    const std::string &getWaterMarkText() const { return mWaterMarkText; }
+    bool fillBackLines() const {
+        return mFillBackLines;
+    }
 
-    bool drawReceiver() const { return mDrawreceiver; }
-    float getReceiverLatitude() const { return mReceiverLatitude; }
-    float getReceiverLongitude() const { return mReceiverLongitude; }
-    const HTMLColor &getReceiverColor() const { return mReceiverColor; }
-    int getReceiverSize() const { return mReceiverSize; }
-    int getReceiverThickness() const { return mReceiverThickness; }
-    const std::string &getReceiverMarkType() const { return mReceiverMarkType; }
+    const std::string& getWaterMarkPlace() const {
+        return mWaterMarkPlace;
+    }
+    const HTMLColor& getWaterMarkColor() const {
+        return mWaterMarkColor;
+    }
+    int getWaterMarkSize() const {
+        return mWaterMarkSize;
+    }
+    int getWaterMarkLineWidth() const {
+        return mWaterMarkLineWidth;
+    }
+    const std::string& getWaterMarkText() const {
+        return mWaterMarkText;
+    }
 
-    const std::string &getShapeGraticulesFile() const { return mShapeGraticulesFile; }
-    const HTMLColor &getShapeGraticulesColor() const { return mShapeGraticulesColor; }
-    int getShapeGraticulesThickness() const { return mShapeGraticulesThickness; }
+    bool drawReceiver() const {
+        return mDrawreceiver;
+    }
+    float getReceiverLatitude() const {
+        return mReceiverLatitude;
+    }
+    float getReceiverLongitude() const {
+        return mReceiverLongitude;
+    }
+    const HTMLColor& getReceiverColor() const {
+        return mReceiverColor;
+    }
+    int getReceiverSize() const {
+        return mReceiverSize;
+    }
+    int getReceiverThickness() const {
+        return mReceiverThickness;
+    }
+    const std::string& getReceiverMarkType() const {
+        return mReceiverMarkType;
+    }
 
-    const std::string &getShapeCoastLinesFile() const { return mShapeCoastLinesFile; }
-    const HTMLColor &getShapeCoastLinesColor() const { return mShapeCoastLinesColor; }
-    int getShapeCoastLinesThickness() const { return mShapeCoastLinesThickness; }
+    const std::string& getShapeGraticulesFile() const {
+        return mShapeGraticulesFile;
+    }
+    const HTMLColor& getShapeGraticulesColor() const {
+        return mShapeGraticulesColor;
+    }
+    int getShapeGraticulesThickness() const {
+        return mShapeGraticulesThickness;
+    }
 
-    const std::string &getShapeBoundaryLinesFile() const { return mShapeBoundaryLinesFile; }
-    const HTMLColor &getShapeBoundaryLinesColor() const { return mShapeBoundaryLinesColor; }
-    int getShapeBoundaryLinesThickness() const { return mShapeBoundaryLinesThickness; }
+    const std::string& getShapeCoastLinesFile() const {
+        return mShapeCoastLinesFile;
+    }
+    const HTMLColor& getShapeCoastLinesColor() const {
+        return mShapeCoastLinesColor;
+    }
+    int getShapeCoastLinesThickness() const {
+        return mShapeCoastLinesThickness;
+    }
 
-    const std::string &getShapePopulatedPlacesFile() const { return mShapePopulatedPlacesFile; }
-    const HTMLColor &getShapePopulatedPlacesColor() const { return mShapePopulatedPlacesColor; }
-    int getShapePopulatedPlacesFontWidth() const { return mShapePopulatedPlacesFontWidth; }
-    int getShapePopulatedPlacesFontSize() const { return mShapePopulatedPlacesFontSize; }
-    int getShapePopulatedPlacesPointradius() const { return mShapePopulatedPlacesPointradius; }
-    const std::string &getShapePopulatedPlacesFilterColumnName() const { return mShapePopulatedPlacesFilterColumnName; }
-    int getShapePopulatedPlacesNumbericFilter() const { return mShapePopulatedPlacesNumbericFilter; }
-    const std::string &getShapePopulatedPlacesTextColumnName() const { return mShapePopulatedPlacesTextColumnName; }
+    const std::string& getShapeBoundaryLinesFile() const {
+        return mShapeBoundaryLinesFile;
+    }
+    const HTMLColor& getShapeBoundaryLinesColor() const {
+        return mShapeBoundaryLinesColor;
+    }
+    int getShapeBoundaryLinesThickness() const {
+        return mShapeBoundaryLinesThickness;
+    }
 
-private:
+    const std::string& getShapePopulatedPlacesFile() const {
+        return mShapePopulatedPlacesFile;
+    }
+    const HTMLColor& getShapePopulatedPlacesColor() const {
+        return mShapePopulatedPlacesColor;
+    }
+    int getShapePopulatedPlacesFontWidth() const {
+        return mShapePopulatedPlacesFontWidth;
+    }
+    int getShapePopulatedPlacesFontSize() const {
+        return mShapePopulatedPlacesFontSize;
+    }
+    int getShapePopulatedPlacesPointradius() const {
+        return mShapePopulatedPlacesPointradius;
+    }
+    const std::string& getShapePopulatedPlacesFilterColumnName() const {
+        return mShapePopulatedPlacesFilterColumnName;
+    }
+    int getShapePopulatedPlacesNumbericFilter() const {
+        return mShapePopulatedPlacesNumbericFilter;
+    }
+    const std::string& getShapePopulatedPlacesTextColumnName() const {
+        return mShapePopulatedPlacesTextColumnName;
+    }
+    void resetArgs() {
+        mArgs.clear();
+    }
+
+  private:
     std::map<std::string, std::string> mArgs;
     std::list<SettingsData> mSettingsList;
     ini::IniParser<char> mIniParser;
 
-    //ini section: Program
+    // ini section: Program
     int mJpegQuality;
     float mScanAngleM2;
     float mM2Roll;
@@ -198,22 +306,22 @@ private:
 
     int mTimeOffsetM2Sec;
 
-    //ini section: Demodulator
+    // ini section: Demodulator
     int mCostasBw;
     int mRRCFilterOrder;
     bool mWaitForLock;
 
-    //ini section: Treatment
+    // ini section: Treatment
     bool mFillBackLines;
 
-    //ini section: watermark
+    // ini section: watermark
     std::string mWaterMarkPlace;
     HTMLColor mWaterMarkColor;
     int mWaterMarkSize;
     int mWaterMarkLineWidth;
     std::string mWaterMarkText;
 
-    //ini section: ReceiverLocation
+    // ini section: ReceiverLocation
     bool mDrawreceiver;
     float mReceiverLatitude;
     float mReceiverLongitude;
@@ -222,22 +330,22 @@ private:
     int mReceiverThickness;
     std::string mReceiverMarkType;
 
-    //ini section: ShapeFileGraticules
+    // ini section: ShapeFileGraticules
     std::string mShapeGraticulesFile;
     HTMLColor mShapeGraticulesColor;
     int mShapeGraticulesThickness;
 
-    //ini section: ShapeFileCoastLines
+    // ini section: ShapeFileCoastLines
     std::string mShapeCoastLinesFile;
     HTMLColor mShapeCoastLinesColor;
     int mShapeCoastLinesThickness;
 
-    //ini section: ShapeFileBoundaryLines
+    // ini section: ShapeFileBoundaryLines
     std::string mShapeBoundaryLinesFile;
     HTMLColor mShapeBoundaryLinesColor;
     int mShapeBoundaryLinesThickness;
 
-    //ini section: ShapeFilePopulatedPlaces
+    // ini section: ShapeFilePopulatedPlaces
     std::string mShapePopulatedPlacesFile;
     HTMLColor mShapePopulatedPlacesColor;
     int mShapePopulatedPlacesFontWidth;
@@ -246,7 +354,6 @@ private:
     std::string mShapePopulatedPlacesFilterColumnName;
     int mShapePopulatedPlacesNumbericFilter;
     std::string mShapePopulatedPlacesTextColumnName;
-
 };
 
 #endif // SETTINGS_H
