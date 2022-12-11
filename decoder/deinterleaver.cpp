@@ -1,24 +1,22 @@
 #include "deinterleaver.h"
+
 #include <string.h>
-#include <vector>
-#include <iostream>
+
 #include <iomanip>
+#include <iostream>
+#include <vector>
 
 static const int INTER_BRANCHES = 36;
 static const int INTER_DELAY = 2048;
 static const int INTER_BASE_LEN = INTER_BRANCHES * INTER_DELAY;
 
-DeInterleaver::DeInterleaver()
-{
-
-}
+DeInterleaver::DeInterleaver() {}
 
 
-bool DeInterleaver::findSync(uint8_t *data, uint64_t len, uint32_t step, uint32_t depth, uint64_t *off, uint8_t *sync)
-{
+bool DeInterleaver::findSync(uint8_t* data, uint64_t len, uint32_t step, uint32_t depth, uint64_t* off, uint8_t* sync) {
     bool result = false;
     *off = 0;
-    for (uint64_t i = 0; i < len - step * depth; i++) {
+    for(uint64_t i = 0; i < len - step * depth; i++) {
         *sync = byteAt(&data[i]);
         result = true;
 
@@ -38,8 +36,7 @@ bool DeInterleaver::findSync(uint8_t *data, uint64_t len, uint32_t step, uint32_
     return result;
 }
 
-void DeInterleaver::deInterleave(uint8_t *data, uint64_t len, uint64_t *outLen)
-{
+void DeInterleaver::deInterleave(uint8_t* data, uint64_t len, uint64_t* outLen) {
     std::vector<uint8_t> src(len);
 
     resyncStream(data, len, outLen);
@@ -50,12 +47,11 @@ void DeInterleaver::deInterleave(uint8_t *data, uint64_t len, uint64_t *outLen)
     deInterleaveBlock(src.data(), data, *outLen);
 }
 
-void DeInterleaver::deInterleaveBlock(uint8_t *src, uint8_t *dst, uint64_t len)
-{
+void DeInterleaver::deInterleaveBlock(uint8_t* src, uint8_t* dst, uint64_t len) {
     uint64_t pos;
     for(uint64_t i = 0; i < len; i++) {
         pos = i + (INTER_BRANCHES - 1) * INTER_DELAY - (i % INTER_BRANCHES) * INTER_BASE_LEN;
-        //Offset it by half a message, to capture both leading and trailing fuzz
+        // Offset it by half a message, to capture both leading and trailing fuzz
         pos += (INTER_BRANCHES / 2) * INTER_BASE_LEN;
         if(pos >= 0 && pos < len) {
             dst[pos] = src[i];
@@ -63,9 +59,8 @@ void DeInterleaver::deInterleaveBlock(uint8_t *src, uint8_t *dst, uint64_t len)
     }
 }
 
-//80k stream: 00100111 36 bits 36 bits 00100111 36 bits 36 bits 00100111 ...
-void DeInterleaver::resyncStream(uint8_t *data, uint64_t len, uint64_t *outLen)
-{
+// 80k stream: 00100111 36 bits 36 bits 00100111 36 bits 36 bits 00100111 ...
+void DeInterleaver::resyncStream(uint8_t* data, uint64_t len, uint64_t* outLen) {
     std::vector<uint8_t> src(data, data + len);
     uint64_t off;
     uint64_t pos = 0;
@@ -84,7 +79,7 @@ void DeInterleaver::resyncStream(uint8_t *data, uint64_t len, uint64_t *outLen)
         pos += off;
 
         while(pos < len - 80) {
-            //Look ahead to prevent it losing sync on weak signal
+            // Look ahead to prevent it losing sync on weak signal
             ok = false;
             for(int i = 0; i < 128; i++) {
                 if(pos + i * 80 < len - 80) {
@@ -110,8 +105,7 @@ void DeInterleaver::resyncStream(uint8_t *data, uint64_t len, uint64_t *outLen)
     std::cout << std::endl;
 }
 
-uint8_t DeInterleaver::byteAt(uint8_t *data)
-{
+uint8_t DeInterleaver::byteAt(uint8_t* data) {
     uint8_t result = 0;
 
     for(int i = 0; i < 8; i++) {
@@ -120,4 +114,3 @@ uint8_t DeInterleaver::byteAt(uint8_t *data)
 
     return result;
 }
-

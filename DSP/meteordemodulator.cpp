@@ -1,8 +1,9 @@
 #include "meteordemodulator.h"
-#include "global.h"
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+
+#include "global.h"
 
 namespace DSP {
 
@@ -16,19 +17,14 @@ MeteorDemodulator::MeteorDemodulator(Mode mode, float symbolRate, float costasBw
     , mAgc(0.5f)
     , mPrevI(0.0f)
     , mSamples(nullptr)
-    , mProcessedSamples(nullptr)
-{
+    , mProcessedSamples(nullptr) {
     mSamples = std::make_unique<PLL::complex[]>(STREAM_CHUNK_SIZE);
     mProcessedSamples = std::make_unique<PLL::complex[]>(STREAM_CHUNK_SIZE);
 }
 
-MeteorDemodulator::~MeteorDemodulator()
-{
+MeteorDemodulator::~MeteorDemodulator() {}
 
-}
-
-void MeteorDemodulator::process(IQSoruce &source, MeteorDecoderCallback_t callback)
-{
+void MeteorDemodulator::process(IQSoruce& source, MeteorDecoderCallback_t callback) {
     float pllBandwidth = 2 * M_PI * mCostasBw / mSymbolRate;
     float maxFreqDeviation = 10000.0f * (2.0f * M_PI) / mSymbolRate; //+-10kHz
     DSP::MeteorCostas costas(pllBandwidth, 0, 0, -maxFreqDeviation, maxFreqDeviation, mBorkenM2Modulation);
@@ -64,13 +60,14 @@ void MeteorDemodulator::process(IQSoruce &source, MeteorDecoderCallback_t callba
             if(callback != nullptr && (!mWaitForLock || costas.isLockedOnce())) {
                 callback(value, progress);
             }
-            bytesWrited +=2;
+            bytesWrited += 2;
         });
         progress = (source.getReadedSamples() / static_cast<float>(source.getTotalSamples())) * 100;
 
         float carierFreq = costas.getFrequency() * mSymbolRate / (2 * M_PI);
 
-        std::cout << std::fixed << std::setprecision(2) << " Carrier: " << carierFreq << "Hz\t Lock detector: "<< costas.getError() << "\t isLocked: " << costas.isLocked() <<"\t OutputSize: " << bytesWrited/1024.0f/1024.0f << "Mb Progress: " <<  progress  << "% \t\t\r" << std::flush;
+        std::cout << std::fixed << std::setprecision(2) << " Carrier: " << carierFreq << "Hz\t Lock detector: " << costas.getError() << "\t isLocked: " << costas.isLocked() << "\t OutputSize: " << bytesWrited / 1024.0f / 1024.0f
+                  << "Mb Progress: " << progress << "% \t\t\r" << std::flush;
     }
 
     std::cout << std::endl;

@@ -9,9 +9,6 @@ MeteorCostas::MeteorCostas(float bandWidth, float initPhase, float initFreq, flo
     , mError(0.0f)
     , mLockDetector(0.0f)
     , mIsLocked(false)
-    , mIsLockedOnce(false)
-{
-
-}
+    , mIsLockedOnce(false) {}
 
 } // namespace DSP

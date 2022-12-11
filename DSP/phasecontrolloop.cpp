@@ -1,4 +1,5 @@
 #include "phasecontrolloop.h"
+
 #include <cmath>
 
 namespace DSP {
@@ -13,13 +14,11 @@ PhaseControlLoop::PhaseControlLoop(float bandWidth, float phase, float minPhase,
     , mMinFreq(minFreq)
     , mMaxFreq(maxFreq)
     , mPhaseDelta(maxPhase - mMinPhase)
-    , mClampPhase(clampPhase)
-{
+    , mClampPhase(clampPhase) {
     float damping = sqrtf(2.0f) / 2.0f;
     float denom = 1.0f + 2.0f * damping * bandWidth + bandWidth * bandWidth;
     mAlpha = (4 * damping * bandWidth) / denom;
     mBeta = (4 * bandWidth * bandWidth) / denom;
-
 }
 
 PhaseControlLoop::PhaseControlLoop(float alpha, float beta, float phase, float minPhase, float maxPhase, float freq, float minFreq, float maxFreq, bool clampPhase)
@@ -32,9 +31,6 @@ PhaseControlLoop::PhaseControlLoop(float alpha, float beta, float phase, float m
     , mMinFreq(minFreq)
     , mMaxFreq(maxFreq)
     , mPhaseDelta(maxPhase - mMinPhase)
-    , mClampPhase(clampPhase)
-{
+    , mClampPhase(clampPhase) {}
 
-}
-
-} //namespace DSP
+} // namespace DSP

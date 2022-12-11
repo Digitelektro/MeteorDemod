@@ -2,24 +2,24 @@
 #define WAVREADER_H
 
 #include <stdint.h>
-#include <iostream>
+
 #include <fstream>
+#include <iostream>
+
 #include "iqsource.h"
 
 #ifdef __GNUC__
-#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#define PACK(__Declaration__) __Declaration__ __attribute__((__packed__))
 #endif
 
 #ifdef _MSC_VER
-#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
+#define PACK(__Declaration__) __pragma(pack(push, 1)) __Declaration__ __pragma(pack(pop))
 #endif
 
 
-class Wavreader: public DSP::IQSoruce
-{
-private:
-    PACK(struct WavHeader
-    {
+class Wavreader : public DSP::IQSoruce {
+  private:
+    PACK(struct WavHeader {
         uint32_t riffHeader;
         uint32_t chunkSize;
         uint32_t filetype;
@@ -35,15 +35,15 @@ private:
         uint32_t subChunk2Size;
     });
 
-public:
+  public:
     Wavreader();
 
     bool openFile(std::string file);
 
-    uint32_t read(complex *data, uint32_t len) override;
+    uint32_t read(complex* data, uint32_t len) override;
 
-private:
-     std::ifstream mWavStream;
+  private:
+    std::ifstream mWavStream;
 };
 
 #endif // WAVREADER_H

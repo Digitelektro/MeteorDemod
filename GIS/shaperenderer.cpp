@@ -1,9 +1,11 @@
 #include "shaperenderer.h"
-#include "pixelgeolocationcalculator.h"
+
 #include <vector>
 
+#include "pixelgeolocationcalculator.h"
 
-GIS::ShapeRenderer::ShapeRenderer(const std::string shapeFile, const cv::Scalar &color, int earthRadius, int altitude)
+
+GIS::ShapeRenderer::ShapeRenderer(const std::string shapeFile, const cv::Scalar& color, int earthRadius, int altitude)
     : ShapeReader(shapeFile)
     , mColor(color)
     , mEarthRadius(earthRadius)
@@ -11,23 +13,17 @@ GIS::ShapeRenderer::ShapeRenderer(const std::string shapeFile, const cv::Scalar 
     , mThicknes(5)
     , mPointRadius(10)
     , mFontHeight(40)
-    , mFontLineWidth(2)
-{
+    , mFontLineWidth(2) {}
 
-}
-
-void GIS::ShapeRenderer::addNumericFilter(const std::string name, int value)
-{
+void GIS::ShapeRenderer::addNumericFilter(const std::string name, int value) {
     mfilter.insert(std::make_pair(name, value));
 }
 
-void GIS::ShapeRenderer::setTextFieldName(const std::string &name)
-{
+void GIS::ShapeRenderer::setTextFieldName(const std::string& name) {
     mTextFieldName = name;
 }
 
-void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float yStart, float scale)
-{
+void GIS::ShapeRenderer::drawShapeMercator(cv::Mat& src, float xStart, float yStart, float scale) {
     if(!load()) {
         return;
     }
@@ -42,9 +38,10 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                 if(polyLineIterator) {
                     std::vector<cv::Point> polyLines;
                     for(polyLineIterator->begin(); *polyLineIterator != polyLineIterator->end(); ++(*polyLineIterator)) {
-                        //std::cout << polyLineIterator->point.x << " " << polyLineIterator->point.y << std::endl;
+                        // std::cout << polyLineIterator->point.x << " " << polyLineIterator->point.y << std::endl;
 
-                        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({polyLineIterator->point.y, polyLineIterator->point.x, 0}, mEarthRadius + mAltitude, scale);
+                        PixelGeolocationCalculator::CartesianCoordinateF coordinate
+                            = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({polyLineIterator->point.y, polyLineIterator->point.x, 0}, mEarthRadius + mAltitude, scale);
 
                         coordinate.x += -xStart;
                         coordinate.y += -yStart;
@@ -71,11 +68,11 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                     coordinate.y += -yStart;
 
                     cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, mColor, cv::FILLED);
-                    cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, cv::Scalar(0,0,0), 1);
+                    cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, cv::Scalar(0, 0, 0), 1);
                 }
             }
         } else {
-            const DbFileReader &dbFilereader = getDbFilereader();
+            const DbFileReader& dbFilereader = getDbFilereader();
             const std::vector<DbFileReader::Field> fieldAttributes = dbFilereader.getFieldAttributes();
 
             if(recordIterator && hasDbFile()) {
@@ -96,13 +93,13 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                             int population = 0;
                             try {
                                 population = std::stoi(fieldValues[n]);
-                            } catch (...) {
+                            } catch(...) {
                                 continue;
                             }
 
                             if(population >= mfilter[fieldAttributes[n].fieldName]) {
                                 cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, mColor, cv::FILLED);
-                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, cv::Scalar(0,0,0), 1);
+                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, cv::Scalar(0, 0, 0), 1);
 
                                 drawName = true;
                             }
@@ -117,8 +114,8 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
                         double fontScale = cv::getFontScaleFromHeight(cv::FONT_ITALIC, mFontHeight, mFontLineWidth);
                         int baseLine;
                         cv::Size size = cv::getTextSize(fieldValues[namePos], cv::FONT_ITALIC, fontScale, mFontLineWidth, &baseLine);
-                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, fontScale, cv::Scalar(0,0,0), mFontLineWidth+1, cv::LINE_AA);
-                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, fontScale, mColor, mFontLineWidth, cv::LINE_AA);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width / 2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, fontScale, cv::Scalar(0, 0, 0), mFontLineWidth + 1, cv::LINE_AA);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width / 2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, fontScale, mColor, mFontLineWidth, cv::LINE_AA);
                     }
                 }
             }
@@ -126,8 +123,7 @@ void GIS::ShapeRenderer::drawShapeMercator(cv::Mat &src, float xStart, float ySt
     }
 }
 
-void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float yStart, float centerLatitude, float centerLongitude, float scale)
-{
+void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat& src, float xStart, float yStart, float centerLatitude, float centerLongitude, float scale) {
     if(!load()) {
         return;
     }
@@ -142,9 +138,10 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                 if(polyLineIterator) {
                     std::vector<cv::Point> polyLines;
                     for(polyLineIterator->begin(); *polyLineIterator != polyLineIterator->end(); ++(*polyLineIterator)) {
-                        //std::cout << polyLineIterator->point.x << " " << polyLineIterator->point.y << std::endl;
+                        // std::cout << polyLineIterator->point.x << " " << polyLineIterator->point.y << std::endl;
 
-                        PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({polyLineIterator->point.y, polyLineIterator->point.x, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
+                        PixelGeolocationCalculator::CartesianCoordinateF coordinate
+                            = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({polyLineIterator->point.y, polyLineIterator->point.x, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
 
                         coordinate.x += -xStart;
                         coordinate.y += -yStart;
@@ -168,7 +165,8 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                 for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator)) {
                     ShapeReader::Point point(*recordIterator);
 
-                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({point.y, point.x, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
+                    PixelGeolocationCalculator::CartesianCoordinateF coordinate
+                        = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({point.y, point.x, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
                     coordinate.x += -xStart;
                     coordinate.y += -yStart;
 
@@ -177,11 +175,11 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                     }
 
                     cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, mColor, cv::FILLED);
-                    cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, cv::Scalar(0,0,0), 1);
+                    cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, cv::Scalar(0, 0, 0), 1);
                 }
             }
         } else {
-            const DbFileReader &dbFilereader = getDbFilereader();
+            const DbFileReader& dbFilereader = getDbFilereader();
             const std::vector<DbFileReader::Field> fieldAttributes = dbFilereader.getFieldAttributes();
 
             if(recordIterator && hasDbFile()) {
@@ -190,7 +188,8 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                     ShapeReader::Point point(*recordIterator);
                     std::vector<std::string> fieldValues = dbFilereader.getFieldValues(i);
 
-                    PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({point.y, point.x, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
+                    PixelGeolocationCalculator::CartesianCoordinateF coordinate
+                        = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({point.y, point.x, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
                     coordinate.x += -xStart;
                     coordinate.y += -yStart;
 
@@ -206,13 +205,13 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                             int population = 0;
                             try {
                                 population = std::stoi(fieldValues[n]);
-                            } catch (...) {
+                            } catch(...) {
                                 continue;
                             }
 
                             if(population >= mfilter[fieldAttributes[n].fieldName]) {
                                 cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, mColor, cv::FILLED);
-                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, cv::Scalar(0,0,0), 1);
+                                cv::circle(src, cv::Point2d(coordinate.x, coordinate.y), mPointRadius, cv::Scalar(0, 0, 0), 1);
 
                                 drawName = true;
                             }
@@ -227,8 +226,8 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
                         double fontScale = cv::getFontScaleFromHeight(cv::FONT_ITALIC, mFontHeight, mFontLineWidth);
                         int baseLine;
                         cv::Size size = cv::getTextSize(fieldValues[namePos], cv::FONT_ITALIC, fontScale, mFontLineWidth, &baseLine);
-                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, fontScale, cv::Scalar(0,0,0), mFontLineWidth+1, cv::LINE_AA);
-                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width/2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, fontScale, mColor, mFontLineWidth, cv::LINE_AA);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width / 2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, fontScale, cv::Scalar(0, 0, 0), mFontLineWidth + 1, cv::LINE_AA);
+                        cv::putText(src, fieldValues[namePos], cv::Point2d(coordinate.x - (size.width / 2), coordinate.y - size.height + baseLine), cv::FONT_ITALIC, fontScale, mColor, mFontLineWidth, cv::LINE_AA);
                     }
                 }
             }
@@ -236,17 +235,15 @@ void GIS::ShapeRenderer::drawShapeEquidistant(cv::Mat &src, float xStart, float 
     }
 }
 
-bool GIS::ShapeRenderer::equidistantCheck(float latitude, float longitude, float centerLatitude, float centerLongitude)
-{
-    //Degree To radian
+bool GIS::ShapeRenderer::equidistantCheck(float latitude, float longitude, float centerLatitude, float centerLongitude) {
+    // Degree To radian
     latitude = M_PI * latitude / 180.0f;
     longitude = M_PI * longitude / 180.0f;
-    centerLatitude= M_PI * centerLatitude / 180.0f;
-    centerLongitude= M_PI * centerLongitude / 180.0f;
+    centerLatitude = M_PI * centerLatitude / 180.0f;
+    centerLongitude = M_PI * centerLongitude / 180.0f;
 
     float deltaSigma = std::sin(centerLatitude) * std::sin(latitude) + std::cos(latitude) * std::cos(longitude - centerLongitude);
-    if (deltaSigma < 0.0)
-    {
+    if(deltaSigma < 0.0) {
         return false;
     }
 

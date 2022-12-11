@@ -1,0 +1,217 @@
+---
+Language:        Cpp
+# NowTechnologies
+# BasedOnStyle:  LLVM
+# Compatible with clang-format version 10
+
+AccessModifierOffset: -2
+AlignAfterOpenBracket: Align
+### not available in v6
+AlignConsecutiveMacros: false
+AlignConsecutiveAssignments: false
+### v11+
+# AlignConsecutiveBitFields: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Right
+### bool in v10, not bool in v11
+AlignOperands:   true
+AlignTrailingComments: true
+### not available in v6
+AllowAllArgumentsOnNextLine: true
+### not available in v6
+AllowAllConstructorInitializersOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+### v11+
+# AllowShortEnumsOnASingleLine: true
+### not available in v6, bool in v6
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+### not available in v6
+AllowShortLambdasOnASingleLine: Empty
+### not available in v6, bool in v6
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+# not available in v6, bool in v6
+AlwaysBreakTemplateDeclarations: Yes 
+# put params and arguments to new line when breaking a long line
+# AllowAllParametersOfDeclarationOnNextLine should be false, too
+BinPackArguments: false
+BinPackParameters: false
+BraceWrapping:
+  ### not available in v6
+  AfterCaseLabel:  false
+  AfterClass:      false
+  ### bool in v10, not bool in v11
+  AfterControlStatement: false
+  AfterEnum:       false
+  AfterFunction:   false
+  AfterNamespace:  false
+  AfterObjCDeclaration: false
+  AfterStruct:     false
+  AfterUnion:      false
+  AfterExternBlock: false
+  BeforeCatch:     false
+  BeforeElse:      false
+  ### v11+
+  # BeforeLambdaBody: false
+  ### v11+
+  # BeforeWhile: false
+  IndentBraces:    false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+# when initializing a variable with a long expression, it won't put that to a new line, 
+# but keeps it in the same, and breaks the right side of the assignment
+BreakBeforeBinaryOperators: All
+BreakBeforeBraces: Custom
+BreakBeforeInheritanceComma: false
+### not available in v6
+BreakInheritanceList: BeforeColon
+BreakBeforeTernaryOperators: true
+### not available in v6
+BreakConstructorInitializersBeforeComma: true
+BreakConstructorInitializers: BeforeComma
+BreakAfterJavaFieldAnnotations: false
+BreakStringLiterals: true
+ColumnLimit:     240
+CommentPragmas:  '^ IWYU pragma:'
+CompactNamespaces: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
+Cpp11BracedListStyle: true
+### not available in v6
+DeriveLineEnding: true
+DerivePointerAlignment: false
+DisableFormat:   false
+ExperimentalAutoDetectBinPacking: false
+FixNamespaceComments: true
+ForEachMacros:
+  - foreach
+  - Q_FOREACH
+  - BOOST_FOREACH
+# IncludeBlocks:  Preserve, Merge, Regroup
+IncludeBlocks:   Regroup
+# SortIncludes should be true to use IncludeCategories
+IncludeCategories:
+  # Headers in <> from specific external libraries.
+  - Regex:           '^.*stdafx.*'
+    Priority:        -1
+    ### not available in v6
+    SortPriority:    0
+  # Headers in <> from Qt
+  - Regex:           '^<Q.*'
+    Priority:        3
+    ### not available in v6
+    SortPriority:    0
+  # Headers in <> from specific external libraries.
+  - Regex:           '<(catch2|boost|cv)\/'
+    Priority:        4
+    ### not available in v6
+    SortPriority:    0
+  # Headers in "" or <> from other specific external libraries.
+  - Regex:           '^((<|")(gtest|gmock|isl|json)/)'
+    Priority:        5
+    ### not available in v6
+    SortPriority:    0
+  # Headers in <> with extension.
+  - Regex:           '^<.*\.h>'
+    Priority:        1
+    ### not available in v6
+    SortPriority:    0
+  # Headers in <> without extension.
+  - Regex:           '^<.*'
+    Priority:        2
+    ### not available in v6
+    SortPriority:    0
+  # all other headers
+  - Regex:           '.*'
+    Priority:        6
+    ### not available in v6
+    SortPriority:    0
+IncludeIsMainRegex: '(Test)?$'
+### not available in v6
+IncludeIsMainSourceRegex: ''
+### v11+
+# IndentCaseBlocks: true
+IndentCaseLabels: true
+### not available in v6
+IndentGotoLabels: true
+IndentPPDirectives: None
+### v11+
+# IndentExternBlock: AfterExternBlock
+IndentWidth:     4
+IndentWrappedFunctionNames: false
+### v11+
+# InsertTrailingCommas: None
+JavaScriptQuotes: Leave
+JavaScriptWrapImports: true
+KeepEmptyLinesAtTheStartOfBlocks: true
+MacroBlockBegin: ''
+MacroBlockEnd:   ''
+MaxEmptyLinesToKeep: 2
+NamespaceIndentation: None
+### not available in v6
+ObjCBinPackProtocolList: Auto
+ObjCBlockIndentWidth: 4
+### v11+
+# ObjCBreakBeforeNestedBlockParam: true
+ObjCSpaceAfterProperty: false
+ObjCSpaceBeforeProtocolList: true
+PenaltyBreakAssignment: 2
+PenaltyBreakBeforeFirstCallParameter: 19
+PenaltyBreakComment: 300
+PenaltyBreakFirstLessLess: 120
+PenaltyBreakString: 1000
+### not available in v6
+PenaltyBreakTemplateDeclaration: 10
+PenaltyExcessCharacter: 1000000
+# https://stackoverflow.com/questions/46872270/clang-format-alwaysbreakafterreturntype-none-doesnt-work
+# force return type to be on the same line as the name of the method
+# default was 60
+PenaltyReturnTypeOnItsOwnLine: 1000000
+PointerAlignment: Left
+ReflowComments:  true
+SortIncludes:    true
+SortUsingDeclarations: true
+SpaceAfterCStyleCast: false
+### not available in v6
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeAssignmentOperators: true
+### not available in v6
+SpaceBeforeCpp11BracedList: false
+### not available in v6
+SpaceBeforeCtorInitializerColon: true
+### not available in v6
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: Never
+### not available in v6
+SpaceBeforeRangeBasedForLoopColon: true
+### not available in v6
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 1
+SpacesInAngles:  false
+### not available in v6
+SpacesInConditionalStatement: false
+SpacesInContainerLiterals: true
+SpacesInCStyleCastParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+### not available in v6
+SpaceBeforeSquareBrackets: false
+### not available in v6, v6 values: Cpp03, Cpp11, Auto. 
+Standard:        Latest
+### not available in v6
+StatementMacros:
+  - Q_UNUSED
+  - QT_REQUIRE_VERSION
+TabWidth:        8
+### not available in v6
+UseCRLF:         false
+UseTab:          Never

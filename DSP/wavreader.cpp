@@ -1,13 +1,9 @@
 #include "wavreader.h"
 
 
-Wavreader::Wavreader()
-{
+Wavreader::Wavreader() {}
 
-}
-
-bool Wavreader::openFile(std::string file)
-{
+bool Wavreader::openFile(std::string file) {
     struct WavHeader wavHeader;
     bool success = true;
 
@@ -45,8 +41,7 @@ bool Wavreader::openFile(std::string file)
     return success;
 }
 
-uint32_t Wavreader::read(complex *data, uint32_t len)
-{
+uint32_t Wavreader::read(complex* data, uint32_t len) {
     uint8_t buffer8bit[2];
     int16_t buffer16bit[2];
     uint32_t samplesCount = 0;

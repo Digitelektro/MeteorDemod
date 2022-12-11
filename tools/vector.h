@@ -6,21 +6,19 @@
 struct Vector3 : Vector {
 
     Vector3()
-        : Vector() {
-    }
+        : Vector() {}
 
     Vector3(const Vector v)
-        : Vector(v) {
-    }
+        : Vector(v) {}
 
-    Vector &operator -= (const Vector& v) {
+    Vector& operator-=(const Vector& v) {
         x -= v.x;
         y -= v.y;
         z -= v.z;
         return *this;
     }
 
-    Vector3 operator * (double factor) const {
+    Vector3 operator*(double factor) const {
         Vector3 r(*this);
         r.x *= factor;
         r.y *= factor;
@@ -28,14 +26,14 @@ struct Vector3 : Vector {
         return r;
     }
 
-    Vector3 &operator *= (double factor) {
+    Vector3& operator*=(double factor) {
         x *= factor;
         y *= factor;
         z *= factor;
         return *this;
     }
 
-    Vector3 operator / (double factor) const {
+    Vector3 operator/(double factor) const {
         Vector3 r(*this);
         r.x /= factor;
         r.y /= factor;
@@ -43,7 +41,7 @@ struct Vector3 : Vector {
         return r;
     }
 
-    Vector3 &operator /= (double factor) {
+    Vector3& operator/=(double factor) {
         x /= factor;
         y /= factor;
         z /= factor;
@@ -58,7 +56,7 @@ struct Vector3 : Vector {
         return r;
     }
 
-    Vector3 &Normalize() {
+    Vector3& Normalize() {
         double m = Magnitude();
         if(m > 0) {
             return (*this) /= m;

@@ -1,10 +1,11 @@
+#include "mm.h"
+
 #include <algorithm>
 #include <numeric>
 
-#include "mm.h"
-#include "windowedsinc.h"
-#include "window.h"
 #include "global.h"
+#include "window.h"
+#include "windowedsinc.h"
 
 namespace DSP {
 
@@ -12,29 +13,27 @@ MM::MM(float omega, float omegaGain, float muGain, float omegaRelLimit, int inte
     : mInterpPhaseCount(interpPhaseCount)
     , mInterpTapCount(interpTapCount)
     , mPcl(muGain, omegaGain, 0.0f, 0.0f, 1.0f, omega, omega * (1.0f - omegaRelLimit), omega * (1.0f + omegaRelLimit), false)
-    , mp0T (0.0f, 0.0f)
-    , mp1T (0.0f, 0.0f)
-    , mp2T (0.0f, 0.0f)
-    , mc0T (0.0f, 0.0f)
-    , mc1T (0.0f, 0.0f)
-    , mc2T (0.0f, 0.0f)
+    , mp0T(0.0f, 0.0f)
+    , mp1T(0.0f, 0.0f)
+    , mp2T(0.0f, 0.0f)
+    , mc0T(0.0f, 0.0f)
+    , mc1T(0.0f, 0.0f)
+    , mc2T(0.0f, 0.0f)
     , mOffset(0)
     , mBuffer(new complex[interpTapCount + (STREAM_CHUNK_SIZE)])
     , mpBufStart(&mBuffer[interpTapCount - 1])
-    , mInterpBank()
-{
+    , mInterpBank() {
     std::fill(mBuffer.get(), mBuffer.get() + (interpTapCount + STREAM_CHUNK_SIZE), 0);
     generateInterpTaps();
 }
 
-int MM::process(int count, const complex *in, std::function<void (complex)> callback)
-{
+int MM::process(int count, const complex* in, std::function<void(complex)> callback) {
     // Copy data to work buffer
     std::copy(in, in + count, mpBufStart);
 
     // Process all samples
     int outCount = 0;
-    while (mOffset < count) {
+    while(mOffset < count) {
         float error;
         complex outVal;
 
@@ -55,7 +54,7 @@ int MM::process(int count, const complex *in, std::function<void (complex)> call
         mc0T = step(outVal);
 
         // Error
-        error = (((mp0T - mp2T) *  std::conj(mc1T)) - ((mc0T - mc2T) * std::conj(mp1T))).real();
+        error = (((mp0T - mp2T) * std::conj(mc1T)) - ((mc0T - mc2T) * std::conj(mp1T))).real();
 
         // Clamp symbol phase error
         error = std::clamp(error, -1.0f, 1.0f);
@@ -70,14 +69,13 @@ int MM::process(int count, const complex *in, std::function<void (complex)> call
     mOffset -= count;
 
     // Update delay buffer
-    //memmove(mpBuffer, &mpBuffer[count], (mInterpTapCount - 1) * sizeof(complex));
+    // memmove(mpBuffer, &mpBuffer[count], (mInterpTapCount - 1) * sizeof(complex));
     std::move(&mBuffer[count], &mBuffer[count + mInterpTapCount], mBuffer.get());
 
     return outCount;
 }
 
-void MM::generateInterpTaps()
-{
+void MM::generateInterpTaps() {
     double bw = 0.5 / (double)mInterpPhaseCount;
     std::vector<float> lp = DSP::TAPS::windowedSinc<float>(mInterpPhaseCount * mInterpTapCount, DSP::TAPS::hzToRads(bw, 1.0), DSP::WINDOW::nuttall, mInterpPhaseCount);
     mInterpBank.buildPolyphaseBank(mInterpPhaseCount, lp.data(), lp.size());

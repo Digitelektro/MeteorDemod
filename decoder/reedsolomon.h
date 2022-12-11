@@ -6,19 +6,18 @@ extern "C" {
 #include "correct.h"
 }
 
-class ReedSolomon
-{
-public:
+class ReedSolomon {
+  public:
     ReedSolomon();
     ~ReedSolomon();
 
-    void deinterleave(const uint8_t *data, int pos, int n);
-    void interleave(uint8_t *output, int pos, int n);
+    void deinterleave(const uint8_t* data, int pos, int n);
+    void interleave(uint8_t* output, int pos, int n);
     int decode();
 
 
-private:
-    correct_reed_solomon *mpReedSolomon;
+  private:
+    correct_reed_solomon* mpReedSolomon;
     uint8_t mWorkBuffer[255];
     uint8_t mResultBuffer[255];
 
