@@ -133,16 +133,31 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat& image, const PixelGeoloca
     Settings& settings = Settings::getInstance();
     GIS::ShapeRenderer graticules(settings.getResourcesPath() + settings.getShapeGraticulesFile(), cv::Scalar(settings.getShapeGraticulesColor().B, settings.getShapeGraticulesColor().G, settings.getShapeGraticulesColor().R));
     graticules.setThickness(settings.getShapeGraticulesThickness());
-    graticules.drawShapeMercator(newImage, xStart, yStart, scale);
+    graticules.drawShape(newImage, [=](double& x, double& y) -> bool {
+        auto coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({x, y, 0}, mEarthRadius + mAltitude, scale);
+        x = coordinate.x + (-xStart);
+        y = coordinate.y + (-yStart);
+        return true;
+    });
 
     GIS::ShapeRenderer coastLines(settings.getResourcesPath() + settings.getShapeCoastLinesFile(), cv::Scalar(settings.getShapeCoastLinesColor().B, settings.getShapeCoastLinesColor().G, settings.getShapeCoastLinesColor().R));
     coastLines.setThickness(settings.getShapeCoastLinesThickness());
-    coastLines.drawShapeMercator(newImage, xStart, yStart, scale);
+    coastLines.drawShape(newImage, [=](double& x, double& y) -> bool {
+        auto coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({x, y, 0}, mEarthRadius + mAltitude, scale);
+        x = coordinate.x + (-xStart);
+        y = coordinate.y + (-yStart);
+        return true;
+    });
 
     GIS::ShapeRenderer countryBorders(settings.getResourcesPath() + settings.getShapeBoundaryLinesFile(),
                                       cv::Scalar(settings.getShapeBoundaryLinesColor().B, settings.getShapeBoundaryLinesColor().G, settings.getShapeBoundaryLinesColor().R));
     countryBorders.setThickness(settings.getShapeBoundaryLinesThickness());
-    countryBorders.drawShapeMercator(newImage, xStart, yStart, scale);
+    countryBorders.drawShape(newImage, [=](double& x, double& y) -> bool {
+        auto coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({x, y, 0}, mEarthRadius + mAltitude, scale);
+        x = coordinate.x + (-xStart);
+        y = coordinate.y + (-yStart);
+        return true;
+    });
 
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(),
                               cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
@@ -151,7 +166,12 @@ cv::Mat SpreadImage::mercatorProjection(const cv::Mat& image, const PixelGeoloca
     cities.setFontHeight(settings.getShapePopulatedPlacesFontSize() * scale);
     cities.setFontLineWidth(settings.getShapePopulatedPlacesFontWidth());
     cities.setPointRadius(settings.getShapePopulatedPlacesPointradius() * scale);
-    cities.drawShapeMercator(newImage, xStart, yStart, scale);
+    cities.drawShape(newImage, [=](double& x, double& y) -> bool {
+        auto coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({x, y, 0}, mEarthRadius + mAltitude, scale);
+        x = coordinate.x + (-xStart);
+        y = coordinate.y + (-yStart);
+        return true;
+    });
 
     if(settings.drawReceiver()) {
         PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({settings.getReceiverLatitude(), settings.getReceiverLongitude(), 0}, mEarthRadius + mAltitude, scale);
@@ -386,16 +406,31 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat>& images, const 
     Settings& settings = Settings::getInstance();
     GIS::ShapeRenderer graticules(settings.getResourcesPath() + settings.getShapeGraticulesFile(), cv::Scalar(settings.getShapeGraticulesColor().B, settings.getShapeGraticulesColor().G, settings.getShapeGraticulesColor().R));
     graticules.setThickness(settings.getShapeGraticulesThickness());
-    graticules.drawShapeMercator(composite, xStart, yStart, scale);
+    graticules.drawShape(composite, [=](double& x, double& y) -> bool {
+        auto coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({x, y, 0}, mEarthRadius + mAltitude, scale);
+        x = coordinate.x + (-xStart);
+        y = coordinate.y + (-yStart);
+        return true;
+    });
 
     GIS::ShapeRenderer coastLines(settings.getResourcesPath() + settings.getShapeCoastLinesFile(), cv::Scalar(settings.getShapeCoastLinesColor().B, settings.getShapeCoastLinesColor().G, settings.getShapeCoastLinesColor().R));
     coastLines.setThickness(settings.getShapeCoastLinesThickness());
-    coastLines.drawShapeMercator(composite, xStart, yStart, scale);
+    coastLines.drawShape(composite, [=](double& x, double& y) -> bool {
+        auto coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({x, y, 0}, mEarthRadius + mAltitude, scale);
+        x = coordinate.x + (-xStart);
+        y = coordinate.y + (-yStart);
+        return true;
+    });
 
     GIS::ShapeRenderer countryBorders(settings.getResourcesPath() + settings.getShapeBoundaryLinesFile(),
                                       cv::Scalar(settings.getShapeBoundaryLinesColor().B, settings.getShapeBoundaryLinesColor().G, settings.getShapeBoundaryLinesColor().R));
     countryBorders.setThickness(settings.getShapeBoundaryLinesThickness());
-    countryBorders.drawShapeMercator(composite, xStart, yStart, scale);
+    countryBorders.drawShape(composite, [=](double& x, double& y) -> bool {
+        auto coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({x, y, 0}, mEarthRadius + mAltitude, scale);
+        x = coordinate.x + (-xStart);
+        y = coordinate.y + (-yStart);
+        return true;
+    });
 
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(),
                               cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
@@ -404,7 +439,12 @@ cv::Mat SpreadImage::mercatorProjection(const std::list<cv::Mat>& images, const 
     cities.setFontHeight(settings.getShapePopulatedPlacesFontSize() * scale);
     cities.setFontLineWidth(settings.getShapePopulatedPlacesFontWidth());
     cities.setPointRadius(settings.getShapePopulatedPlacesPointradius() * scale);
-    cities.drawShapeMercator(composite, xStart, yStart, scale);
+    cities.drawShape(composite, [=](double& x, double& y) -> bool {
+        auto coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({x, y, 0}, mEarthRadius + mAltitude, scale);
+        x = coordinate.x + (-xStart);
+        y = coordinate.y + (-yStart);
+        return true;
+    });
 
     if(settings.drawReceiver()) {
         PixelGeolocationCalculator::CartesianCoordinateF coordinate = PixelGeolocationCalculator::coordinateToMercatorProjection<float>({settings.getReceiverLatitude(), settings.getReceiverLongitude(), 0}, mEarthRadius + mAltitude, scale);
@@ -482,16 +522,43 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat& image, const PixelGeol
 
     GIS::ShapeRenderer graticules(settings.getResourcesPath() + settings.getShapeGraticulesFile(), cv::Scalar(settings.getShapeGraticulesColor().B, settings.getShapeGraticulesColor().G, settings.getShapeGraticulesColor().R));
     graticules.setThickness(settings.getShapeGraticulesThickness());
-    graticules.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude, scale);
+    graticules.drawShape(newImage, [=](double& x, double& y) -> bool {
+        if(PixelGeolocationCalculator::equidistantCheck<float>(x, y, centerLatitude, centerLongitude)) {
+            auto coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({x, y, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
+            x = coordinate.x + (-xStart);
+            y = coordinate.y + (-yStart);
+            return true;
+        } else {
+            return false;
+        }
+    });
 
     GIS::ShapeRenderer coastLines(settings.getResourcesPath() + settings.getShapeCoastLinesFile(), cv::Scalar(settings.getShapeCoastLinesColor().B, settings.getShapeCoastLinesColor().G, settings.getShapeCoastLinesColor().R));
     coastLines.setThickness(settings.getShapeCoastLinesThickness());
-    coastLines.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude, scale);
+    coastLines.drawShape(newImage, [=](double& x, double& y) -> bool {
+        if(PixelGeolocationCalculator::equidistantCheck<float>(x, y, centerLatitude, centerLongitude)) {
+            auto coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({x, y, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
+            x = coordinate.x + (-xStart);
+            y = coordinate.y + (-yStart);
+            return true;
+        } else {
+            return false;
+        }
+    });
 
     GIS::ShapeRenderer countryBorders(settings.getResourcesPath() + settings.getShapeBoundaryLinesFile(),
                                       cv::Scalar(settings.getShapeBoundaryLinesColor().B, settings.getShapeBoundaryLinesColor().G, settings.getShapeBoundaryLinesColor().R));
     countryBorders.setThickness(settings.getShapeBoundaryLinesThickness());
-    countryBorders.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude, scale);
+    countryBorders.drawShape(newImage, [=](double& x, double& y) -> bool {
+        if(PixelGeolocationCalculator::equidistantCheck<float>(x, y, centerLatitude, centerLongitude)) {
+            auto coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({x, y, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
+            x = coordinate.x + (-xStart);
+            y = coordinate.y + (-yStart);
+            return true;
+        } else {
+            return false;
+        }
+    });
 
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(),
                               cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
@@ -500,7 +567,16 @@ cv::Mat SpreadImage::equidistantProjection(const cv::Mat& image, const PixelGeol
     cities.setPointRadius(settings.getShapePopulatedPlacesPointradius() * scale);
     cities.addNumericFilter(settings.getShapePopulatedPlacesFilterColumnName(), settings.getShapePopulatedPlacesNumbericFilter());
     cities.setTextFieldName(settings.getShapePopulatedPlacesTextColumnName());
-    cities.drawShapeEquidistant(newImage, xStart, yStart, centerLatitude, centerLongitude, scale);
+    cities.drawShape(newImage, [=](double& x, double& y) -> bool {
+        if(PixelGeolocationCalculator::equidistantCheck<float>(x, y, centerLatitude, centerLongitude)) {
+            auto coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({x, y, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
+            x = coordinate.x + (-xStart);
+            y = coordinate.y + (-yStart);
+            return true;
+        } else {
+            return false;
+        }
+    });
 
     if(settings.drawReceiver()) {
         PixelGeolocationCalculator::CartesianCoordinateF coordinate
@@ -663,16 +739,43 @@ cv::Mat SpreadImage::equidistantProjection(const std::list<cv::Mat>& images, con
 
     GIS::ShapeRenderer graticules(settings.getResourcesPath() + settings.getShapeGraticulesFile(), cv::Scalar(settings.getShapeGraticulesColor().B, settings.getShapeGraticulesColor().G, settings.getShapeGraticulesColor().R));
     graticules.setThickness(settings.getShapeGraticulesThickness());
-    graticules.drawShapeEquidistant(composite, xStart, yStart, centerLatitude, centerLongitude, scale);
+    graticules.drawShape(composite, [=](double& x, double& y) -> bool {
+        if(PixelGeolocationCalculator::equidistantCheck<float>(x, y, centerLatitude, centerLongitude)) {
+            auto coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({x, y, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
+            x = coordinate.x + (-xStart);
+            y = coordinate.y + (-yStart);
+            return true;
+        } else {
+            return false;
+        }
+    });
 
     GIS::ShapeRenderer coastLines(settings.getResourcesPath() + settings.getShapeCoastLinesFile(), cv::Scalar(settings.getShapeCoastLinesColor().B, settings.getShapeCoastLinesColor().G, settings.getShapeCoastLinesColor().R));
     coastLines.setThickness(settings.getShapeCoastLinesThickness());
-    coastLines.drawShapeEquidistant(composite, xStart, yStart, centerLatitude, centerLongitude, scale);
+    coastLines.drawShape(composite, [=](double& x, double& y) -> bool {
+        if(PixelGeolocationCalculator::equidistantCheck<float>(x, y, centerLatitude, centerLongitude)) {
+            auto coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({x, y, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
+            x = coordinate.x + (-xStart);
+            y = coordinate.y + (-yStart);
+            return true;
+        } else {
+            return false;
+        }
+    });
 
     GIS::ShapeRenderer countryBorders(settings.getResourcesPath() + settings.getShapeBoundaryLinesFile(),
                                       cv::Scalar(settings.getShapeBoundaryLinesColor().B, settings.getShapeBoundaryLinesColor().G, settings.getShapeBoundaryLinesColor().R));
     countryBorders.setThickness(settings.getShapeBoundaryLinesThickness());
-    countryBorders.drawShapeEquidistant(composite, xStart, yStart, centerLatitude, centerLongitude, scale);
+    countryBorders.drawShape(composite, [=](double& x, double& y) -> bool {
+        if(PixelGeolocationCalculator::equidistantCheck<float>(x, y, centerLatitude, centerLongitude)) {
+            auto coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({x, y, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
+            x = coordinate.x + (-xStart);
+            y = coordinate.y + (-yStart);
+            return true;
+        } else {
+            return false;
+        }
+    });
 
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(),
                               cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
@@ -681,7 +784,16 @@ cv::Mat SpreadImage::equidistantProjection(const std::list<cv::Mat>& images, con
     cities.setFontHeight(settings.getShapePopulatedPlacesFontSize() * scale);
     cities.setFontLineWidth(settings.getShapePopulatedPlacesFontWidth());
     cities.setPointRadius(settings.getShapePopulatedPlacesPointradius() * scale);
-    cities.drawShapeEquidistant(composite, xStart, yStart, centerLatitude, centerLongitude, scale);
+    cities.drawShape(composite, [=](double& x, double& y) -> bool {
+        if(PixelGeolocationCalculator::equidistantCheck<float>(x, y, centerLatitude, centerLongitude)) {
+            auto coordinate = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>({x, y, 0}, {centerLatitude, centerLongitude, 0}, mEarthRadius + mAltitude, scale);
+            x = coordinate.x + (-xStart);
+            y = coordinate.y + (-yStart);
+            return true;
+        } else {
+            return false;
+        }
+    });
 
     if(settings.drawReceiver()) {
         PixelGeolocationCalculator::CartesianCoordinateF coordinate

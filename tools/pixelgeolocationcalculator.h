@@ -114,6 +114,22 @@ class PixelGeolocationCalculator {
         return {cartesianCoordinate.x * scale, cartesianCoordinate.y * scale};
     }
 
+    template <typename T>
+    static bool equidistantCheck(T latitude, T longitude, T centerLatitude, T centerLongitude) {
+        // Degree To radian
+        latitude = M_PI * latitude / 180.0f;
+        longitude = M_PI * longitude / 180.0f;
+        centerLatitude = M_PI * centerLatitude / 180.0f;
+        centerLongitude = M_PI * centerLongitude / 180.0f;
+
+        T deltaSigma = std::sin(centerLatitude) * std::sin(latitude) + std::cos(latitude) * std::cos(longitude - centerLongitude);
+        if(deltaSigma < 0.0) {
+            return false;
+        }
+
+        return true;
+    }
+
   private:
     void calculateCartesionCoordinates();
     Vector locationToVector(const CoordGeodetic& location);
