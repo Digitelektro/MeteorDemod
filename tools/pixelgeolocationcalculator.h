@@ -108,10 +108,9 @@ class PixelGeolocationCalculator {
 
     template <typename T>
     static CartesianCoordinate<T> coordinateToAzimuthalEquidistantProjection(const CoordGeodetic& coordinate, const CoordGeodetic& centerCoordinate, double radius, float scale) {
-        CartesianCoordinate<T> cartesianCoordinate;
-        cartesianCoordinate.x = radius * (cos(coordinate.latitude) * sin(coordinate.longitude - centerCoordinate.longitude));
-        cartesianCoordinate.y = -radius * (cos(centerCoordinate.latitude) * sin(coordinate.latitude) - sin(centerCoordinate.latitude) * cos(coordinate.latitude) * cos(coordinate.longitude - centerCoordinate.longitude));
-        return {cartesianCoordinate.x * scale, cartesianCoordinate.y * scale};
+        T x = radius * (cos(coordinate.latitude) * sin(coordinate.longitude - centerCoordinate.longitude));
+        T y = -radius * (cos(centerCoordinate.latitude) * sin(coordinate.latitude) - sin(centerCoordinate.latitude) * cos(coordinate.latitude) * cos(coordinate.longitude - centerCoordinate.longitude));
+        return {x * scale, y * scale};
     }
 
     template <typename T>
@@ -129,13 +128,23 @@ class PixelGeolocationCalculator {
 
         return true;
     }
+    template <typename T>
+    static bool equidistantCheck(T latitude, T longitude, const CoordGeodetic& centerCoordinate) {
+        // Degree To radian
+        latitude = M_PI * latitude / 180.0f;
+        longitude = M_PI * longitude / 180.0f;
+
+        T deltaSigma = std::sin(centerCoordinate.latitude) * std::sin(latitude) + std::cos(latitude) * std::cos(longitude - centerCoordinate.longitude);
+        if(deltaSigma < 0.0) {
+            return false;
+        }
+
+        return true;
+    }
 
   private:
     void calculateCartesionCoordinates();
-    Vector locationToVector(const CoordGeodetic& location);
-    CoordGeodetic vectorToLocation(const Vector& vector);
-    CoordGeodetic los_to_earth(const CoordGeodetic& position, double roll, double pitch, double yaw);
-    CoordGeodetic los_to_earth(const Vector& position, double roll, double pitch, double yaw);
+    Vector los_to_earth(const Vector& position, double roll, double pitch, double yaw);
     double calculateBearingAngle(const CoordGeodetic& start, const CoordGeodetic& end);
     Matrix4x4 lookAt(const Vector3& position, const Vector3& target, const Vector3& up);
 
