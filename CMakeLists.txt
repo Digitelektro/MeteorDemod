@@ -67,6 +67,8 @@ add_executable(meteordemod
     decoder/viterbi.cpp
     decoder/viterbi.h
     decoder/deinterleaver.cpp
+    decoder/meteordecoder.cpp
+    decoder/meteordecoder.h
     common/settings.cpp
     common/settings.h
     common/version.h
