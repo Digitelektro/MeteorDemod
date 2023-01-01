@@ -42,11 +42,12 @@ void MeteorDemodulator::process(IQSoruce& source, MeteorDecoderCallback_t callba
 
     // Discard the first null samples
     readedSamples = source.read(mSamples.get(), mRrcFilterOrder);
-    rrcFilter.process(mSamples.get(), mProcessedSamples.get(), readedSamples);
+    mAgc.process(mSamples.get(), mProcessedSamples.get(), readedSamples);
+    rrcFilter.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
 
     while((readedSamples = source.read(mSamples.get(), STREAM_CHUNK_SIZE)) > 0) {
-        rrcFilter.process(mSamples.get(), mProcessedSamples.get(), readedSamples);
-        mAgc.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
+        mAgc.process(mSamples.get(), mProcessedSamples.get(), readedSamples);
+        rrcFilter.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
         costas.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
 
         mm.process(readedSamples, mProcessedSamples.get(), [progress, &bytesWrited, callback, &costas, this](MM::complex value) mutable {
