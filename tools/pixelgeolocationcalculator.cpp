@@ -68,8 +68,8 @@ void PixelGeolocationCalculator::calcPixelCoordinates() {
         angle = degreeToRadian(90) - angle;
 
         for(int n = 79; n > -79; n--) {
-            CoordGeodetic coordinate(los_to_earth(satOnGround, degreeToRadian((((mScanAngle / 2.0) / 79.0)) * n), 0, angle));
-            mCoordinates.push_back(coordinate);
+            Vector3 posVector(los_to_earth(Vector3(satOnGround), degreeToRadian((((mScanAngle / 2.0) / 79.0)) * n), 0, angle));
+            mCoordinates.push_back(posVector.toCoordinate());
         }
     }
 }
@@ -97,50 +97,7 @@ void PixelGeolocationCalculator::save(const std::string& path) {
     file.close();
 }
 
-Vector PixelGeolocationCalculator::locationToVector(const CoordGeodetic& location) {
-    double cosLat = cos(location.latitude);
-    double sinLat = sin(location.latitude);
-    double cosLon = cos(location.longitude);
-    double sinLon = sin(location.longitude);
-
-    double radA = 6378.137;
-    double f = 1.0 / 298.257223563; // Flattening factor WGS84 Model
-    double radB = radA * (1 - f);
-
-    double N = pow(radA, 2) / sqrt(pow(radA, 2) * pow(cosLat, 2) + pow(radB, 2) * pow(sinLat, 2));
-
-    double x = (N + location.altitude) * cosLat * cosLon;
-    double y = (N + location.altitude) * cosLat * sinLon;
-    double z = ((pow(radB, 2) / pow(radA, 2)) * N + location.altitude) * sinLat;
-
-    return Vector(x, y, z);
-}
-
-CoordGeodetic PixelGeolocationCalculator::vectorToLocation(const Vector& vector) {
-    double a = 6378.137;
-    double f = 1.0 / 298.257223563; // Flattening factor WGS84 Model
-    double b = a * (1 - f);
-
-    double r = sqrt(pow(vector.x, 2) + pow(vector.y, 2) + pow(vector.z, 2));
-
-    double lat = asin(vector.z / r);
-    double lon = atan2(vector.y, vector.x);
-
-    double e = sqrt((pow(a, 2) - pow(b, 2)) / pow(a, 2));
-    double e2 = sqrt((pow(a, 2) - pow(b, 2)) / pow(b, 2));
-    double p = sqrt(pow(vector.x, 2) + pow(vector.y, 2));
-    double phi = atan2(vector.z * a, p * b);
-    lat = atan2(vector.z + pow(e2, 2) * b * pow(sin(phi), 3), p - pow(e, 2) * a * pow(cos(phi), 3));
-
-    return CoordGeodetic(lat, lon, 0, true);
-}
-
-CoordGeodetic PixelGeolocationCalculator::los_to_earth(const CoordGeodetic& position, double roll, double pitch, double yaw) {
-    Vector vector = locationToVector(position);
-    return los_to_earth(vector, roll, pitch, yaw);
-}
-
-CoordGeodetic PixelGeolocationCalculator::los_to_earth(const Vector& position, double roll, double pitch, double yaw) {
+Vector PixelGeolocationCalculator::los_to_earth(const Vector& position, double roll, double pitch, double yaw) {
     double a = 6371.0087714;
     double b = 6371.0087714;
     double c = 6356.752314245;
@@ -175,20 +132,20 @@ CoordGeodetic PixelGeolocationCalculator::los_to_earth(const Vector& position, d
     */
 
     if(radical < 0) {
-        return CoordGeodetic(0, 0, 0);
+        return {0, 0, 0};
     }
 
     double d = (value - a * b * c * sqrt(radical)) / magnitude;
 
     if(d < 0) {
-        return CoordGeodetic(0, 0, 0);
+        return {0, 0, 0};
     }
 
     x += d * u;
     y += d * v;
     z += d * w;
 
-    return vectorToLocation(Vector(x, y, z));
+    return {x, y, z};
 }
 
 // Todo: More precise calculation maybe required, example: https://github.com/airbreather/Gavaghan.Geodesy/blob/master/Source/Gavaghan.Geodesy/GeodeticCalculator.cs

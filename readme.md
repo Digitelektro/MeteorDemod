@@ -17,10 +17,13 @@ The project is based on
 
 [https://github.com/AlexandreRouma/SDRPlusPlus](https://github.com/AlexandreRouma/SDRPlusPlus)
 
+# Detailed tutorial
+
+Thanks to ZL4MDE for the [nice tutorial](https://kiwiweather.com/index.php/2022/12/17/meteordemod-tutorial-for-meteor-m-2/) he wrote about meteordemod. You can find information how to setup a PC for using meteordemod and detailed information about the settings in the settings.ini.
 
 Currently supported outputs are raw channel images, RGB images, IR images. Output projection modes are rectified image, Mercator and Azimuthal Equidistant projection.
 
-## Install using deb package
+## Install using deb package (Only for Raspberry PI)
 I've created a debian package for raspberry pi users. There is a limitation though, user home folder must be "/home/pi". 
 
 ```
