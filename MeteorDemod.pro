@@ -35,6 +35,7 @@ SOURCES += \
     decoder/reedsolomon.cpp \
     decoder/bitio.cpp \
     decoder/correlation.cpp \
+    decoder/meteordecoder.cpp \
     imageproc/spreadimage.cpp \
     imageproc/threatimage.cpp \
     common/settings.cpp \

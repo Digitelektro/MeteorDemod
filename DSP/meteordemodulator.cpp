@@ -14,7 +14,7 @@ MeteorDemodulator::MeteorDemodulator(Mode mode, float symbolRate, float costasBw
     , mSymbolRate(symbolRate)
     , mCostasBw(costasBw)
     , mRrcFilterOrder(rrcFilterOrder)
-    , mAgc(0.5f)
+    , mAgc(0.5f, 100)
     , mPrevI(0.0f)
     , mSamples(nullptr)
     , mProcessedSamples(nullptr) {
@@ -42,11 +42,12 @@ void MeteorDemodulator::process(IQSoruce& source, MeteorDecoderCallback_t callba
 
     // Discard the first null samples
     readedSamples = source.read(mSamples.get(), mRrcFilterOrder);
-    rrcFilter.process(mSamples.get(), mProcessedSamples.get(), readedSamples);
+    mAgc.process(mSamples.get(), mProcessedSamples.get(), readedSamples);
+    rrcFilter.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
 
     while((readedSamples = source.read(mSamples.get(), STREAM_CHUNK_SIZE)) > 0) {
-        rrcFilter.process(mSamples.get(), mProcessedSamples.get(), readedSamples);
-        mAgc.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
+        mAgc.process(mSamples.get(), mProcessedSamples.get(), readedSamples);
+        rrcFilter.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
         costas.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
 
         mm.process(readedSamples, mProcessedSamples.get(), [progress, &bytesWrited, callback, &costas, this](MM::complex value) mutable {

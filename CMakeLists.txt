@@ -67,6 +67,8 @@ add_executable(meteordemod
     decoder/viterbi.cpp
     decoder/viterbi.h
     decoder/deinterleaver.cpp
+    decoder/meteordecoder.cpp
+    decoder/meteordecoder.h
     common/settings.cpp
     common/settings.h
     common/version.h
@@ -124,7 +126,6 @@ if(WIN32)
         ${OpenCV_LIBS}
         sgp4.lib
         correct.lib
-		stdc++fs
     )
 else()
     target_link_libraries(meteordemod
@@ -151,7 +152,7 @@ if(UNIX AND NOT APPLE)
         SET(CPACK_GENERATOR "DEB")
         SET(CPACK_PACKAGE_VERSION_MAJOR "2")
         SET(CPACK_PACKAGE_VERSION_MINOR "4")
-        SET(CPACK_PACKAGE_VERSION_PATCH "5")
+        SET(CPACK_PACKAGE_VERSION_PATCH "6")
         SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Digitelektro")
         SET(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/Digitelektro/MeteorDemod")
         SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Russian Meteor M2 weather satellite data decoder")
