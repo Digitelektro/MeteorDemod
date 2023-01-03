@@ -126,7 +126,6 @@ if(WIN32)
         ${OpenCV_LIBS}
         sgp4.lib
         correct.lib
-		stdc++fs
     )
 else()
     target_link_libraries(meteordemod
