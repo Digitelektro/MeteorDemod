@@ -26,7 +26,7 @@ MeteorDemodulator::~MeteorDemodulator() {}
 
 void MeteorDemodulator::process(IQSoruce& source, MeteorDecoderCallback_t callback) {
     float pllBandwidth = 2 * M_PI * mCostasBw / mSymbolRate;
-    float maxFreqDeviation = 10000.0f * (2.0f * M_PI) / mSymbolRate; //+-10kHz
+    float maxFreqDeviation = 10000.0f * (2.0f * M_PI) / source.getSampleRate(); //+-10kHz
     DSP::MeteorCostas costas(pllBandwidth, 0, 0, -maxFreqDeviation, maxFreqDeviation, mBorkenM2Modulation);
     DSP::RRCFilter rrcFilter(mRrcFilterOrder, 0.6f, mSymbolRate, source.getSampleRate());
     MM mm(source.getSampleRate() / mSymbolRate, 1e-6, 0.01f, 0.01f);
@@ -65,7 +65,7 @@ void MeteorDemodulator::process(IQSoruce& source, MeteorDecoderCallback_t callba
         });
         progress = (source.getReadedSamples() / static_cast<float>(source.getTotalSamples())) * 100;
 
-        float carierFreq = costas.getFrequency() * mSymbolRate / (2 * M_PI);
+        float carierFreq = costas.getFrequency() / (2 * M_PI) * source.getSampleRate();
 
         std::cout << std::fixed << std::setprecision(2) << " Carrier: " << carierFreq << "Hz\t Lock detector: " << costas.getError() << "\t isLocked: " << costas.isLocked() << "\t OutputSize: " << bytesWrited / 1024.0f / 1024.0f
                   << "Mb Progress: " << progress << "% \t\t\r" << std::flush;
