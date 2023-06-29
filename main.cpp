@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     TleReader reader(mSettings.getTlePath());
     TleReader::TLE tle;
     reader.processFile();
-    if(!reader.getTLE("METEOR-M 2", tle)) {
+    if(!reader.getTLE("METEOR-M2 3", tle)) {
         std::cout << "TLE data not found in TLE file, exiting..." << std::endl;
         return -1;
     }
