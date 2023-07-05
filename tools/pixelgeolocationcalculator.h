@@ -91,7 +91,7 @@ class PixelGeolocationCalculator {
 
   public:
     template <typename T>
-    static CartesianCoordinate<T> coordinateToMercatorProjection(const CoordGeodetic& coordinate, double radius, float scale) {
+    static CartesianCoordinate<T> coordinateToMercatorProjection(const CoordGeodetic& coordinate, double radius, float scale, float offset = 0.0f) {
         CartesianCoordinate<T> cartesianCoordinate;
         CoordGeodetic correctedCoordinate = coordinate;
 
@@ -101,7 +101,7 @@ class PixelGeolocationCalculator {
             correctedCoordinate.latitude = degreeToRadian(-85.05113);
         }
 
-        cartesianCoordinate.x = radius * (M_PI + correctedCoordinate.longitude);
+        cartesianCoordinate.x = radius * (M_PI + normalizeLongitude(correctedCoordinate.longitude + degreeToRadian(offset)));
         cartesianCoordinate.y = radius * (M_PI - log(tan(M_PI / 4.0 + (correctedCoordinate.latitude) / 2.0)));
         return {cartesianCoordinate.x * scale, cartesianCoordinate.y * scale};
     }
@@ -154,6 +154,10 @@ class PixelGeolocationCalculator {
 
     static inline double radioanToDegree(double radian) {
         return radian * (180.0 / M_PI);
+    }
+    template <typename T>
+    static inline T normalizeLongitude(T angleRadians) {
+        return std::remainder(angleRadians, static_cast<T>(2.0 * M_PI));
     }
 
   private:
