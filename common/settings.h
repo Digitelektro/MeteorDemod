@@ -84,6 +84,7 @@ class Settings {
   public: // getters
     std::string getInputFilePath() const;
     std::string getTlePath() const;
+    std::string getSateliteName() const;
     int getCompositeMaxAgeHours() const;
 
     std::string getResourcesPath() const;
@@ -94,7 +95,7 @@ class Settings {
     std::string getDemodulatorMode() const;
     bool differentialDecode() const;
     bool deInterleave() const;
-    bool getBrokenM2Modulation() const;
+    bool getBrokenModulation() const;
 
     bool showHelp() const {
         return mArgs.count("-h") > 0 || mArgs.count("--help") > 0;
@@ -103,18 +104,38 @@ class Settings {
     int getJpegQuality() const {
         return mJpegQuality;
     }
-    float getM2ScanAngle() const {
-        return mScanAngleM2;
+
+    std::string getSatNameInTLE() {
+        std::string name;
+        ini::extract(mIniParser.sections[getSateliteName()]["SatNameInTLE"], name);
+        return name;
     }
-    float getM2Roll() const {
-        return mM2Roll;
+    float getScanAngle() {
+        float angle;
+        ini::extract(mIniParser.sections[getSateliteName()]["ScanAngle"], angle, 110.8f);
+        return angle;
     }
-    float getM2Pitch() const {
-        return mM2Pitch;
+    float getRoll() {
+        float roll;
+        ini::extract(mIniParser.sections[getSateliteName()]["Roll"], roll, 0.0f);
+        return roll;
     }
-    float getM2Yaw() const {
-        return mM2Yaw;
+    float getPitch() {
+        float pitch;
+        ini::extract(mIniParser.sections[getSateliteName()]["Pitch"], pitch, 0.0f);
+        return pitch;
     }
+    float getYaw() {
+        float yaw;
+        ini::extract(mIniParser.sections[getSateliteName()]["Yaw"], yaw, 0.0f);
+        return yaw;
+    }
+    int getTimeOffsetSec() {
+        int timeOffset;
+        ini::extract(mIniParser.sections["Program"]["TimeOffset"], timeOffset, 0);
+        return timeOffset;
+    }
+
     bool equadistantProjection() const {
         return mEquidistantProjection;
     }
@@ -160,10 +181,6 @@ class Settings {
     }
     bool generateComposite68Rain() const {
         return mGenerateComposite68Rain;
-    }
-
-    int getTimeOffsetM2Sec() const {
-        return mTimeOffsetM2Sec;
     }
 
     int getCostasBandwidth() const {
@@ -283,10 +300,6 @@ class Settings {
 
     // ini section: Program
     int mJpegQuality;
-    float mScanAngleM2;
-    float mM2Roll;
-    float mM2Pitch;
-    float mM2Yaw;
     bool mEquidistantProjection;
     bool mMercatorProjection;
     bool mSpreadImage;
@@ -303,8 +316,6 @@ class Settings {
     bool mGenerateComposite68;
     bool mGenerateCompositeThermal;
     bool mGenerateComposite68Rain;
-
-    int mTimeOffsetM2Sec;
 
     // ini section: Demodulator
     int mCostasBw;
