@@ -9,18 +9,27 @@ namespace DSP {
 
 class MeteorCostas : public PLL {
   private:
-    static constexpr float cLockDetectionTreshold = 0.22;
-    static constexpr float cUnLockDetectionTreshold = 0.25;
+    static constexpr float cLockDetectionTreshold = 0.18;
+    static constexpr float cUnLockDetectionTreshold = 0.22;
     static constexpr float cLockFilterCoeff = 0.00001f;
 
   public:
-    MeteorCostas(float bandWidth, float initPhase = 0.0f, float initFreq = 0.0f, float minFreq = -M_PI, float maxFreq = M_PI, bool brokenModulation = false);
+    enum Mode { QPSK, OQPSK };
+
+  public:
+    MeteorCostas(Mode mode, float bandWidth, float initPhase = 0.0f, float initFreq = 0.0f, float minFreq = -M_PI, float maxFreq = M_PI, bool brokenModulation = false);
 
     inline virtual complex process(const complex& sample) override {
         complex retval;
         retval = sample * complex(cosf(-mPhase), sinf(-mPhase));
         mError = errorFunction(retval);
         advance(mError);
+
+        if(mMode == Mode::OQPSK) {
+            float temp = retval.imag();
+            retval = complex(retval.real(), mPrevI);
+            mPrevI = temp;
+        }
         return retval;
     }
 
@@ -92,12 +101,14 @@ class MeteorCostas : public PLL {
     }
 
   protected:
+    Mode mMode;
     float mPllOriginalBandwidth;
     bool mBrokenModulation;
     float mError;
     float mLockDetector;
     bool mIsLocked;
     bool mIsLockedOnce;
+    float mPrevI;
 };
 
 } // namespace DSP

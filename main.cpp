@@ -71,9 +71,9 @@ int main(int argc, char* argv[]) {
                 throw std::runtime_error("Opening .wav file failed, demodulating aborted");
             }
 
-            DSP::MeteorDemodulator::Mode mode = DSP::MeteorDemodulator::QPSK;
+            DSP::MeteorCostas::Mode mode = DSP::MeteorCostas::QPSK;
             if(mSettings.getDemodulatorMode() == "oqpsk") {
-                mode = DSP::MeteorDemodulator::OQPSK;
+                mode = DSP::MeteorCostas::OQPSK;
             }
 
 
