@@ -49,6 +49,11 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    if(mSettings.getSateliteName() == "") {
+        std::cout << mSettings.getHelp() << std::endl;
+        throw std::runtime_error("Satellite name is not given in command line arguments!");
+    }
+
     mThreadPool.start();
 
     size_t decodedPacketCounter = 0;
@@ -71,13 +76,13 @@ int main(int argc, char* argv[]) {
                 throw std::runtime_error("Opening .wav file failed, demodulating aborted");
             }
 
-            DSP::MeteorDemodulator::Mode mode = DSP::MeteorDemodulator::QPSK;
+            DSP::MeteorCostas::Mode mode = DSP::MeteorCostas::QPSK;
             if(mSettings.getDemodulatorMode() == "oqpsk") {
-                mode = DSP::MeteorDemodulator::OQPSK;
+                mode = DSP::MeteorCostas::OQPSK;
             }
 
 
-            DSP::MeteorDemodulator demodulator(mode, mSettings.getSymbolRate(), mSettings.getCostasBandwidth(), mSettings.getRRCFilterOrder(), mSettings.waitForlock(), mSettings.getBrokenM2Modulation());
+            DSP::MeteorDemodulator demodulator(mode, mSettings.getSymbolRate(), mSettings.getCostasBandwidth(), mSettings.getRRCFilterOrder(), mSettings.waitForlock(), mSettings.getBrokenModulation());
             demodulator.process(wavReader, [&outputStream](const Wavreader::complex& sample, float) {
                 writeSymbolToFile(outputStream, sample);
             });
@@ -119,8 +124,8 @@ int main(int argc, char* argv[]) {
         TimeSpan passStartTime = meteorDecoder.getFirstTimeStamp();
         TimeSpan passLength = meteorDecoder.getLastTimeStamp() - passStartTime;
 
-        passStartTime = passStartTime.Add(TimeSpan(0, 0, mSettings.getTimeOffsetM2Sec()));
-        passLength = passLength.Add(TimeSpan(0, 0, mSettings.getTimeOffsetM2Sec()));
+        passStartTime = passStartTime.Add(TimeSpan(0, 0, mSettings.getTimeOffsetSec()));
+        passLength = passLength.Add(TimeSpan(0, 0, mSettings.getTimeOffsetSec()));
 
         passDate = passDate.AddHours(3); // Convert UTC 0 to Moscow time zone (UTC + 3)
 
@@ -252,12 +257,12 @@ int main(int argc, char* argv[]) {
         TleReader reader(mSettings.getTlePath());
         TleReader::TLE tle;
         reader.processFile();
-        if(!reader.getTLE("METEOR-M 2", tle)) {
+        if(!reader.getTLE(mSettings.getSatNameInTLE(), tle)) {
             std::cout << "TLE data not found in TLE file, unable to create projected images..." << std::endl;
             return -1;
         }
 
-        PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getM2ScanAngle(), mSettings.getM2Roll(), mSettings.getM2Pitch(), mSettings.getM2Yaw());
+        PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getScanAngle(), mSettings.getRoll(), mSettings.getPitch(), mSettings.getYaw());
         calc.calcPixelCoordinates();
         calc.save(mSettings.getOutputPath() + fileNameDate + ".gcp");
 

@@ -7,7 +7,7 @@
 
 namespace DSP {
 
-MeteorDemodulator::MeteorDemodulator(Mode mode, float symbolRate, float costasBw, uint16_t rrcFilterOrder, bool waitForLock, bool brokenM2Modulation)
+MeteorDemodulator::MeteorDemodulator(MeteorCostas::Mode mode, float symbolRate, float costasBw, uint16_t rrcFilterOrder, bool waitForLock, bool brokenM2Modulation)
     : mMode(mode)
     , mBorkenM2Modulation(brokenM2Modulation)
     , mWaitForLock(waitForLock)
@@ -26,8 +26,8 @@ MeteorDemodulator::~MeteorDemodulator() {}
 
 void MeteorDemodulator::process(IQSoruce& source, MeteorDecoderCallback_t callback) {
     float pllBandwidth = 2 * M_PI * mCostasBw / mSymbolRate;
-    float maxFreqDeviation = 10000.0f * (2.0f * M_PI) / mSymbolRate; //+-10kHz
-    DSP::MeteorCostas costas(pllBandwidth, 0, 0, -maxFreqDeviation, maxFreqDeviation, mBorkenM2Modulation);
+    float maxFreqDeviation = 10000.0f * (2.0f * M_PI) / source.getSampleRate(); //+-10kHz
+    DSP::MeteorCostas costas(mMode, pllBandwidth, 0, 0, -maxFreqDeviation, maxFreqDeviation, mBorkenM2Modulation);
     DSP::RRCFilter rrcFilter(mRrcFilterOrder, 0.6f, mSymbolRate, source.getSampleRate());
     MM mm(source.getSampleRate() / mSymbolRate, 1e-6, 0.01f, 0.01f);
     uint32_t readedSamples;
@@ -51,12 +51,6 @@ void MeteorDemodulator::process(IQSoruce& source, MeteorDecoderCallback_t callba
         costas.process(mProcessedSamples.get(), mProcessedSamples.get(), readedSamples);
 
         mm.process(readedSamples, mProcessedSamples.get(), [progress, &bytesWrited, callback, &costas, this](MM::complex value) mutable {
-            if(mMode == Mode::OQPSK) {
-                float temp = value.imag();
-                value = MM::complex(value.real(), mPrevI);
-                mPrevI = temp;
-            }
-
             // Append the new samples to the output file
             if(callback != nullptr && (!mWaitForLock || costas.isLockedOnce())) {
                 callback(value, progress);
@@ -65,7 +59,7 @@ void MeteorDemodulator::process(IQSoruce& source, MeteorDecoderCallback_t callba
         });
         progress = (source.getReadedSamples() / static_cast<float>(source.getTotalSamples())) * 100;
 
-        float carierFreq = costas.getFrequency() * mSymbolRate / (2 * M_PI);
+        float carierFreq = costas.getFrequency() / (2 * M_PI) * source.getSampleRate();
 
         std::cout << std::fixed << std::setprecision(2) << " Carrier: " << carierFreq << "Hz\t Lock detector: " << costas.getError() << "\t isLocked: " << costas.isLocked() << "\t OutputSize: " << bytesWrited / 1024.0f / 1024.0f
                   << "Mb Progress: " << progress << "% \t\t\r" << std::flush;
