@@ -15,10 +15,8 @@ class MeteorDemodulator {
   public:
     typedef std::function<void(const PLL::complex&, float progress)> MeteorDecoderCallback_t;
 
-    enum Mode { QPSK, OQPSK };
-
   public:
-    MeteorDemodulator(Mode mode, float symbolRate, float costasBw = 100.0f, uint16_t rrcFilterOrder = 64, bool waitForLock = true, bool brokenM2Modulation = false);
+    MeteorDemodulator(MeteorCostas::Mode mode, float symbolRate, float costasBw = 100.0f, uint16_t rrcFilterOrder = 64, bool waitForLock = true, bool brokenM2Modulation = false);
     ~MeteorDemodulator();
 
     MeteorDemodulator& operator=(const MeteorDemodulator&) = delete;
@@ -29,7 +27,7 @@ class MeteorDemodulator {
     void process(IQSoruce& source, MeteorDecoderCallback_t callback);
 
   private:
-    Mode mMode;
+    MeteorCostas::Mode mMode;
     bool mBorkenM2Modulation;
     bool mWaitForLock;
     float mSymbolRate;

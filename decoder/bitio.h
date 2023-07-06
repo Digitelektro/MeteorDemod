@@ -18,20 +18,5 @@ class BitIOConst {
     int mPos;
 };
 
-class BitIO {
-  public:
-    BitIO(uint8_t* bytes, int len);
-    ~BitIO();
-
-    void writeBitlistReversed(uint8_t* list, int len);
-
-  private:
-    uint8_t* mpBytes;
-    int mPos;
-    int mLength;
-
-    uint8_t mCurrent;
-    int mCurrentLength;
-};
 
 #endif // BITIO_H

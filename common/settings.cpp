@@ -34,6 +34,7 @@ Settings::Settings() {
     mSettingsList.push_back(SettingsData("--int", "-int", "Deinterleave (Maybe required for newer satellites)"));
     mSettingsList.push_back(SettingsData("--brokenM2", "-b", "Broken M2 modulation"));
     mSettingsList.push_back(SettingsData("--compmaxage", "-c", "Maximum image age in hours for creating composite image"));
+    mSettingsList.push_back(SettingsData("--satellite", "-sat", "Name of the satellite settings in settings.ini file"));
 }
 
 void Settings::parseArgs(int argc, char** argv) {
@@ -73,11 +74,6 @@ void Settings::parseIni(const std::string& path) {
     ini::extract(mIniParser.sections["Program"]["SpreadImage"], mSpreadImage, true);
     ini::extract(mIniParser.sections["Program"]["AddRainOverlay"], mAddRainOverlay, true);
     ini::extract(mIniParser.sections["Program"]["JpgQuality"], mJpegQuality, 90);
-    ini::extract(mIniParser.sections["Program"]["ScanAngleM2"], mScanAngleM2, 110.8f);
-    ini::extract(mIniParser.sections["Program"]["RollM2"], mM2Roll, -2.9f);
-    ini::extract(mIniParser.sections["Program"]["PitchM2"], mM2Pitch, 0.3f);
-    ini::extract(mIniParser.sections["Program"]["YawM2"], mM2Yaw, 0.0f);
-    ini::extract(mIniParser.sections["Program"]["TimeOffsetM2"], mTimeOffsetM2Sec, 0);
     ini::extract(mIniParser.sections["Program"]["NightPassTreshold"], mNightPassTreshold, 10.0f);
     ini::extract(mIniParser.sections["Program"]["ProjectionScale"], mProjectionScale, 0.75f);
     ini::extract(mIniParser.sections["Program"]["CompositeProjectionScale"], mCompositeProjectionScale, 0.75f);
@@ -160,6 +156,16 @@ std::string Settings::getTlePath() const {
     }
     if(mArgs.count("--tle")) {
         return mArgs.at("--tle");
+    }
+    return std::string();
+}
+
+std::string Settings::getSateliteName() const {
+    if(mArgs.count("-sat")) {
+        return mArgs.at("-sat");
+    }
+    if(mArgs.count("--satellite")) {
+        return mArgs.at("--satellite");
     }
     return std::string();
 }
@@ -311,7 +317,7 @@ bool Settings::deInterleave() const {
     return result;
 }
 
-bool Settings::getBrokenM2Modulation() const {
+bool Settings::getBrokenModulation() const {
     bool result = false;
 
     if(mArgs.count("-b")) {

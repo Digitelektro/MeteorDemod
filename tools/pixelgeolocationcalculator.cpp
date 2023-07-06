@@ -9,8 +9,8 @@ PixelGeolocationCalculator PixelGeolocationCalculator::load(const std::string& p
     TleReader reader(settings.getTlePath());
     reader.processFile();
     TleReader::TLE tle;
-    reader.getTLE("METEOR-M 2", tle);
-    PixelGeolocationCalculator calc(tle, DateTime(), TimeSpan(0), settings.getM2ScanAngle(), settings.getM2Roll(), settings.getM2Pitch(), settings.getM2Yaw());
+    reader.getTLE(settings.getSatNameInTLE(), tle);
+    PixelGeolocationCalculator calc(tle, DateTime(), TimeSpan(0), settings.getScanAngle(), settings.getRoll(), settings.getPitch(), settings.getYaw());
     std::ifstream gcpReader(path);
 
     if(!gcpReader) {
