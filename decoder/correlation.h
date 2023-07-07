@@ -22,10 +22,17 @@ class Correlation {
 
     void correlate(const uint8_t* softBits, int64_t size, CorrelationCallback callback);
     uint8_t rotateIQ(uint8_t data, PhaseShift phaseShift);
+    uint64_t rotate64(uint64_t word, PhaseShift phaseShift);
 
   private:
     void initKernels();
     uint32_t hardCorrelate(uint8_t dataByte, uint8_t wordByte);
+
+    inline uint64_t swapIQ(uint64_t word) const {
+        uint64_t i = word & 0xaaaaaaaaaaaaaaaa;
+        uint64_t q = word & 0x5555555555555555;
+        return (i >> 1) | (q << 1);
+    }
 
   private:
     uint8_t mRotateIqTable[256];
@@ -40,15 +47,7 @@ class Correlation {
     uint8_t mKernelUW7[64];
 
   private:
-    static constexpr uint64_t UW0 = 0xFCA2B63DB00D9794;
-    static constexpr uint64_t UW1 = 0x56FBD394DAA4C1C2;
-    static constexpr uint64_t UW2 = 0x035D49C24FF2686B;
-    static constexpr uint64_t UW3 = 0xA9042C6B255B3E3D;
-    static constexpr uint64_t UW4 = 0xFC51793E700E6B68;
-    static constexpr uint64_t UW5 = 0xA9F7E368E558C2C1;
-    static constexpr uint64_t UW6 = 0x03AE86C18FF19497;
-    static constexpr uint64_t UW7 = 0x56081C971AA73D3E;
-
+    static constexpr uint64_t sSynchWord = 0xFCA2B63DB00D9794;
     static constexpr uint8_t CORRELATION_LIMIT = 54;
 
   public:

@@ -157,6 +157,15 @@ void Correlation::correlate(const uint8_t* softBits, int64_t size, CorrelationCa
 }
 
 void Correlation::initKernels() {
+    uint64_t UW0 = rotate64(sSynchWord, PhaseShift::PhaseShift_0);
+    uint64_t UW1 = rotate64(sSynchWord, PhaseShift::PhaseShift_1);
+    uint64_t UW2 = rotate64(sSynchWord, PhaseShift::PhaseShift_2);
+    uint64_t UW3 = rotate64(sSynchWord, PhaseShift::PhaseShift_3);
+    uint64_t UW4 = rotate64(sSynchWord, PhaseShift::PhaseShift_4);
+    uint64_t UW5 = rotate64(sSynchWord, PhaseShift::PhaseShift_5);
+    uint64_t UW6 = rotate64(sSynchWord, PhaseShift::PhaseShift_6);
+    uint64_t UW7 = rotate64(sSynchWord, PhaseShift::PhaseShift_7);
+
     for(int i = 0; i < 64; i++) {
         mKernelUW0[i] = (UW0 >> (64 - i - 1)) & 1 ? 0xFF : 0x00;
         mKernelUW1[i] = (UW1 >> (64 - i - 1)) & 1 ? 0xFF : 0x00;
@@ -193,33 +202,78 @@ uint8_t Correlation::rotateIQ(uint8_t data, PhaseShift phaseShift) {
     return result;
 }
 
+uint64_t Correlation::rotate64(uint64_t word, PhaseShift phaseShift) {
+
+    switch(phaseShift) {
+        case PhaseShift::PhaseShift_1:
+            word = word ^ 0x5555555555555555U;
+            break;
+        case PhaseShift::PhaseShift_2:
+            word = word ^ 0xFFFFFFFFFFFFFFFFU;
+            break;
+        case PhaseShift::PhaseShift_3:
+            word = word ^ 0xAAAAAAAAAAAAAAAAU;
+            break;
+        case PhaseShift::PhaseShift_4:
+            word = swapIQ(word);
+            break;
+        case PhaseShift::PhaseShift_5:
+            word = swapIQ(word) ^ 0x5555555555555555U;
+            break;
+        case PhaseShift::PhaseShift_6:
+            word = swapIQ(word) ^ 0xFFFFFFFFFFFFFFFFU;
+            break;
+        case PhaseShift::PhaseShift_7:
+            word = swapIQ(word) ^ 0xAAAAAAAAAAAAAAAAU;
+            break;
+        default:
+            break;
+    }
+    return word;
+}
+
 void Correlation::rotateSoftIqInPlace(uint8_t* data, uint32_t length, PhaseShift phaseShift) {
     uint8_t b;
 
     switch(phaseShift) {
-        case 0:
+        case PhaseShift::PhaseShift_0:
             for(uint32_t i = 0; i < length; i++) {
                 data[i] ^= 0x7F;
             }
             break;
-        case 1:
+        case PhaseShift::PhaseShift_1:
             for(uint32_t i = 0; i < length; i += 2) {
-                b = data[i] ^ 0xFF;
-                data[i] = data[i + 1];
-                data[i + 1] = b;
+                data[i + 1] ^= 0xFF;
 
                 data[i] ^= 0x7F;
                 data[i + 1] ^= 0x7F;
             }
             break;
-        case 2:
+        case PhaseShift::PhaseShift_2:
             for(uint32_t i = 0; i < length; i++) {
                 data[i] ^= 0xFF;
                 data[i] ^= 0x7F;
             }
             break;
 
-        case 3:
+        case PhaseShift::PhaseShift_3:
+            for(uint32_t i = 0; i < length; i += 2) {
+                data[i] ^= 0xFF;
+
+                data[i] ^= 0x7F;
+                data[i + 1] ^= 0x7F;
+            }
+            break;
+
+        case PhaseShift::PhaseShift_4:
+            for(uint32_t i = 0; i < length; i += 2) {
+                b = data[i];
+                data[i] = data[i + 1] ^ 0x7F;
+                data[i + 1] = b ^ 0x7F;
+            }
+            break;
+
+        case PhaseShift::PhaseShift_5:
             for(uint32_t i = 0; i < length; i += 2) {
                 b = data[i];
                 data[i] = data[i + 1] ^ 0xFF;
@@ -230,24 +284,7 @@ void Correlation::rotateSoftIqInPlace(uint8_t* data, uint32_t length, PhaseShift
             }
             break;
 
-        case 4:
-            for(uint32_t i = 0; i < length; i += 2) {
-                b = data[i];
-                data[i] = data[i + 1] ^ 0x7F;
-                data[i + 1] = b ^ 0x7F;
-            }
-            break;
-
-        case 5:
-            for(uint32_t i = 0; i < length; i += 2) {
-                data[i + 1] ^= 0xFF;
-
-                data[i] ^= 0x7F;
-                data[i + 1] ^= 0x7F;
-            }
-            break;
-
-        case 6:
+        case PhaseShift::PhaseShift_6:
             for(uint32_t i = 0; i < length; i += 2) {
                 b = data[i];
                 data[i] = data[i + 1] ^ 0xFF;
@@ -258,9 +295,11 @@ void Correlation::rotateSoftIqInPlace(uint8_t* data, uint32_t length, PhaseShift
             }
             break;
 
-        case 7:
+        case PhaseShift::PhaseShift_7:
             for(uint32_t i = 0; i < length; i += 2) {
-                data[i] ^= 0xFF;
+                b = data[i] ^ 0xFF;
+                data[i] = data[i + 1];
+                data[i + 1] = b;
 
                 data[i] ^= 0x7F;
                 data[i + 1] ^= 0x7F;
