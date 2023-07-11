@@ -131,11 +131,8 @@ int main(int argc, char* argv[]) {
 
         // Satellite's date time
         passStart.Initialise(passDate.Year(), passDate.Month(), passDate.Day(), passStartTime.Hours(), passStartTime.Minutes(), passStartTime.Seconds(), passStartTime.Microseconds());
-
-        if(mSettings.getSateliteName() == "METEOR-M-2") {
-            // Convert satellite's Moscow time zone to UTC 0
-            passStart = passStart.AddHours(-3);
-        }
+        // Convert satellite's Moscow time zone to UTC 0
+        passStart = passStart.AddHours(-3);
 
         std::string fileNameDate = std::to_string(passStart.Year()) + "-" + std::to_string(passStart.Month()) + "-" + std::to_string(passStart.Day()) + "-" + std::to_string(passStart.Hour()) + "-" + std::to_string(passStart.Minute()) + "-"
                                    + std::to_string(passStart.Second());
