@@ -18,7 +18,7 @@ class Correlation {
     typedef std::function<uint32_t(CorellationResult&, PhaseShift)> CorrelationCallback;
 
   public:
-    Correlation();
+    Correlation(uint64_t syncWord);
 
     void correlate(const uint8_t* softBits, int64_t size, CorrelationCallback callback);
     uint8_t rotateIQ(uint8_t data, PhaseShift phaseShift);
@@ -35,6 +35,7 @@ class Correlation {
     }
 
   private:
+    uint64_t mSyncWord;
     uint8_t mRotateIqTable[256];
     uint8_t mRotateIqTableInverted[256];
     uint8_t mKernelUW0[64];
@@ -47,7 +48,6 @@ class Correlation {
     uint8_t mKernelUW7[64];
 
   private:
-    static constexpr uint64_t sSynchWord = 0xFCA2B63DB00D9794;
     static constexpr uint8_t CORRELATION_LIMIT = 54;
 
   public:

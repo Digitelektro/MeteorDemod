@@ -42,18 +42,11 @@ class MeteorDecoder : public PacketParser {
     ReedSolomon mReedSolomon;
 
   private:
-    void differentialDecode(int8_t* data, int64_t len);
+    void differentialDecode(uint8_t* data, int64_t len);
 
   private:
-    inline constexpr int mean(int cur, int prev) {
-        int v = cur * prev;
-        int result = 0;
-
-        if(v > 32767 || v < -32767) {
-            return 0;
-        }
-        return v >= 0 ? mIntSqrtTable[v] : -mIntSqrtTable[-v];
-    }
+    static constexpr uint64_t sSynchWordQPSK = 0xFCA2B63DB00D9794U;
+    static constexpr uint64_t sSynchWordOQPSK = 0xFC4EF4FD0CC2DF89U;
 };
 
 #endif // METEOR_DECODER_H

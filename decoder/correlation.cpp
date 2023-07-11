@@ -1,6 +1,7 @@
 #include "correlation.h"
 
-Correlation::Correlation() {
+Correlation::Correlation(uint64_t syncWord)
+    : mSyncWord(syncWord) {
     // init rotation table
     for(int i = 0; i < 255; i++) {
         mRotateIqTable[i] = (((i & 0x55) ^ 0x55) << 1) | ((i & 0xAA) >> 1);
@@ -157,14 +158,14 @@ void Correlation::correlate(const uint8_t* softBits, int64_t size, CorrelationCa
 }
 
 void Correlation::initKernels() {
-    uint64_t UW0 = rotate64(sSynchWord, PhaseShift::PhaseShift_0);
-    uint64_t UW1 = rotate64(sSynchWord, PhaseShift::PhaseShift_1);
-    uint64_t UW2 = rotate64(sSynchWord, PhaseShift::PhaseShift_2);
-    uint64_t UW3 = rotate64(sSynchWord, PhaseShift::PhaseShift_3);
-    uint64_t UW4 = rotate64(sSynchWord, PhaseShift::PhaseShift_4);
-    uint64_t UW5 = rotate64(sSynchWord, PhaseShift::PhaseShift_5);
-    uint64_t UW6 = rotate64(sSynchWord, PhaseShift::PhaseShift_6);
-    uint64_t UW7 = rotate64(sSynchWord, PhaseShift::PhaseShift_7);
+    uint64_t UW0 = rotate64(mSyncWord, PhaseShift::PhaseShift_0);
+    uint64_t UW1 = rotate64(mSyncWord, PhaseShift::PhaseShift_1);
+    uint64_t UW2 = rotate64(mSyncWord, PhaseShift::PhaseShift_2);
+    uint64_t UW3 = rotate64(mSyncWord, PhaseShift::PhaseShift_3);
+    uint64_t UW4 = rotate64(mSyncWord, PhaseShift::PhaseShift_4);
+    uint64_t UW5 = rotate64(mSyncWord, PhaseShift::PhaseShift_5);
+    uint64_t UW6 = rotate64(mSyncWord, PhaseShift::PhaseShift_6);
+    uint64_t UW7 = rotate64(mSyncWord, PhaseShift::PhaseShift_7);
 
     for(int i = 0; i < 64; i++) {
         mKernelUW0[i] = (UW0 >> (64 - i - 1)) & 1 ? 0xFF : 0x00;
