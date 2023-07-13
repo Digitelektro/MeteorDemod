@@ -72,10 +72,14 @@ class MeteorCostas : public PLL {
 
         if(mLockDetector < cLockDetectionTreshold && !mIsLocked) {
             mIsLocked = true;
-            setBandWidth(mPllOriginalBandwidth / 5.0f);
+            if(mMode != Mode::OQPSK) {
+                setBandWidth(mPllOriginalBandwidth / 5.0f);
+            }
         } else if(mLockDetector > cUnLockDetectionTreshold && mIsLocked) {
             mIsLocked = false;
-            setBandWidth(mPllOriginalBandwidth);
+            if(mMode != Mode::OQPSK) {
+                setBandWidth(mPllOriginalBandwidth);
+            }
         }
 
         if(mLockDetector < cLockDetectionTreshold) {
