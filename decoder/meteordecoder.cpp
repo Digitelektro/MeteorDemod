@@ -1,10 +1,10 @@
 #include "meteordecoder.h"
 
 
-MeteorDecoder::MeteorDecoder(bool deInterleave, bool differentialDecode)
+MeteorDecoder::MeteorDecoder(bool deInterleave, bool oqpsk, bool differentialDecode)
     : mDeInterleave(deInterleave)
     , mDifferentialDecode(differentialDecode)
-    , mCorrelation(differentialDecode ? sSynchWordOQPSK : sSynchWordQPSK) {}
+    , mCorrelation(differentialDecode ? sSynchWordOQPSK : sSynchWordQPSK, oqpsk) {}
 
 size_t MeteorDecoder::decode(uint8_t* softBits, size_t length) {
     size_t decodedPacketCounter = 0;

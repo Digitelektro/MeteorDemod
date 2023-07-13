@@ -25,7 +25,7 @@ class MeteorDecoder : public PacketParser {
 
   public:
     MeteorDecoder() = delete;
-    MeteorDecoder(bool deInterleave, bool differentialDecode);
+    MeteorDecoder(bool deInterleave, bool oqpsk, bool differentialDecode);
 
     size_t decode(uint8_t* softBits, size_t length);
 
