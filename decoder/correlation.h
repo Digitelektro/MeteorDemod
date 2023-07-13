@@ -12,21 +12,37 @@ class Correlation {
         uint32_t pos;
     };
 
-    enum PhaseShift { PhaseShift_0 = 0, PhaseShift_1, PhaseShift_2, PhaseShift_3, PhaseShift_4, PhaseShift_5, PhaseShift_6, PhaseShift_7 };
+    using PhaseShift = uint16_t;
 
   public:
     typedef std::function<uint32_t(CorellationResult&, PhaseShift)> CorrelationCallback;
 
   public:
-    Correlation(uint64_t syncWord);
+    Correlation(uint64_t syncWord, bool oqpsk);
 
     void correlate(const uint8_t* softBits, int64_t size, CorrelationCallback callback);
-    uint8_t rotateIQ(uint8_t data, PhaseShift phaseShift);
     uint64_t rotate64(uint64_t word, PhaseShift phaseShift);
 
   private:
     void initKernels();
-    uint32_t hardCorrelate(uint8_t dataByte, uint8_t wordByte);
+    inline uint32_t hardCorrelate(uint8_t dataByte, uint8_t wordByte) const {
+        return (dataByte >= 127 & wordByte == 255) | (dataByte < 127 & wordByte == 0);
+    }
+
+    inline void hardToSoft(uint64_t UW, uint8_t* const result) {
+        for(int i = 0; i < 64; i++) {
+            result[i] = (UW >> (64 - i - 1)) & 1 ? 0xFF : 0x00;
+        }
+    }
+
+    inline static void delayOQPSK(uint8_t* const data, int size) {
+        uint8_t last = 0;
+        for(int i = 0; i < size / 2; i += 1) {
+            uint8_t back = data[i * 2 + 1];
+            data[i * 2 + 1] = last;
+            last = back;
+        }
+    }
 
     inline uint64_t swapIQ(uint64_t word) const {
         uint64_t i = word & 0xaaaaaaaaaaaaaaaa;
@@ -36,16 +52,8 @@ class Correlation {
 
   private:
     uint64_t mSyncWord;
-    uint8_t mRotateIqTable[256];
-    uint8_t mRotateIqTableInverted[256];
-    uint8_t mKernelUW0[64];
-    uint8_t mKernelUW1[64];
-    uint8_t mKernelUW2[64];
-    uint8_t mKernelUW3[64];
-    uint8_t mKernelUW4[64];
-    uint8_t mKernelUW5[64];
-    uint8_t mKernelUW6[64];
-    uint8_t mKernelUW7[64];
+    bool mOqpskMode;
+    std::vector<std::vector<uint8_t>> mKernels;
 
   private:
     static constexpr uint8_t CORRELATION_LIMIT = 54;
