@@ -3,6 +3,6 @@
 
 #define VERSION_MAJOR 2
 #define VERSION_MINOR 5
-#define VERSION_FIX 2
+#define VERSION_FIX 3
 
 #endif // VERSION_H
