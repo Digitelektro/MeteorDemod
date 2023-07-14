@@ -56,8 +56,9 @@ int main(int argc, char* argv[]) {
 
     mThreadPool.start();
 
+    MeteorDecoder meteorDecoder(mSettings.deInterleave(), mSettings.getDemodulatorMode() == "oqpsk", mSettings.differentialDecode());
+
     size_t decodedPacketCounter = 0;
-    MeteorDecoder meteorDecoder(mSettings.deInterleave(), mSettings.differentialDecode(), mSettings.getDemodulatorMode() == "oqpsk");
     std::string inputPath = mSettings.getInputFilePath();
     try {
         if(inputPath.substr(inputPath.find_last_of(".") + 1) == "wav") {
