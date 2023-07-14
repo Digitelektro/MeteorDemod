@@ -301,7 +301,10 @@ bool Settings::differentialDecode() const {
     bool result = false;
 
     if(mArgs.count("--diff")) {
-        result = true;
+        result = atoi(mArgs.at("--diff").c_str()) > 0;
+    }
+    if(mArgs.count("-diff")) {
+        result = atoi(mArgs.at("-diff").c_str()) > 0;
     }
 
     return result;
@@ -311,7 +314,10 @@ bool Settings::deInterleave() const {
     bool result = false;
 
     if(mArgs.count("--int")) {
-        result = true;
+        result = atoi(mArgs.at("--int").c_str()) > 0;
+    }
+    if(mArgs.count("-int")) {
+        result = atoi(mArgs.at("-int").c_str()) > 0;
     }
 
     return result;
@@ -321,10 +327,10 @@ bool Settings::getBrokenModulation() const {
     bool result = false;
 
     if(mArgs.count("-b")) {
-        result = true;
+        result = atoi(mArgs.at("-b").c_str()) > 0;
     }
     if(mArgs.count("--brokenM2")) {
-        result = true;
+        result = atoi(mArgs.at("--brokenM2").c_str()) > 0;
     }
 
     return result;
