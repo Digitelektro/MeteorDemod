@@ -67,7 +67,7 @@ uint64_t Correlation::rotate64(uint64_t word, PhaseShift phaseShift) {
         case 6:
             word = swapIQ(word) ^ 0xFFFFFFFFFFFFFFFFU;
             break;
-        case_7:
+        case 7:
             word = swapIQ(word) ^ 0xAAAAAAAAAAAAAAAAU;
             break;
         default:
