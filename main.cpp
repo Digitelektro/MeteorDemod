@@ -580,8 +580,8 @@ void saveImage(const std::string fileName, const cv::Mat& image) {
 void writeSymbolToFile(std::ostream& stream, const Wavreader::complex& sample) {
     int8_t outBuffer[2];
 
-    outBuffer[0] = static_cast<int8_t>(std::clamp(std::real(sample) * 127.0f, -128.0f, 127.0f));
-    outBuffer[1] = static_cast<int8_t>(std::clamp(std::imag(sample) * 127.0f, -128.0f, 127.0f));
+    outBuffer[0] = static_cast<int8_t>(std::clamp(std::imag(sample) * 127.0f, -128.0f, 127.0f));
+    outBuffer[1] = static_cast<int8_t>(std::clamp(std::real(sample) * 127.0f, -128.0f, 127.0f));
 
     stream.write(reinterpret_cast<char*>(outBuffer), sizeof(outBuffer));
 }
