@@ -80,6 +80,8 @@ sudo make install
 ## Usage
 Input parameters:
 
+-sat --satellite Satellite settings name from settings.ini
+
 -t --tle        Two-line element set (TLE) file for calculating overlays
 
 -i --input      Input *.S file or *.wav
@@ -90,8 +92,17 @@ Input parameters:
 
 -d --date       Optional, specify date for decoding older files (format: dd-mm-yyyy)
 
+-m --mode       Specify modulation type (qpsk or oqpsk, default: qpsk)
+
+-int --int      Deinterleave, needed for 80k mode
+
+-diff --diff    Differential decode, may need for newer satellites
+
 Other settings can be found in the settings.ini file.
 
+### Example command for 80k mode Meteor M2-3: 
+
+``` meteordemod -m oqpsk -int 1 -diff 1 -s 80e3 -sat METEOR-M-2-3 -i input_baseband.wav -t weather.tle -o ./```
 
 ## Development
 Master branch is for the latest stable version, beta branch for beta versions, development is ongoing on other branches.
