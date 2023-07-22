@@ -1,5 +1,3 @@
 #include "window.h"
 
-namespace DSP {
-
-} // namespace DSP
+namespace DSP {} // namespace DSP

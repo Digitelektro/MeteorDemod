@@ -1,15 +1,16 @@
 #include "pixelgeolocationcalculator.h"
-#include "settings.h"
+
 #include <fstream>
 
-PixelGeolocationCalculator PixelGeolocationCalculator::load(const std::string &path)
-{
-    Settings &settings = Settings::getInstance();
-    TleReader reader (settings.getTlePath());
+#include "settings.h"
+
+PixelGeolocationCalculator PixelGeolocationCalculator::load(const std::string& path) {
+    Settings& settings = Settings::getInstance();
+    TleReader reader(settings.getTlePath());
     reader.processFile();
     TleReader::TLE tle;
-    reader.getTLE("METEOR-M 2", tle);
-    PixelGeolocationCalculator calc(tle, DateTime(), TimeSpan(0), settings.getM2ScanAngle(), settings.getM2Roll(), settings.getM2Pitch(), settings.getM2Yaw());
+    reader.getTLE(settings.getSatNameInTLE(), tle);
+    PixelGeolocationCalculator calc(tle, DateTime(), TimeSpan(0), settings.getScanAngle(), settings.getRoll(), settings.getPitch(), settings.getYaw());
     std::ifstream gcpReader(path);
 
     if(!gcpReader) {
@@ -21,15 +22,14 @@ PixelGeolocationCalculator PixelGeolocationCalculator::load(const std::string &p
 
     int i, n;
     double longitude, latitude;
-    while (gcpReader >> i >> n >> latitude >> longitude)
-    {
+    while(gcpReader >> i >> n >> latitude >> longitude) {
         calc.mCoordinates.push_back(CoordGeodetic(latitude, longitude, 0, false));
     }
 
     return calc;
 }
 
-PixelGeolocationCalculator::PixelGeolocationCalculator(const TleReader::TLE &tle, const DateTime &passStart, const TimeSpan &passLength, double scanAngle, double roll, double pitch, double yaw, int earthRadius, int satelliteAltitude)
+PixelGeolocationCalculator::PixelGeolocationCalculator(const TleReader::TLE& tle, const DateTime& passStart, const TimeSpan& passLength, double scanAngle, double roll, double pitch, double yaw, int earthRadius, int satelliteAltitude)
     : mTle(tle.satellite, tle.line1, tle.line2)
     , mSgp4(mTle)
     , mPassStart(passStart)
@@ -39,13 +39,9 @@ PixelGeolocationCalculator::PixelGeolocationCalculator(const TleReader::TLE &tle
     , mPitch(pitch)
     , mYaw(yaw)
     , mEarthradius(earthRadius)
-    , mSatelliteAltitude(satelliteAltitude)
-{
+    , mSatelliteAltitude(satelliteAltitude) {}
 
-}
-
-void PixelGeolocationCalculator::calcPixelCoordinates()
-{
+void PixelGeolocationCalculator::calcPixelCoordinates() {
     double angle;
     CoordGeodetic satOnGroundPrev;
     CoordGeodetic satOnGround;
@@ -54,8 +50,7 @@ void PixelGeolocationCalculator::calcPixelCoordinates()
 
     DateTime passEnd = DateTime(mPassStart).Add(mPassLength);
 
-    for(DateTime currentTime = mPassStart; currentTime <= passEnd; currentTime = currentTime.AddMicroseconds(PIXELTIME_MS * 10 * 1000))
-    {
+    for(DateTime currentTime = mPassStart; currentTime <= passEnd; currentTime = currentTime.AddMicroseconds(PIXELTIME_MS * 10 * 1000)) {
         passList.push_back(mSgp4.FindPosition(currentTime));
     }
 
@@ -64,8 +59,7 @@ void PixelGeolocationCalculator::calcPixelCoordinates()
     ++it;
 
     DateTime currentTime = mPassStart;
-    for (unsigned int i = 0 ; it != passList.end(); prevIt = it,  ++it, i++)
-    {
+    for(unsigned int i = 0; it != passList.end(); prevIt = it, ++it, i++) {
         satOnGroundPrev = Eci(currentTime, prevIt->Position(), prevIt->Velocity()).ToGeodetic();
         satOnGround = Eci(currentTime, it->Position(), it->Velocity()).ToGeodetic();
         currentTime = currentTime.AddMicroseconds(PIXELTIME_MS * 10 * 1000);
@@ -73,16 +67,14 @@ void PixelGeolocationCalculator::calcPixelCoordinates()
         angle = calculateBearingAngle(satOnGround, satOnGroundPrev);
         angle = degreeToRadian(90) - angle;
 
-        for (int n = 79; n > -79; n--)
-        {
-            CoordGeodetic coordinate (los_to_earth(satOnGround, degreeToRadian((((mScanAngle/2.0) / 79.0)) * n), 0, angle));
-            mCoordinates.push_back(coordinate);
+        for(int n = 79; n > -79; n--) {
+            Vector3 posVector(los_to_earth(Vector3(satOnGround), degreeToRadian((((mScanAngle / 2.0) / 79.0)) * n), 0, angle));
+            mCoordinates.push_back(posVector.toCoordinate());
         }
     }
 }
 
-void PixelGeolocationCalculator::save(const std::string &path)
-{
+void PixelGeolocationCalculator::save(const std::string& path) {
     std::ofstream file(path);
 
     if(!file) {
@@ -93,8 +85,8 @@ void PixelGeolocationCalculator::save(const std::string &path)
     int i = 0;
     int n = 0;
 
-    for (it = mCoordinates.begin(); it != mCoordinates.end(); ++it, n++) {
-        file << (n * 10) << " " << (i * 10) << " " << std::setprecision (15) << radioanToDegree(it->latitude) << " " << radioanToDegree(it->longitude) <<  std::endl;
+    for(it = mCoordinates.begin(); it != mCoordinates.end(); ++it, n++) {
+        file << (n * 10) << " " << (i * 10) << " " << std::setprecision(15) << radioanToDegree(it->latitude) << " " << radioanToDegree(it->longitude) << std::endl;
 
         if(n == 157) {
             n = -1;
@@ -105,54 +97,7 @@ void PixelGeolocationCalculator::save(const std::string &path)
     file.close();
 }
 
-Vector PixelGeolocationCalculator::locationToVector(const CoordGeodetic &location)
-{
-    double cosLat = cos(location.latitude);
-    double sinLat = sin(location.latitude);
-    double cosLon = cos(location.longitude);
-    double sinLon = sin(location.longitude);
-
-    double radA = 6378.137;
-    double f = 1.0 / 298.257223563;  //Flattening factor WGS84 Model
-    double radB = radA * (1 - f);
-
-    double N = pow(radA, 2) / sqrt(pow(radA, 2) * pow(cosLat, 2) + pow(radB, 2) * pow(sinLat, 2));
-
-    double x = (N + location.altitude) * cosLat * cosLon;
-    double y = (N + location.altitude) * cosLat * sinLon;
-    double z = ((pow(radB, 2) / pow(radA, 2)) * N + location.altitude) * sinLat;
-
-    return Vector(x,y, z);
-}
-
-CoordGeodetic PixelGeolocationCalculator::vectorToLocation(const Vector &vector)
-{
-    double a = 6378.137;
-    double f = 1.0 / 298.257223563;  //Flattening factor WGS84 Model
-    double b = a * (1 - f);
-
-    double r = sqrt(pow(vector.x, 2) + pow(vector.y, 2) + pow(vector.z, 2));
-
-    double lat = asin(vector.z / r);
-    double lon = atan2(vector.y, vector.x);
-
-    double e = sqrt((pow(a, 2) - pow(b, 2)) / pow(a, 2));
-    double e2 = sqrt((pow(a, 2) - pow(b, 2)) / pow(b, 2));
-    double p = sqrt(pow(vector.x, 2) + pow(vector.y, 2));
-    double phi = atan2(vector.z * a, p * b);
-    lat = atan2(vector.z + pow(e2, 2) * b * pow(sin(phi), 3), p - pow(e, 2) * a * pow(cos(phi), 3));
-
-    return CoordGeodetic(lat, lon, 0, true);
-}
-
-CoordGeodetic PixelGeolocationCalculator::los_to_earth(const CoordGeodetic &position, double roll, double pitch, double yaw)
-{
-    Vector vector = locationToVector(position);
-    return los_to_earth(vector, roll, pitch, yaw);
-}
-
-CoordGeodetic PixelGeolocationCalculator::los_to_earth(const Vector &position, double roll, double pitch, double yaw)
-{
+Vector PixelGeolocationCalculator::los_to_earth(const Vector& position, double roll, double pitch, double yaw) {
     double a = 6371.0087714;
     double b = 6371.0087714;
     double c = 6356.752314245;
@@ -161,11 +106,7 @@ CoordGeodetic PixelGeolocationCalculator::los_to_earth(const Vector &position, d
     double y = position.y;
     double z = position.z;
 
-    Matrix4x4 matrix (
-        1, 0, 0, position.x,
-        0, 1, 0, position.y,
-        0, 0, 1, position.z,
-        0, 0, 0, 1);
+    Matrix4x4 matrix(1, 0, 0, position.x, 0, 1, 0, position.y, 0, 0, 1, position.z, 0, 0, 0, 1);
 
     Vector lookVector(0, 0, 0);
     Matrix4x4 lookMatrix = lookAt(position, lookVector, Vector(0, 0, 1));
@@ -181,7 +122,8 @@ CoordGeodetic PixelGeolocationCalculator::los_to_earth(const Vector &position, d
     double w = vector3.z;
 
     double value = -pow(a, 2) * pow(b, 2) * w * z - pow(a, 2) * pow(c, 2) * v * y - pow(b, 2) * pow(c, 2) * u * x;
-    double radical = pow(a, 2) * pow(b, 2) * pow(w, 2) + pow(a, 2) * pow(c, 2) * pow(v, 2) - pow(a, 2) * pow(v, 2) * pow(z, 2) + 2 * pow(a, 2) * v * w * y * z - pow(a, 2) * pow(w, 2) * pow(y, 2) + pow(b, 2) * pow(c, 2) * pow(u, 2) - pow(b, 2) * pow(u, 2) * pow(z, 2) + 2 * pow(b, 2) * u * w * x * z - pow(b, 2) * pow(w, 2) * pow(x, 2) - pow(c, 2) * pow(u, 2) * pow(y, 2) + 2 * pow(c, 2) * u * v * x * y - pow(c, 2) * pow(v, 2) * pow(x, 2);
+    double radical = pow(a, 2) * pow(b, 2) * pow(w, 2) + pow(a, 2) * pow(c, 2) * pow(v, 2) - pow(a, 2) * pow(v, 2) * pow(z, 2) + 2 * pow(a, 2) * v * w * y * z - pow(a, 2) * pow(w, 2) * pow(y, 2) + pow(b, 2) * pow(c, 2) * pow(u, 2)
+                     - pow(b, 2) * pow(u, 2) * pow(z, 2) + 2 * pow(b, 2) * u * w * x * z - pow(b, 2) * pow(w, 2) * pow(x, 2) - pow(c, 2) * pow(u, 2) * pow(y, 2) + 2 * pow(c, 2) * u * v * x * y - pow(c, 2) * pow(v, 2) * pow(x, 2);
     double magnitude = pow(a, 2) * pow(b, 2) * pow(w, 2) + pow(a, 2) * pow(c, 2) * pow(v, 2) + pow(b, 2) * pow(c, 2) * pow(u, 2);
 
     /*double t = -(1 / (pow(c, 2) * (pow(u, 2) + pow(v, 2)) + pow(a, 2) * pow(w, 2))) *
@@ -189,28 +131,25 @@ CoordGeodetic PixelGeolocationCalculator::los_to_earth(const Vector &position, d
        0.5 * sqrt(4 * pow((pow(a, 2) * (u * x + v * y) + pow(a, 2) * w * z), 2) - 4 * (pow(a, 2) * (pow(u, 2) + pow(v, 2)) + pow(a, 2) * pow(w, 2)) * (pow(c, 2) * (-pow(a, 2) + pow(x, 2) + pow(y, 2)) + pow(a, 2) * pow(z, 2))));
     */
 
-    if (radical < 0)
-    {
-        return CoordGeodetic(0, 0, 0);
+    if(radical < 0) {
+        return {0, 0, 0};
     }
 
     double d = (value - a * b * c * sqrt(radical)) / magnitude;
 
-    if (d < 0)
-    {
-        return CoordGeodetic(0, 0, 0);
+    if(d < 0) {
+        return {0, 0, 0};
     }
 
     x += d * u;
     y += d * v;
     z += d * w;
 
-    return vectorToLocation(Vector(x, y, z));
+    return {x, y, z};
 }
 
-//Todo: More precise calculation maybe required, example: https://github.com/airbreather/Gavaghan.Geodesy/blob/master/Source/Gavaghan.Geodesy/GeodeticCalculator.cs
-double PixelGeolocationCalculator::calculateBearingAngle(const CoordGeodetic &start, const CoordGeodetic &end)
-{
+// Todo: More precise calculation maybe required, example: https://github.com/airbreather/Gavaghan.Geodesy/blob/master/Source/Gavaghan.Geodesy/GeodeticCalculator.cs
+double PixelGeolocationCalculator::calculateBearingAngle(const CoordGeodetic& start, const CoordGeodetic& end) {
     double alpha = end.longitude - start.longitude;
     double y = sin(alpha) * cos(end.latitude);
     double x = cos(start.latitude) * sin(end.latitude) - sin(start.latitude) * cos(end.latitude) * cos(alpha);
@@ -219,12 +158,10 @@ double PixelGeolocationCalculator::calculateBearingAngle(const CoordGeodetic &st
     return theta;
 }
 
-Matrix4x4 PixelGeolocationCalculator::lookAt(const Vector3 &position, const Vector3 &target, const Vector3 &up)
-{
+Matrix4x4 PixelGeolocationCalculator::lookAt(const Vector3& position, const Vector3& target, const Vector3& up) {
     Vector3 k = Vector3(target) - position;
     double m = k.DistanceSquared();
-    if (m < std::numeric_limits<double>::epsilon())
-    {
+    if(m < std::numeric_limits<double>::epsilon()) {
         return Matrix4x4();
     }
     k = k * (1.0 / sqrt(m));
@@ -235,10 +172,5 @@ Matrix4x4 PixelGeolocationCalculator::lookAt(const Vector3 &position, const Vect
     Vector3 j = k.Cross(i);
     j.Normalize();
 
-    return Matrix4x4(
-        i.x, j.x, k.x, 0.0,
-        i.y, j.y, k.y, 0.0,
-        i.z, j.z, k.z, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    );
+    return Matrix4x4(i.x, j.x, k.x, 0.0, i.y, j.y, k.y, 0.0, i.z, j.z, k.z, 0.0, 0.0, 0.0, 0.0, 1.0);
 }

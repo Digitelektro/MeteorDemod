@@ -4,24 +4,19 @@
 
 namespace GIS {
 
-ShapeReader::ShapeReader(const std::string &shapeFile)
+ShapeReader::ShapeReader(const std::string& shapeFile)
     : mFilePath(shapeFile)
     , mLoaded(false)
     , mDbFileReader(shapeFile)
-    , mHasDbFile(false)
-{
+    , mHasDbFile(false) {}
 
-}
-
-ShapeReader::~ShapeReader()
-{
+ShapeReader::~ShapeReader() {
     if(mBinaryData.is_open()) {
         mBinaryData.close();
     }
 }
 
-bool ShapeReader::load()
-{
+bool ShapeReader::load() {
     bool success = true;
 
     if(mLoaded) {
@@ -50,7 +45,7 @@ bool ShapeReader::load()
 
         RecordIterator it(mBinaryData);
 
-        //Test
+        // Test
         /*for(it.begin(); it != it.end(); ++it) {
             std::cout << it.recordHeader.recordNumber << std::endl;
 
@@ -77,9 +72,9 @@ bool ShapeReader::load()
             mHasDbFile = true;
         }
 
-    } while (false);
+    } while(false);
 
     return success;
 }
 
-} //namespace GIS
+} // namespace GIS

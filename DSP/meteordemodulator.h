@@ -2,37 +2,32 @@
 #define METEORDEMODULATOR_H
 
 #include <functional>
+
+#include "agc.h"
+#include "filter.h"
 #include "iqsource.h"
 #include "meteorcostas.h"
-#include "filter.h"
-#include "agc.h"
 #include "mm.h"
 
 namespace DSP {
 
-class MeteorDemodulator
-{
-public:
+class MeteorDemodulator {
+  public:
     typedef std::function<void(const PLL::complex&, float progress)> MeteorDecoderCallback_t;
 
-    enum Mode {
-        QPSK,
-        OQPSK
-    };
-
-public:
-    MeteorDemodulator(Mode mode, float symbolRate, float costasBw = 100.0f, uint16_t rrcFilterOrder = 64, bool waitForLock = true, bool brokenM2Modulation = false);
+  public:
+    MeteorDemodulator(MeteorCostas::Mode mode, float symbolRate, float costasBw = 100.0f, uint16_t rrcFilterOrder = 64, bool waitForLock = true, bool brokenM2Modulation = false);
     ~MeteorDemodulator();
 
-    MeteorDemodulator &operator=(const MeteorDemodulator &) = delete;
-    MeteorDemodulator(const MeteorDemodulator &) = delete;
-    MeteorDemodulator &operator=(MeteorDemodulator &&) = delete;
-    MeteorDemodulator(MeteorDemodulator &&) = delete;
+    MeteorDemodulator& operator=(const MeteorDemodulator&) = delete;
+    MeteorDemodulator(const MeteorDemodulator&) = delete;
+    MeteorDemodulator& operator=(MeteorDemodulator&&) = delete;
+    MeteorDemodulator(MeteorDemodulator&&) = delete;
 
-    void process(IQSoruce &source, MeteorDecoderCallback_t callback);
+    void process(IQSoruce& source, MeteorDecoderCallback_t callback);
 
-private:
-    Mode mMode;
+  private:
+    MeteorCostas::Mode mMode;
     bool mBorkenM2Modulation;
     bool mWaitForLock;
     float mSymbolRate;

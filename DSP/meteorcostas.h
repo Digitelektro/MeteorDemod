@@ -1,36 +1,45 @@
 #ifndef DSP_METEORCOSTAS_H
 #define DSP_METEORCOSTAS_H
 
-#include "pll.h"
 #include <algorithm>
+
+#include "pll.h"
 
 namespace DSP {
 
-class MeteorCostas : public PLL
-{    
-private:
-    static constexpr float cLockDetectionTreshold = 0.22;
-    static constexpr float cUnLockDetectionTreshold = 0.25;
+class MeteorCostas : public PLL {
+  private:
+    static constexpr float cLockDetectionTreshold = 0.18;
+    static constexpr float cUnLockDetectionTreshold = 0.22;
     static constexpr float cLockFilterCoeff = 0.00001f;
 
-public:
-    MeteorCostas(float bandWidth, float initPhase = 0.0f, float initFreq = 0.0f, float minFreq = -M_PI, float maxFreq = M_PI, bool brokenModulation = false);
+  public:
+    enum Mode { QPSK, OQPSK };
 
-    inline virtual complex process(const complex &sample) override {
+  public:
+    MeteorCostas(Mode mode, float bandWidth, float initPhase = 0.0f, float initFreq = 0.0f, float minFreq = -M_PI, float maxFreq = M_PI, bool brokenModulation = false);
+
+    inline virtual complex process(const complex& sample) override {
         complex retval;
         retval = sample * complex(cosf(-mPhase), sinf(-mPhase));
         mError = errorFunction(retval);
         advance(mError);
+
+        if(mMode == Mode::OQPSK) {
+            float temp = retval.imag();
+            retval = complex(retval.real(), mPrevI);
+            mPrevI = temp;
+        }
         return retval;
     }
 
-    inline virtual void process(const complex *insamples, complex *outsampes, unsigned int count) {
+    inline virtual void process(const complex* insamples, complex* outsampes, unsigned int count) {
         for(unsigned int i = 0; i < count; i++) {
             *outsampes++ = process(*insamples++);
         }
     }
 
-protected:
+  protected:
     float errorFunction(complex value) {
         float error;
         if(mBrokenModulation) {
@@ -45,9 +54,15 @@ protected:
             float dp3 = normalizePhase(phase - PHASE3);
             float dp4 = normalizePhase(phase - PHASE4);
             float lowest = dp1;
-            if (fabsf(dp2) < fabsf(lowest)) { lowest = dp2; }
-            if (fabsf(dp3) < fabsf(lowest)) { lowest = dp3; }
-            if (fabsf(dp4) < fabsf(lowest)) { lowest = dp4; }
+            if(fabsf(dp2) < fabsf(lowest)) {
+                lowest = dp2;
+            }
+            if(fabsf(dp3) < fabsf(lowest)) {
+                lowest = dp3;
+            }
+            if(fabsf(dp4) < fabsf(lowest)) {
+                lowest = dp4;
+            }
             error = lowest * std::abs(value);
         } else {
             error = (step(value.real()) * value.imag()) - (step(value.imag()) * value.real());
@@ -57,10 +72,14 @@ protected:
 
         if(mLockDetector < cLockDetectionTreshold && !mIsLocked) {
             mIsLocked = true;
-            setBandWidth(mPllOriginalBandwidth/5.0f);
+            if(mMode != Mode::OQPSK) {
+                setBandWidth(mPllOriginalBandwidth / 5.0f);
+            }
         } else if(mLockDetector > cUnLockDetectionTreshold && mIsLocked) {
             mIsLocked = false;
-            setBandWidth(mPllOriginalBandwidth);
+            if(mMode != Mode::OQPSK) {
+                setBandWidth(mPllOriginalBandwidth);
+            }
         }
 
         if(mLockDetector < cLockDetectionTreshold) {
@@ -74,7 +93,7 @@ protected:
         return val > 0 ? 1.0f : -1.0f;
     }
 
-public:
+  public:
     inline float getError() const {
         return mLockDetector;
     }
@@ -85,13 +104,15 @@ public:
         return mIsLockedOnce;
     }
 
-protected:
+  protected:
+    Mode mMode;
     float mPllOriginalBandwidth;
     bool mBrokenModulation;
     float mError;
     float mLockDetector;
     bool mIsLocked;
     bool mIsLockedOnce;
+    float mPrevI;
 };
 
 } // namespace DSP

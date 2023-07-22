@@ -1,15 +1,12 @@
 #include "tlereader.h"
+
 #include <fstream>
 #include <iostream>
 
-TleReader::TleReader(const std::string &filePath)
-    : mFilePath(filePath)
-{
+TleReader::TleReader(const std::string& filePath)
+    : mFilePath(filePath) {}
 
-}
-
-void TleReader::processFile()
-{
+void TleReader::processFile() {
     std::ifstream fileReader;
     fileReader.open(mFilePath);
     TLE tle;
@@ -17,7 +14,7 @@ void TleReader::processFile()
 
     do {
         if(!fileReader.is_open()) {
-            std::cout << "TLE file ( "<< mFilePath << " ) open failed" << std::endl;
+            std::cout << "TLE file ( " << mFilePath << " ) open failed" << std::endl;
             break;
         }
 
@@ -43,11 +40,10 @@ void TleReader::processFile()
 
         fileReader.close();
 
-    } while (false);
+    } while(false);
 }
 
-bool TleReader::getTLE(const std::string &sateliteName, TLE &tle)
-{
+bool TleReader::getTLE(const std::string& sateliteName, TLE& tle) {
     if(mTleList.find(sateliteName) != mTleList.end()) {
         tle = mTleList[sateliteName];
         return true;

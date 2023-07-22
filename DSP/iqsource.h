@@ -6,16 +6,17 @@
 namespace DSP {
 
 class IQSoruce {
-public:
+  public:
     typedef std::complex<float> complex;
-public:
+
+  public:
     IQSoruce();
     virtual ~IQSoruce() {}
 
-    virtual uint32_t read(complex *data, uint32_t len) = 0;
+    virtual uint32_t read(complex* data, uint32_t len) = 0;
 
 
-public: //getters
+  public: // getters
     uint32_t getSampleRate() const {
         return mSampleRate;
     }
@@ -32,13 +33,13 @@ public: //getters
         return mReadedSamples;
     }
 
-protected:
+  protected:
     uint16_t mBitsPerSample;
     uint32_t mSampleRate;
     uint32_t mTotalSamples;
     uint32_t mReadedSamples;
 };
 
-} //namespace DSP
+} // namespace DSP
 
 #endif // IQSOURCE_H

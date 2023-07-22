@@ -1,67 +1,79 @@
 #include "settings.h"
-#include "version.h"
-#include <sstream>
-#include <fstream>
+
 #include <ctime>
+#include <fstream>
 #include <regex>
+#include <sstream>
+
+#include "version.h"
 
 #if defined(_MSC_VER)
 #include <Shlwapi.h>
 #pragma comment(lib, "shlwapi.lib")
 #else
-#include <unistd.h>
-#include <sys/types.h>
 #include <pwd.h>
+#include <sys/types.h>
+#include <unistd.h>
 #endif
 
-Settings &Settings::getInstance()
-{
+Settings& Settings::getInstance() {
     static Settings instance;
     return instance;
 }
 
-Settings::Settings()
-{
-    mSettingsList.push_back(SettingsData("--help",  "-h", "Print help"));
-    mSettingsList.push_back(SettingsData("--tle",   "-t", "TLE file required for pass calculation"));
+Settings::Settings() {
+    mSettingsList.push_back(SettingsData("--help", "-h", "Print help"));
+    mSettingsList.push_back(SettingsData("--tle", "-t", "TLE file required for pass calculation"));
     mSettingsList.push_back(SettingsData("--input", "-i", "Input S file containing softbits"));
-    mSettingsList.push_back(SettingsData("--output","-o", "Output folder where generated files will be placed"));
-    mSettingsList.push_back(SettingsData("--date",  "-d", "Specify pass date, format should be dd-mm-yyyy"));
-    mSettingsList.push_back(SettingsData("--format",  "-f", "Output image format (bmp, jpg)"));
-    mSettingsList.push_back(SettingsData("--symbolrate",  "-s", "Set symbol rate for demodulator"));
-    mSettingsList.push_back(SettingsData("--mode",  "-m", "Set demodulator mode to qpsk or oqpsk"));
-    mSettingsList.push_back(SettingsData("--diff",  "-diff", "Use differential decoding (Maybe required for newer satellites)"));
-    mSettingsList.push_back(SettingsData("--int",  "-int", "Deinterleave (Maybe required for newer satellites)"));
-    mSettingsList.push_back(SettingsData("--brokenM2",  "-b", "Broken M2 modulation"));
+    mSettingsList.push_back(SettingsData("--output", "-o", "Output folder where generated files will be placed"));
+    mSettingsList.push_back(SettingsData("--date", "-d", "Specify pass date, format should be dd-mm-yyyy"));
+    mSettingsList.push_back(SettingsData("--format", "-f", "Output image format (bmp, jpg)"));
+    mSettingsList.push_back(SettingsData("--symbolrate", "-s", "Set symbol rate for demodulator"));
+    mSettingsList.push_back(SettingsData("--mode", "-m", "Set demodulator mode to qpsk or oqpsk"));
+    mSettingsList.push_back(SettingsData("--diff", "-diff", "Use differential decoding (Maybe required for newer satellites)"));
+    mSettingsList.push_back(SettingsData("--int", "-int", "Deinterleave (Maybe required for newer satellites)"));
+    mSettingsList.push_back(SettingsData("--brokenM2", "-b", "Broken M2 modulation"));
+    mSettingsList.push_back(SettingsData("--compmaxage", "-c", "Maximum image age in hours for creating composite image"));
+    mSettingsList.push_back(SettingsData("--satellite", "-sat", "Name of the satellite settings in settings.ini file"));
 }
 
-void Settings::parseArgs(int argc, char **argv)
-{
-    for(int i = 1; i < (argc-1); i+=2) {
-        mArgs.insert(std::make_pair(argv[i], argv[i+1]));
+void Settings::parseArgs(int argc, char** argv) {
+    if(argc == 1) {
+        throw std::runtime_error("Invalid number or arguments, at least one argument shall be provided!");
+    } else {
+        for(int i = 1; i < argc; i++) {
+            if(i + 1 < argc) {
+                if(*argv[i + 1] == '-') {
+                    mArgs.insert(std::make_pair(argv[i], "true"));
+                } else {
+                    mArgs.insert(std::make_pair(argv[i], argv[i + 1]));
+                    i++;
+                }
+            } else {
+                if(*argv[i] == '-') {
+                    mArgs.insert(std::make_pair(argv[i], "true"));
+                } else {
+                    mArgs.insert(std::make_pair("-o", argv[i]));
+                }
+            }
+        }
     }
 }
 
-void Settings::parseIni(const std::string &path)
-{
+void Settings::parseIni(const std::string& path) {
     std::ifstream ifStream(path);
     if(!ifStream.is_open()) {
         std::cout << "Unable to open settings.ini at: '" << path << "' Program will use default settings." << std::endl;
     } else {
         mIniParser.parse(ifStream);
     }
-    //mIniParser.generate(std::cout);
+    // mIniParser.generate(std::cout);
 
     ini::extract(mIniParser.sections["Program"]["AzimuthalEquidistantProjection"], mEquidistantProjection, true);
     ini::extract(mIniParser.sections["Program"]["MercatorProjection"], mMercatorProjection, true);
     ini::extract(mIniParser.sections["Program"]["SpreadImage"], mSpreadImage, true);
     ini::extract(mIniParser.sections["Program"]["AddRainOverlay"], mAddRainOverlay, true);
     ini::extract(mIniParser.sections["Program"]["JpgQuality"], mJpegQuality, 90);
-    ini::extract(mIniParser.sections["Program"]["ScanAngleM2"], mScanAngleM2, 110.8f);
-    ini::extract(mIniParser.sections["Program"]["RollM2"], mM2Roll, -2.9f);
-    ini::extract(mIniParser.sections["Program"]["PitchM2"], mM2Pitch, 0.3f);
-    ini::extract(mIniParser.sections["Program"]["YawM2"], mM2Yaw, 0.0f);
-    ini::extract(mIniParser.sections["Program"]["TimeOffsetM2"], mTimeOffsetM2Sec, 0);
     ini::extract(mIniParser.sections["Program"]["NightPassTreshold"], mNightPassTreshold, 10.0f);
     ini::extract(mIniParser.sections["Program"]["ProjectionScale"], mProjectionScale, 0.75f);
     ini::extract(mIniParser.sections["Program"]["CompositeProjectionScale"], mCompositeProjectionScale, 0.75f);
@@ -116,8 +128,7 @@ void Settings::parseIni(const std::string &path)
     ini::extract(mIniParser.sections["ShapeFilePopulatedPlaces"]["TextColumnName"], mShapePopulatedPlacesTextColumnName, std::string("NAME"));
 }
 
-std::string Settings::getHelp() const
-{
+std::string Settings::getHelp() const {
     std::list<SettingsData>::const_iterator it;
     std::stringstream ss;
 
@@ -129,8 +140,7 @@ std::string Settings::getHelp() const
     return ss.str();
 }
 
-std::string Settings::getInputFilePath() const
-{
+std::string Settings::getInputFilePath() const {
     if(mArgs.count("-i")) {
         return mArgs.at("-i");
     }
@@ -140,8 +150,7 @@ std::string Settings::getInputFilePath() const
     return std::string();
 }
 
-std::string Settings::getTlePath() const
-{
+std::string Settings::getTlePath() const {
     if(mArgs.count("-t")) {
         return mArgs.at("-t");
     }
@@ -151,52 +160,75 @@ std::string Settings::getTlePath() const
     return std::string();
 }
 
-std::string Settings::getResourcesPath() const
-{
+std::string Settings::getSateliteName() const {
+    if(mArgs.count("-sat")) {
+        return mArgs.at("-sat");
+    }
+    if(mArgs.count("--satellite")) {
+        return mArgs.at("--satellite");
+    }
+    return std::string();
+}
+
+int Settings::getCompositeMaxAgeHours() const {
+    if(mArgs.count("-c")) {
+        return atoi(mArgs.at("-c").c_str());
+    }
+    if(mArgs.count("--compmaxage")) {
+        return atoi(mArgs.at("-compmaxage").c_str());
+    }
+    return 6; // default 6H
+}
+
+std::string Settings::getResourcesPath() const {
 #if defined(_MSC_VER)
     CHAR path[MAX_PATH];
 
-	GetModuleFileNameA(nullptr, path, MAX_PATH);
-	PathRemoveFileSpecA(path);
+    GetModuleFileNameA(nullptr, path, MAX_PATH);
+    PathRemoveFileSpecA(path);
 
     return std::string(path) + "\\resources\\";
 #else
-    struct passwd *pw = getpwuid(getuid());
+    struct passwd* pw = getpwuid(getuid());
     return std::string(pw->pw_dir) + "/.config/meteordemod/";
 #endif
 }
 
-std::string Settings::getOutputPath() const
-{
+std::string Settings::getOutputPath() const {
+    std::string path{"./"};
+
     if(mArgs.count("-o")) {
-        return mArgs.at("-o");
+        path = mArgs.at("-o");
     }
     if(mArgs.count("--output")) {
-        return mArgs.at("--output");
+        path = mArgs.at("--output");
     }
-    return std::string("./");
+
+    if(path.back() != '/') {
+        path += '/';
+    }
+
+    return path;
 }
 
-std::string Settings::getOutputFormat() const
-{
+std::string Settings::getOutputFormat() const {
     std::string imgFormat;
 
-    imgFormat =  std::string("bmp");
+    imgFormat = std::string("bmp");
 
     if(mArgs.count("-f")) {
         imgFormat = mArgs.at("-f");
     }
     if(mArgs.count("--format")) {
-        imgFormat =  mArgs.at("--format");
+        imgFormat = mArgs.at("--format");
     }
 
-    //Todo: validate format
+    // Todo: validate format
 
     return imgFormat;
 }
 
-DateTime Settings::getPassDate() const
-{
+DateTime Settings::getPassDate() const {
     int year, month, day;
     std::string dateTimeStr;
     DateTime dateTime(0);
@@ -205,16 +237,16 @@ DateTime Settings::getPassDate() const
         dateTimeStr = mArgs.at("-d");
     }
     if(mArgs.count("--date")) {
-        dateTimeStr =  mArgs.at("--date");
+        dateTimeStr = mArgs.at("--date");
     }
 
     const time_t now = time(nullptr);
     tm today;
-    #if defined(_MSC_VER)
-        gmtime_s(&today, &now);
-    #else
-        gmtime_r(&now, &today);
-    #endif
+#if defined(_MSC_VER)
+    gmtime_s(&today, &now);
+#else
+    gmtime_r(&now, &today);
+#endif
 
     dateTime.Initialise(1900 + today.tm_year, today.tm_mon + 1, today.tm_mday, today.tm_hour, today.tm_min, today.tm_sec, 0);
 
@@ -226,78 +258,79 @@ DateTime Settings::getPassDate() const
         std::regex dateTimeRegex("\\d{2}-\\d{2}-\\d{4}");
 
         if(std::regex_search(dateTimeStr, dateTimeRegex)) {
-            std::replace( dateTimeStr.begin(), dateTimeStr.end(), '-', ' ');
-            std::istringstream( dateTimeStr ) >> day >> month >> year;
+            std::replace(dateTimeStr.begin(), dateTimeStr.end(), '-', ' ');
+            std::istringstream(dateTimeStr) >> day >> month >> year;
             dateTime.Initialise(year, month, day, 12, 0, 0, 0);
         } else {
             std::cout << "Invalid given Date format, using today's date" << std::endl;
         }
-    } catch (...) {
+    } catch(...) {
         std::cout << "Extracting date parameter failed, regex might not be supported on your system. GCC version >=4.9.2 is required. Using default Date" << std::endl;
     }
 
     return dateTime;
 }
 
-float Settings::getSymbolRate() const
-{
+float Settings::getSymbolRate() const {
     float symbolRate = 72000.0f;
 
     if(mArgs.count("-s")) {
         symbolRate = atof(mArgs.at("-s").c_str());
     }
     if(mArgs.count("--symbolrate")) {
-        symbolRate =  atof(mArgs.at("--symbolrate").c_str());
+        symbolRate = atof(mArgs.at("--symbolrate").c_str());
     }
 
     return symbolRate;
 }
 
-std::string Settings::getDemodulatorMode() const
-{
+std::string Settings::getDemodulatorMode() const {
     std::string modeStr = std::string("qpsk");
 
     if(mArgs.count("-m")) {
         modeStr = mArgs.at("-m");
     }
     if(mArgs.count("--mode")) {
-        modeStr =  mArgs.at("--mode");
+        modeStr = mArgs.at("--mode");
     }
 
     return modeStr;
 }
 
-bool Settings::differentialDecode() const
-{
+bool Settings::differentialDecode() const {
     bool result = false;
 
     if(mArgs.count("--diff")) {
-        std::istringstream(mArgs.at("--diff")) >> result;
+        result = atoi(mArgs.at("--diff").c_str()) > 0;
+    }
+    if(mArgs.count("-diff")) {
+        result = atoi(mArgs.at("-diff").c_str()) > 0;
     }
 
     return result;
 }
 
-bool Settings::deInterleave() const
-{
+bool Settings::deInterleave() const {
     bool result = false;
 
     if(mArgs.count("--int")) {
-        std::istringstream(mArgs.at("--int")) >> result;
+        result = atoi(mArgs.at("--int").c_str()) > 0;
+    }
+    if(mArgs.count("-int")) {
+        result = atoi(mArgs.at("-int").c_str()) > 0;
     }
 
     return result;
 }
 
-bool Settings::getBrokenM2Modulation() const
-{
+bool Settings::getBrokenModulation() const {
     bool result = false;
 
     if(mArgs.count("-b")) {
-        std::istringstream(mArgs.at("-b")) >> result;
+        result = atoi(mArgs.at("-b").c_str()) > 0;
     }
     if(mArgs.count("--brokenM2")) {
-        std::istringstream(mArgs.at("--brokenM2")) >> result;
+        result = atoi(mArgs.at("--brokenM2").c_str()) > 0;
     }
 
     return result;

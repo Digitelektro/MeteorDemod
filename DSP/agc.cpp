@@ -9,9 +9,6 @@ Agc::Agc(float targetAmplitude, float maxGain, float windowSize, float biasWindo
     , mMaxGain(maxGain)
     , mTargetAmplitude(targetAmplitude)
     , mBiasWindowSize(biasWindowSize)
-    , mBias(0)
-{
+    , mBias(0) {}
 
-}
-
-} //namespace DSP
+} // namespace DSP
