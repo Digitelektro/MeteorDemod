@@ -164,8 +164,8 @@ class Settings {
     bool compositeMercatorProjection() const {
         return mCompositeMercatorProjection;
     }
-    bool generateComposite123() const {
-        return mGenerateComposite123;
+    bool generateComposite321() const {
+        return mGenerateComposite321;
     }
     bool generateComposite125() const {
         return mGenerateComposite125;
@@ -310,7 +310,7 @@ class Settings {
 
     bool mCompositeEquadistantProjection;
     bool mCompositeMercatorProjection;
-    bool mGenerateComposite123;
+    bool mGenerateComposite321;
     bool mGenerateComposite125;
     bool mGenerateComposite221;
     bool mGenerateComposite68;
