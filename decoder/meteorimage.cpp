@@ -151,8 +151,8 @@ int MeteorImage::getAcReal(uint16_t word) {
 
 MeteorImage::~MeteorImage() {}
 
-cv::Mat MeteorImage::getChannelImage(ChannelIDs APID, bool fillBlackLines) {
-    if(mFullImage.size() == 0) {
+cv::Mat MeteorImage::getChannelImage(APIDs channelID, bool fillBlackLines) {
+    if(mChannels.size() == 0) {
         return cv::Mat();
     }
 
@@ -167,32 +167,9 @@ cv::Mat MeteorImage::getChannelImage(ChannelIDs APID, bool fillBlackLines) {
 
             cv::Vec3b& color = image.at<cv::Vec3b>(y, x);
 
-            image.at<cv::Vec3b>(cv::Point(x, y)) = color;
-
-            switch(APID) {
-                case APID_68:
-                    color[0] = mFullImage[off].r;
-                    color[1] = mFullImage[off].r;
-                    color[2] = mFullImage[off].r;
-                    break;
-                case APID_66:
-                    color[0] = mFullImage[off].r;
-                    color[1] = mFullImage[off].r;
-                    color[2] = mFullImage[off].r;
-                    break;
-                case APID_65:
-                    color[0] = mFullImage[off].g;
-                    color[1] = mFullImage[off].g;
-                    color[2] = mFullImage[off].g;
-                    break;
-                case APID_64:
-                    color[0] = mFullImage[off].b;
-                    color[1] = mFullImage[off].b;
-                    color[2] = mFullImage[off].b;
-                    break;
-            }
-
-            image.at<cv::Vec3b>(cv::Point(x, y)) = color;
+            color[0] = mChannels[off][channelID - 64];
+            color[1] = mChannels[off][channelID - 64];
+            color[2] = mChannels[off][channelID - 64];
         }
     }
 
@@ -204,24 +181,23 @@ cv::Mat MeteorImage::getChannelImage(ChannelIDs APID, bool fillBlackLines) {
     return image;
 }
 
-cv::Mat MeteorImage::getRGBImage(ChannelIDs redAPID, ChannelIDs greenAPID, ChannelIDs blueAPID, bool fillBlackLines) {
-    if(mFullImage.size() == 0) {
+cv::Mat MeteorImage::getRGBImage(APIDs redAPID, APIDs greenAPID, APIDs blueAPID, bool fillBlackLines) {
+    if(mChannels.size() == 0) {
         return cv::Mat();
     }
 
     int width = 8 * MCU_PER_LINE;
     int height = mCurY + 8;
     cv::Mat image = cv::Mat(height, width, CV_8UC3);
-    cv::Vec3b color;
 
     for(int y = 0; y < image.rows; y++) {
         for(int x = 0; x < image.cols; x++) {
             uint off = x + y * MCU_PER_LINE * 8;
+            cv::Vec3b& color = image.at<cv::Vec3b>(cv::Point(x, y));
 
-            color[0] = (blueAPID == APID_66 || blueAPID == APID_68) ? mFullImage[off].r : (blueAPID == APID_65) ? mFullImage[off].g : mFullImage[off].b;
-            color[1] = (greenAPID == APID_66 || greenAPID == APID_68) ? mFullImage[off].r : (greenAPID == APID_65) ? mFullImage[off].g : mFullImage[off].b;
-            color[2] = (redAPID == APID_66 || redAPID == APID_68) ? mFullImage[off].r : (redAPID == APID_65) ? mFullImage[off].g : mFullImage[off].b;
-            image.at<cv::Vec3b>(cv::Point(x, y)) = color;
+            color[0] = mChannels[off][blueAPID - 64];
+            color[1] = mChannels[off][greenAPID - 64];
+            color[2] = mChannels[off][redAPID - 64];
         }
     }
 
@@ -258,7 +234,7 @@ bool MeteorImage::progressImage(int apd, int mcu_id, int pck_cnt) {
 
     mCurY = 8 * ((pck_cnt - mFirstPacket) / (14 + 14 + 14 + 1));
     if(mCurY > mLastY) {
-        mFullImage.resize(MCU_PER_LINE * 8 * (mCurY + 8));
+        mChannels.resize(MCU_PER_LINE * 8 * (mCurY + 8));
     }
     mLastY = mCurY;
 
@@ -314,14 +290,28 @@ void MeteorImage::fillPix(std::array<float, 64>& img_dct, int apd, int mcu_id, i
         int y = mCurY + i / 8;
         uint off = x + y * MCU_PER_LINE * 8;
 
-        if(apd == APID_68 || apd == APID_66) {
-            mFullImage[off].r = t;
-        }
-        if(apd == APID_65) {
-            mFullImage[off].g = t;
-        }
-        if(apd == APID_64) {
-            mFullImage[off].b = t;
+        switch(apd) {
+            case 64:
+                mChannels[off][APIDs::APID64 - 64] = t;
+                break;
+            case 65:
+                mChannels[off][APIDs::APID65 - 64] = t;
+                break;
+            case 66:
+                mChannels[off][APIDs::APID66 - 64] = t;
+                break;
+            case 67:
+                mChannels[off][APIDs::APID67 - 64] = t;
+                break;
+            case 68:
+                mChannels[off][APIDs::APID68 - 64] = t;
+                break;
+            case 69:
+                mChannels[off][APIDs::APID69 - 64] = t;
+                break;
+
+            default:
+                break;
         }
     }
 }
@@ -329,21 +319,27 @@ void MeteorImage::fillPix(std::array<float, 64>& img_dct, int apd, int mcu_id, i
 void MeteorImage::decMCUs(const uint8_t* packet, int len, int apd, int pck_cnt, int mcu_id, uint8_t q) {
     BitIOConst b(packet);
 
-    if(!progressImage(apd, mcu_id, pck_cnt))
+    if(!progressImage(apd, mcu_id, pck_cnt)) {
         return;
+    }
 
-    if(apd == APID_64) {
+    if(apd == APIDs::APID64) {
         mIsChannel64Available = true;
     }
-    if(apd == APID_65) {
+    if(apd == APIDs::APID65) {
         mIsChannel65Available = true;
     }
-
-    if(apd == APID_66) {
+    if(apd == APIDs::APID66) {
         mIsChannel66Available = true;
     }
-    if(apd == APID_68) {
+    if(apd == APIDs::APID67) {
+        mIsChannel67Available = true;
+    }
+    if(apd == APIDs::APID68) {
         mIsChannel68Available = true;
+    }
+    if(apd == APIDs::APID69) {
+        mIsChannel69Available = true;
     }
 
     std::array<int, 64> dqt{};
