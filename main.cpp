@@ -188,6 +188,54 @@ int main(int argc, char* argv[]) {
                 imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(irImage, rainOverlay), "rain_IR_"));
             }
 
+        } else if(meteorDecoder.isChannel64Available() && meteorDecoder.isChannel65Available() && meteorDecoder.isChannel67Available()) {
+            cv::Mat ch64 = meteorDecoder.getChannelImage(PacketParser::APID64, mSettings.fillBackLines());
+            cv::Mat ch65 = meteorDecoder.getChannelImage(PacketParser::APID65, mSettings.fillBackLines());
+            cv::Mat ch67 = meteorDecoder.getChannelImage(PacketParser::APID67, mSettings.fillBackLines());
+            cv::Mat irImage = meteorDecoder.getChannelImage(PacketParser::APID67, mSettings.fillBackLines());
+
+            cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
+            cv::Mat rainOverlay = ThreatImage::irToRain(irImage, rainRef);
+
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
+            saveImage(mSettings.getOutputPath() + fileNameDate + "_67.bmp", ch67);
+
+            cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
+            cv::Mat thermalImage = ThreatImage::irToTemperature(irImage, thermalRef);
+            imagesToSpread.push_back(ImageForSpread(thermalImage, "thermal_"));
+
+            irImage = ThreatImage::invertIR(irImage);
+            irImage = ThreatImage::gamma(irImage, 1.4);
+            irImage = ThreatImage::contrast(irImage, 1.3, -40);
+            irImage = ThreatImage::sharpen(irImage);
+            imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
+
+            if(mSettings.addRainOverlay()) {
+                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(irImage, rainOverlay), "rain_IR_"));
+            }
+            cv::Mat image221 = meteorDecoder.getRGBImage(PacketParser::APID65, PacketParser::APID65, PacketParser::APID64, mSettings.fillBackLines());
+            cv::Mat image224 = meteorDecoder.getRGBImage(PacketParser::APID65, PacketParser::APID65, PacketParser::APID67, mSettings.fillBackLines());
+
+            if(!ThreatImage::isNightPass(image221, mSettings.getNightPassTreshold())) {
+                image221 = ThreatImage::sharpen(image221);
+                image224 = ThreatImage::sharpen(image224);
+
+                imagesToSpread.push_back(ImageForSpread(image221, "221_"));
+                imagesToSpread.push_back(ImageForSpread(image224, "224_"));
+
+
+                if(mSettings.addRainOverlay()) {
+                    imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(image221, rainOverlay), "rain_221_"));
+                    imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(image224, rainOverlay), "rain_224_"));
+                }
+
+                saveImage(mSettings.getOutputPath() + fileNameDate + "_221.bmp", image221);
+                saveImage(mSettings.getOutputPath() + fileNameDate + "_224.bmp", image224);
+            } else {
+                std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
+            }
+
         } else if(meteorDecoder.isChannel64Available() && meteorDecoder.isChannel65Available() && meteorDecoder.isChannel66Available()) {
             cv::Mat threatedImage1 = meteorDecoder.getRGBImage(PacketParser::APID66, PacketParser::APID65, PacketParser::APID64, mSettings.fillBackLines());
             cv::Mat threatedImage2 = meteorDecoder.getRGBImage(PacketParser::APID65, PacketParser::APID65, PacketParser::APID64, mSettings.fillBackLines());
