@@ -19,16 +19,6 @@
 #define PACK(__Declaration__) __pragma(pack(push, 1)) __Declaration__ __pragma(pack(pop))
 #endif
 
-union Pixel {
-    PACK(struct {
-        uint8_t b;
-        uint8_t g;
-        uint8_t r;
-        uint8_t a;
-    });
-    uint32_t pixel;
-};
-
 struct ac_table_rec {
     int run;
     int size;
@@ -39,19 +29,14 @@ struct ac_table_rec {
 
 class MeteorImage {
   public:
-    enum ChannelIDs {
-        APID_68 = 68, // R
-        APID_66 = 66, // B
-        APID_65 = 65, // G
-        APID_64 = 64  // R
-    };
+    enum APIDs { APID64 = 64, APID65, APID66, APID67, APID68, APID69 };
 
   public:
     MeteorImage();
     virtual ~MeteorImage();
 
-    cv::Mat getRGBImage(ChannelIDs redAPID, ChannelIDs greenAPID, ChannelIDs blueAPID, bool fillBlackLines = true);
-    cv::Mat getChannelImage(ChannelIDs APID, bool fillBlackLines = true);
+    cv::Mat getRGBImage(APIDs redAPID, APIDs greenAPID, APIDs blueAPID, bool fillBlackLines = true);
+    cv::Mat getChannelImage(APIDs APID, bool fillBlackLines = true);
 
   public:
     bool isChannel64Available() const {
@@ -63,8 +48,14 @@ class MeteorImage {
     bool isChannel66Available() const {
         return mIsChannel66Available;
     }
+    bool isChannel67Available() const {
+        return mIsChannel67Available;
+    }
     bool isChannel68Available() const {
         return mIsChannel68Available;
+    }
+    bool isChannel69Available() const {
+        return mIsChannel69Available;
     }
 
   protected:
@@ -93,9 +84,11 @@ class MeteorImage {
     bool mIsChannel64Available;
     bool mIsChannel65Available;
     bool mIsChannel66Available;
+    bool mIsChannel67Available;
     bool mIsChannel68Available;
+    bool mIsChannel69Available;
 
-    std::vector<Pixel> mFullImage;
+    std::vector<std::array<uint8_t, 6>> mChannels;
     int mLastMCU, mCurY, mLastY, mFirstPacket, mPrevPacket;
     std::array<int, 65536> mAcLookup{}, mDcLookup{};
     std::array<ac_table_rec, 162> mAcTable{};
