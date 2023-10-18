@@ -181,7 +181,7 @@ cv::Mat MeteorImage::getChannelImage(APIDs channelID, bool fillBlackLines) {
     return image;
 }
 
-cv::Mat MeteorImage::getRGBImage(APIDs redAPID, APIDs greenAPID, APIDs blueAPID, bool fillBlackLines) {
+cv::Mat MeteorImage::getRGBImage(APIDs redAPID, APIDs greenAPID, APIDs blueAPID, bool fillBlackLines, bool invertR, bool invertG, bool invertB) {
     if(mChannels.size() == 0) {
         return cv::Mat();
     }
@@ -195,9 +195,9 @@ cv::Mat MeteorImage::getRGBImage(APIDs redAPID, APIDs greenAPID, APIDs blueAPID,
             uint off = x + y * MCU_PER_LINE * 8;
             cv::Vec3b& color = image.at<cv::Vec3b>(cv::Point(x, y));
 
-            color[0] = mChannels[off][blueAPID - 64];
-            color[1] = mChannels[off][greenAPID - 64];
-            color[2] = mChannels[off][redAPID - 64];
+            color[0] = invertB ? ~mChannels[off][blueAPID - 64] : mChannels[off][blueAPID - 64];
+            color[1] = invertG ? ~mChannels[off][greenAPID - 64] : mChannels[off][greenAPID - 64];
+            color[2] = invertR ? ~mChannels[off][redAPID - 64] : mChannels[off][redAPID - 64];
         }
     }
 
