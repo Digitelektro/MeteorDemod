@@ -494,6 +494,36 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    if(mSettings.generateComposite224()) {
+        std::list<cv::Mat> images224;
+        std::list<PixelGeolocationCalculator> geolocationCalculators224;
+        searchForImages(images224, geolocationCalculators224, "224");
+
+        if(images224.size() > 1 && images224.size() == geolocationCalculators224.size()) {
+            SpreadImage spreadImage;
+            if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
+                for(auto& img : images224) {
+                    img = ThreatImage::sharpen(img);
+                }
+            }
+
+            if(mSettings.compositeEquadistantProjection()) {
+                cv::Mat composite = spreadImage.equidistantProjection(images224, geolocationCalculators224, mSettings.getCompositeProjectionScale(), [](float progress) {
+                    std::cout << "Generate equidistant channel 224 composite image " << (int)progress << "% \t\t\r" << std::flush;
+                });
+                std::cout << std::endl;
+                saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_224_composite.jpg", composite);
+            }
+            if(mSettings.compositeMercatorProjection()) {
+                cv::Mat composite = spreadImage.mercatorProjection(images224, geolocationCalculators224, mSettings.getCompositeProjectionScale(), [](float progress) {
+                    std::cout << "Generate mercator channel 224 composite image " << (int)progress << "% \t\t\r" << std::flush;
+                });
+                std::cout << std::endl;
+                saveImage(mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_224_composite.jpg", composite);
+            }
+        }
+    }
+
     if(mSettings.generateComposite68()) {
         std::list<cv::Mat> images68;
         std::list<PixelGeolocationCalculator> geolocationCalculators68;
