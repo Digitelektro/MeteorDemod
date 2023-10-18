@@ -201,14 +201,12 @@ int main(int argc, char* argv[]) {
             saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
             saveImage(mSettings.getOutputPath() + fileNameDate + "_67.bmp", ch67);
 
+            irImage = ThreatImage::equalize(irImage);
             cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
             cv::Mat thermalImage = ThreatImage::irToTemperature(irImage, thermalRef);
             imagesToSpread.push_back(ImageForSpread(thermalImage, "thermal_"));
 
             irImage = ThreatImage::invertIR(irImage);
-            irImage = ThreatImage::gamma(irImage, 1.4);
-            irImage = ThreatImage::contrast(irImage, 1.3, -40);
-            irImage = ThreatImage::sharpen(irImage);
             imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
 
             if(mSettings.addRainOverlay()) {
