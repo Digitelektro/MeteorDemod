@@ -130,9 +130,9 @@ class Settings {
         ini::extract(mIniParser.sections[getSateliteName()]["Yaw"], yaw, 0.0f);
         return yaw;
     }
-    int getTimeOffsetSec() {
-        int timeOffset;
-        ini::extract(mIniParser.sections["Program"]["TimeOffset"], timeOffset, 0);
+    float getTimeOffsetMs() {
+        float timeOffset;
+        ini::extract(mIniParser.sections[getSateliteName()]["TimeOffset"], timeOffset, 0.0f);
         return timeOffset;
     }
 

@@ -125,8 +125,8 @@ int main(int argc, char* argv[]) {
         TimeSpan passStartTime = meteorDecoder.getFirstTimeStamp();
         TimeSpan passLength = meteorDecoder.getLastTimeStamp() - passStartTime;
 
-        passStartTime = passStartTime.Add(TimeSpan(0, 0, mSettings.getTimeOffsetSec()));
-        passLength = passLength.Add(TimeSpan(0, 0, mSettings.getTimeOffsetSec()));
+        passStartTime = passStartTime.Add(TimeSpan(0, 0, 0, 0, static_cast<int>(mSettings.getTimeOffsetMs() * 1000)));
+        passLength = passLength.Add(TimeSpan(0, 0, 0, 0, static_cast<int>(mSettings.getTimeOffsetMs() * 1000)));
 
         passDate = passDate.AddHours(3); // Convert UTC 0 to Moscow time zone (UTC + 3)
 
