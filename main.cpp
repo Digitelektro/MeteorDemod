@@ -125,8 +125,8 @@ int main(int argc, char* argv[]) {
         TimeSpan passStartTime = meteorDecoder.getFirstTimeStamp();
         TimeSpan passLength = meteorDecoder.getLastTimeStamp() - passStartTime;
 
-        passStartTime = passStartTime.Add(TimeSpan(0, 0, mSettings.getTimeOffsetSec()));
-        passLength = passLength.Add(TimeSpan(0, 0, mSettings.getTimeOffsetSec()));
+        passStartTime = passStartTime.Add(TimeSpan(0, 0, 0, 0, static_cast<int>(mSettings.getTimeOffsetMs() * 1000)));
+        passLength = passLength.Add(TimeSpan(0, 0, 0, 0, static_cast<int>(mSettings.getTimeOffsetMs() * 1000)));
 
         passDate = passDate.AddHours(3); // Convert UTC 0 to Moscow time zone (UTC + 3)
 
@@ -201,14 +201,12 @@ int main(int argc, char* argv[]) {
             saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
             saveImage(mSettings.getOutputPath() + fileNameDate + "_67.bmp", ch67);
 
+            irImage = ThreatImage::equalize(irImage);
             cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
             cv::Mat thermalImage = ThreatImage::irToTemperature(irImage, thermalRef);
             imagesToSpread.push_back(ImageForSpread(thermalImage, "thermal_"));
 
             irImage = ThreatImage::invertIR(irImage);
-            irImage = ThreatImage::gamma(irImage, 1.4);
-            irImage = ThreatImage::contrast(irImage, 1.3, -40);
-            irImage = ThreatImage::sharpen(irImage);
             imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
 
             if(mSettings.addRainOverlay()) {
@@ -490,6 +488,36 @@ int main(int argc, char* argv[]) {
                 });
                 std::cout << std::endl;
                 saveImage(mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_221_composite.jpg", composite);
+            }
+        }
+    }
+
+    if(mSettings.generateComposite224()) {
+        std::list<cv::Mat> images224;
+        std::list<PixelGeolocationCalculator> geolocationCalculators224;
+        searchForImages(images224, geolocationCalculators224, "224");
+
+        if(images224.size() > 1 && images224.size() == geolocationCalculators224.size()) {
+            SpreadImage spreadImage;
+            if(mSettings.compositeEquadistantProjection() || mSettings.compositeMercatorProjection()) {
+                for(auto& img : images224) {
+                    img = ThreatImage::sharpen(img);
+                }
+            }
+
+            if(mSettings.compositeEquadistantProjection()) {
+                cv::Mat composite = spreadImage.equidistantProjection(images224, geolocationCalculators224, mSettings.getCompositeProjectionScale(), [](float progress) {
+                    std::cout << "Generate equidistant channel 224 composite image " << (int)progress << "% \t\t\r" << std::flush;
+                });
+                std::cout << std::endl;
+                saveImage(mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_224_composite.jpg", composite);
+            }
+            if(mSettings.compositeMercatorProjection()) {
+                cv::Mat composite = spreadImage.mercatorProjection(images224, geolocationCalculators224, mSettings.getCompositeProjectionScale(), [](float progress) {
+                    std::cout << "Generate mercator channel 224 composite image " << (int)progress << "% \t\t\r" << std::flush;
+                });
+                std::cout << std::endl;
+                saveImage(mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_224_composite.jpg", composite);
             }
         }
     }

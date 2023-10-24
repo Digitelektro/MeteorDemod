@@ -35,7 +35,7 @@ class MeteorImage {
     MeteorImage();
     virtual ~MeteorImage();
 
-    cv::Mat getRGBImage(APIDs redAPID, APIDs greenAPID, APIDs blueAPID, bool fillBlackLines = true);
+    cv::Mat getRGBImage(APIDs redAPID, APIDs greenAPID, APIDs blueAPID, bool fillBlackLines = true, bool invertR = false, bool invertG = false, bool invertB = false);
     cv::Mat getChannelImage(APIDs APID, bool fillBlackLines = true);
 
   public:
