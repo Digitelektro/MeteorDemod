@@ -1,12 +1,13 @@
 #include "meteordecoder.h"
 
+#include <iostream>
 
 MeteorDecoder::MeteorDecoder(bool deInterleave, bool oqpsk, bool differentialDecode)
     : mDeInterleave(deInterleave)
     , mDifferentialDecode(differentialDecode)
     , mCorrelation(differentialDecode ? sSynchWordOQPSK : sSynchWordQPSK, oqpsk) {}
 
-size_t MeteorDecoder::decode(uint8_t* softBits, size_t length) {
+size_t MeteorDecoder::decode(uint8_t* softBits, size_t length, std::function<void(const uint8_t* cadu, std::size_t size)> callback) {
     size_t decodedPacketCounter = 0;
     size_t syncWordFound = 0;
 
@@ -17,7 +18,7 @@ size_t MeteorDecoder::decode(uint8_t* softBits, size_t length) {
         length = outLen;
     }
 
-    mCorrelation.correlate(softBits, length, [&softBits, length, &decodedPacketCounter, &syncWordFound, this](Correlation::CorellationResult correlationResult, Correlation::PhaseShift phaseShift) {
+    mCorrelation.correlate(softBits, length, [&softBits, length, &decodedPacketCounter, &syncWordFound, &callback, this](Correlation::CorellationResult correlationResult, Correlation::PhaseShift phaseShift) {
         bool packetOk;
         uint32_t processedBits = 0;
 
@@ -28,7 +29,7 @@ size_t MeteorDecoder::decode(uint8_t* softBits, size_t length) {
                 return processedBits;
             }
 
-            memcpy(mDataTodecode, &softBits[correlationResult.pos + processedBits], 16384);
+            std::copy(&softBits[correlationResult.pos + processedBits], &softBits[correlationResult.pos + processedBits] + 16384, mDataTodecode);
 
             mCorrelation.rotateSoftIqInPlace(mDataTodecode, 16384, phaseShift);
 
@@ -53,7 +54,7 @@ size_t MeteorDecoder::decode(uint8_t* softBits, size_t length) {
             for(int i = 0; i < 4; i++) {
                 mReedSolomon.deinterleave(mViterbiResult + 4, i, 4);
                 rsResult[i] = mReedSolomon.decode();
-                mReedSolomon.interleave(mDecodedPacket, i, 4);
+                mReedSolomon.interleave(mDecodedPacket + 4, i, 4);
             }
 
             std::cout << "SyncWordFound:" << syncWordFound << " | Decoded Packets:" << decodedPacketCounter << " | Current Pos:" << (correlationResult.pos + processedBits) << " | Phase:" << phaseShift << " | synch:" << std::hex
@@ -63,7 +64,8 @@ size_t MeteorDecoder::decode(uint8_t* softBits, size_t length) {
             packetOk = (rsResult[0] != -1) && (rsResult[1] != -1) && (rsResult[2] != -1) && (rsResult[3] != -1);
 
             if(packetOk) {
-                parseFrame(mDecodedPacket, 892);
+                std::copy(mViterbiResult, mViterbiResult + 4, mDecodedPacket);
+                callback(mDecodedPacket, sizeof(mDecodedPacket));
                 decodedPacketCounter++;
                 processedBits += 16384;
             }

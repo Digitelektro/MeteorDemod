@@ -14,6 +14,7 @@
 #include "GIS/shapereader.h"
 #include "GIS/shaperenderer.h"
 #include "meteordecoder.h"
+#include "packetparser.h"
 #include "pixelgeolocationcalculator.h"
 #include "settings.h"
 #include "spreadimage.h"
@@ -39,6 +40,7 @@ void writeSymbolToFile(std::ostream& stream, const Wavreader::complex& sample);
 static std::mutex saveImageMutex;
 static Settings& mSettings = Settings::getInstance();
 static ThreadPool mThreadPool(std::thread::hardware_concurrency());
+static PacketParser mMeteorPacketParser;
 
 int main(int argc, char* argv[]) {
     mSettings.parseArgs(argc, argv);
@@ -93,24 +95,58 @@ int main(int argc, char* argv[]) {
             inputPath = outputPath;
         }
 
-        std::ifstream binaryData(inputPath, std::ifstream::binary);
-        if(!binaryData) {
-            throw std::runtime_error("Opening input file failed");
+        if(inputPath.substr(inputPath.find_last_of(".") + 1) == "cadu") {
+            std::cout << "Input is a .cadu file, processing it..." << std::endl;
+
+            std::ifstream caduBitsStream(inputPath, std::ifstream::binary);
+            if(!caduBitsStream) {
+                throw std::runtime_error("Opening input file failed");
+            }
+
+            uint8_t caduBuffer[1024];
+            while(!caduBitsStream.eof()) {
+                caduBitsStream.read(reinterpret_cast<char*>(caduBuffer), sizeof(caduBuffer));
+                if(caduBitsStream.gcount() == sizeof(caduBuffer)) {
+                    mMeteorPacketParser.parseFrame(caduBuffer + 4, 892);
+                    std::cout << "Number of readed cadu: " << (decodedPacketCounter++) + 1 << "\t\t\r";
+                }
+            }
+            std::cout << std::endl;
+
+            if(caduBitsStream && caduBitsStream.is_open()) {
+                caduBitsStream.close();
+            }
+        } else {
+            std::ifstream softbitsStream(inputPath, std::ifstream::binary);
+            if(!softbitsStream) {
+                throw std::runtime_error("Opening input file failed");
+            }
+
+            const std::string outputPath = inputPath.substr(0, inputPath.find_last_of(".") + 1) + "cadu";
+            std::ofstream caduFileStream;
+            caduFileStream.open(outputPath, std::ios::binary);
+
+            softbitsStream.seekg(0, softbitsStream.end);
+            int64_t fileLength = softbitsStream.tellg();
+            softbitsStream.seekg(0, softbitsStream.beg);
+
+            auto softBits = std::make_unique<uint8_t[]>(fileLength);
+
+            softbitsStream.read(reinterpret_cast<char*>(softBits.get()), fileLength);
+            decodedPacketCounter = meteorDecoder.decode(softBits.get(), fileLength, [&caduFileStream](const uint8_t* cadu, std::size_t size) {
+                if(size == 1024) {
+                    mMeteorPacketParser.parseFrame(cadu + 4, 892);
+                    caduFileStream.write(reinterpret_cast<const char*>(cadu), size);
+                }
+            });
+
+            if(softbitsStream && softbitsStream.is_open()) {
+                softbitsStream.close();
+            }
+            if(caduFileStream && caduFileStream.is_open()) {
+                caduFileStream.close();
+            }
         }
-
-        binaryData.seekg(0, binaryData.end);
-        int64_t fileLength = binaryData.tellg();
-        binaryData.seekg(0, binaryData.beg);
-
-        auto softBits = std::make_unique<uint8_t[]>(fileLength);
-
-        binaryData.read(reinterpret_cast<char*>(softBits.get()), fileLength);
-        decodedPacketCounter = meteorDecoder.decode(softBits.get(), fileLength);
-
-        if(binaryData && binaryData.is_open()) {
-            binaryData.close();
-        }
-
     } catch(std::exception ex) {
         std::cout << ex.what() << std::endl;
     }
@@ -122,8 +158,8 @@ int main(int argc, char* argv[]) {
 
         DateTime passStart;
         DateTime passDate = mSettings.getPassDate();
-        TimeSpan passStartTime = meteorDecoder.getFirstTimeStamp();
-        TimeSpan passLength = meteorDecoder.getLastTimeStamp() - passStartTime;
+        TimeSpan passStartTime = mMeteorPacketParser.getFirstTimeStamp();
+        TimeSpan passLength = mMeteorPacketParser.getLastTimeStamp() - passStartTime;
 
         passStartTime = passStartTime.Add(TimeSpan(0, 0, 0, 0, static_cast<int>(mSettings.getTimeOffsetMs() * 1000)));
         passLength = passLength.Add(TimeSpan(0, 0, 0, 0, static_cast<int>(mSettings.getTimeOffsetMs() * 1000)));
@@ -140,10 +176,10 @@ int main(int argc, char* argv[]) {
 
         std::list<ImageForSpread> imagesToSpread;
 
-        if(meteorDecoder.isChannel64Available() && meteorDecoder.isChannel65Available() && meteorDecoder.isChannel68Available()) {
-            cv::Mat threatedImage1 = meteorDecoder.getRGBImage(PacketParser::APID65, PacketParser::APID65, PacketParser::APID64, mSettings.fillBackLines());
-            cv::Mat irImage = meteorDecoder.getChannelImage(PacketParser::APID68, mSettings.fillBackLines());
-            cv::Mat threatedImage2 = meteorDecoder.getRGBImage(PacketParser::APID64, PacketParser::APID65, PacketParser::APID68, mSettings.fillBackLines());
+        if(mMeteorPacketParser.isChannel64Available() && mMeteorPacketParser.isChannel65Available() && mMeteorPacketParser.isChannel68Available()) {
+            cv::Mat threatedImage1 = mMeteorPacketParser.getRGBImage(PacketParser::APID65, PacketParser::APID65, PacketParser::APID64, mSettings.fillBackLines());
+            cv::Mat irImage = mMeteorPacketParser.getChannelImage(PacketParser::APID68, mSettings.fillBackLines());
+            cv::Mat threatedImage2 = mMeteorPacketParser.getRGBImage(PacketParser::APID64, PacketParser::APID65, PacketParser::APID68, mSettings.fillBackLines());
 
             cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
             cv::Mat rainOverlay = ThreatImage::irToRain(irImage, rainRef);
@@ -166,9 +202,9 @@ int main(int argc, char* argv[]) {
                 std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
             }
 
-            cv::Mat ch64 = meteorDecoder.getChannelImage(PacketParser::APID64, mSettings.fillBackLines());
-            cv::Mat ch65 = meteorDecoder.getChannelImage(PacketParser::APID65, mSettings.fillBackLines());
-            cv::Mat ch68 = meteorDecoder.getChannelImage(PacketParser::APID68, mSettings.fillBackLines());
+            cv::Mat ch64 = mMeteorPacketParser.getChannelImage(PacketParser::APID64, mSettings.fillBackLines());
+            cv::Mat ch65 = mMeteorPacketParser.getChannelImage(PacketParser::APID65, mSettings.fillBackLines());
+            cv::Mat ch68 = mMeteorPacketParser.getChannelImage(PacketParser::APID68, mSettings.fillBackLines());
 
             saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
             saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
@@ -188,11 +224,11 @@ int main(int argc, char* argv[]) {
                 imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(irImage, rainOverlay), "rain_IR_"));
             }
 
-        } else if(meteorDecoder.isChannel64Available() && meteorDecoder.isChannel65Available() && meteorDecoder.isChannel67Available()) {
-            cv::Mat ch64 = meteorDecoder.getChannelImage(PacketParser::APID64, mSettings.fillBackLines());
-            cv::Mat ch65 = meteorDecoder.getChannelImage(PacketParser::APID65, mSettings.fillBackLines());
-            cv::Mat ch67 = meteorDecoder.getChannelImage(PacketParser::APID67, mSettings.fillBackLines());
-            cv::Mat irImage = meteorDecoder.getChannelImage(PacketParser::APID67, mSettings.fillBackLines());
+        } else if(mMeteorPacketParser.isChannel64Available() && mMeteorPacketParser.isChannel65Available() && mMeteorPacketParser.isChannel67Available()) {
+            cv::Mat ch64 = mMeteorPacketParser.getChannelImage(PacketParser::APID64, mSettings.fillBackLines());
+            cv::Mat ch65 = mMeteorPacketParser.getChannelImage(PacketParser::APID65, mSettings.fillBackLines());
+            cv::Mat ch67 = mMeteorPacketParser.getChannelImage(PacketParser::APID67, mSettings.fillBackLines());
+            cv::Mat irImage = mMeteorPacketParser.getChannelImage(PacketParser::APID67, mSettings.fillBackLines());
 
             cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
             cv::Mat rainOverlay = ThreatImage::irToRain(irImage, rainRef);
@@ -212,8 +248,8 @@ int main(int argc, char* argv[]) {
             if(mSettings.addRainOverlay()) {
                 imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(irImage, rainOverlay), "rain_IR_"));
             }
-            cv::Mat image221 = meteorDecoder.getRGBImage(PacketParser::APID65, PacketParser::APID65, PacketParser::APID64, mSettings.fillBackLines());
-            cv::Mat image224 = meteorDecoder.getRGBImage(PacketParser::APID65, PacketParser::APID65, PacketParser::APID67, mSettings.fillBackLines());
+            cv::Mat image221 = mMeteorPacketParser.getRGBImage(PacketParser::APID65, PacketParser::APID65, PacketParser::APID64, mSettings.fillBackLines());
+            cv::Mat image224 = mMeteorPacketParser.getRGBImage(PacketParser::APID65, PacketParser::APID65, PacketParser::APID67, mSettings.fillBackLines());
 
             if(!ThreatImage::isNightPass(image221, mSettings.getNightPassTreshold())) {
                 image221 = ThreatImage::sharpen(image221);
@@ -234,9 +270,9 @@ int main(int argc, char* argv[]) {
                 std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
             }
 
-        } else if(meteorDecoder.isChannel64Available() && meteorDecoder.isChannel65Available() && meteorDecoder.isChannel66Available()) {
-            cv::Mat threatedImage1 = meteorDecoder.getRGBImage(PacketParser::APID66, PacketParser::APID65, PacketParser::APID64, mSettings.fillBackLines());
-            cv::Mat threatedImage2 = meteorDecoder.getRGBImage(PacketParser::APID65, PacketParser::APID65, PacketParser::APID64, mSettings.fillBackLines());
+        } else if(mMeteorPacketParser.isChannel64Available() && mMeteorPacketParser.isChannel65Available() && mMeteorPacketParser.isChannel66Available()) {
+            cv::Mat threatedImage1 = mMeteorPacketParser.getRGBImage(PacketParser::APID66, PacketParser::APID65, PacketParser::APID64, mSettings.fillBackLines());
+            cv::Mat threatedImage2 = mMeteorPacketParser.getRGBImage(PacketParser::APID65, PacketParser::APID65, PacketParser::APID64, mSettings.fillBackLines());
 
             if(!ThreatImage::isNightPass(threatedImage1, mSettings.getNightPassTreshold())) {
                 threatedImage1 = ThreatImage::sharpen(threatedImage1);
@@ -251,22 +287,22 @@ int main(int argc, char* argv[]) {
                 std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
             }
 
-            meteorDecoder.getChannelImage(PacketParser::APID64, mSettings.fillBackLines());
-            meteorDecoder.getChannelImage(PacketParser::APID65, mSettings.fillBackLines());
-            meteorDecoder.getChannelImage(PacketParser::APID66, mSettings.fillBackLines());
+            mMeteorPacketParser.getChannelImage(PacketParser::APID64, mSettings.fillBackLines());
+            mMeteorPacketParser.getChannelImage(PacketParser::APID65, mSettings.fillBackLines());
+            mMeteorPacketParser.getChannelImage(PacketParser::APID66, mSettings.fillBackLines());
 
-            cv::Mat ch64 = meteorDecoder.getChannelImage(PacketParser::APID64, mSettings.fillBackLines());
-            cv::Mat ch65 = meteorDecoder.getChannelImage(PacketParser::APID65, mSettings.fillBackLines());
-            cv::Mat ch66 = meteorDecoder.getChannelImage(PacketParser::APID66, mSettings.fillBackLines());
+            cv::Mat ch64 = mMeteorPacketParser.getChannelImage(PacketParser::APID64, mSettings.fillBackLines());
+            cv::Mat ch65 = mMeteorPacketParser.getChannelImage(PacketParser::APID65, mSettings.fillBackLines());
+            cv::Mat ch66 = mMeteorPacketParser.getChannelImage(PacketParser::APID66, mSettings.fillBackLines());
 
             saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
             saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
             saveImage(mSettings.getOutputPath() + fileNameDate + "_66.bmp", ch66);
-        } else if(meteorDecoder.isChannel67Available() && meteorDecoder.isChannel68Available() && meteorDecoder.isChannel69Available()) {
-            cv::Mat ch67 = meteorDecoder.getChannelImage(PacketParser::APID67, mSettings.fillBackLines());
-            cv::Mat ch68 = meteorDecoder.getChannelImage(PacketParser::APID68, mSettings.fillBackLines());
-            cv::Mat ch69 = meteorDecoder.getChannelImage(PacketParser::APID69, mSettings.fillBackLines());
-            cv::Mat ch654 = meteorDecoder.getRGBImage(PacketParser::APID67, PacketParser::APID68, PacketParser::APID69, mSettings.fillBackLines());
+        } else if(mMeteorPacketParser.isChannel67Available() && mMeteorPacketParser.isChannel68Available() && mMeteorPacketParser.isChannel69Available()) {
+            cv::Mat ch67 = mMeteorPacketParser.getChannelImage(PacketParser::APID67, mSettings.fillBackLines());
+            cv::Mat ch68 = mMeteorPacketParser.getChannelImage(PacketParser::APID68, mSettings.fillBackLines());
+            cv::Mat ch69 = mMeteorPacketParser.getChannelImage(PacketParser::APID69, mSettings.fillBackLines());
+            cv::Mat ch654 = mMeteorPacketParser.getRGBImage(PacketParser::APID67, PacketParser::APID68, PacketParser::APID69, mSettings.fillBackLines());
 
             saveImage(mSettings.getOutputPath() + fileNameDate + "_67.bmp", ch67);
             saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
@@ -291,8 +327,8 @@ int main(int argc, char* argv[]) {
                 imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(ch68, rainOverlay), "rain_IR_"));
             }
 
-        } else if(meteorDecoder.isChannel64Available() && meteorDecoder.isChannel65Available()) {
-            cv::Mat threatedImage = meteorDecoder.getRGBImage(PacketParser::APID65, PacketParser::APID65, PacketParser::APID64, mSettings.fillBackLines());
+        } else if(mMeteorPacketParser.isChannel64Available() && mMeteorPacketParser.isChannel65Available()) {
+            cv::Mat threatedImage = mMeteorPacketParser.getRGBImage(PacketParser::APID65, PacketParser::APID65, PacketParser::APID64, mSettings.fillBackLines());
 
             if(!ThreatImage::isNightPass(threatedImage, mSettings.getNightPassTreshold())) {
                 threatedImage = ThreatImage::sharpen(threatedImage);
@@ -303,13 +339,13 @@ int main(int argc, char* argv[]) {
                 std::cout << "Night pass, RGB image skipped, threshold set to: " << mSettings.getNightPassTreshold() << std::endl;
             }
 
-            cv::Mat ch64 = meteorDecoder.getChannelImage(PacketParser::APID64, mSettings.fillBackLines());
-            cv::Mat ch65 = meteorDecoder.getChannelImage(PacketParser::APID65, mSettings.fillBackLines());
+            cv::Mat ch64 = mMeteorPacketParser.getChannelImage(PacketParser::APID64, mSettings.fillBackLines());
+            cv::Mat ch65 = mMeteorPacketParser.getChannelImage(PacketParser::APID65, mSettings.fillBackLines());
 
             saveImage(mSettings.getOutputPath() + fileNameDate + "_64.bmp", ch64);
             saveImage(mSettings.getOutputPath() + fileNameDate + "_65.bmp", ch65);
-        } else if(meteorDecoder.isChannel68Available()) {
-            cv::Mat ch68 = meteorDecoder.getChannelImage(PacketParser::APID68, mSettings.fillBackLines());
+        } else if(mMeteorPacketParser.isChannel68Available()) {
+            cv::Mat ch68 = mMeteorPacketParser.getChannelImage(PacketParser::APID68, mSettings.fillBackLines());
             saveImage(mSettings.getOutputPath() + fileNameDate + "_68.bmp", ch68);
 
             if(mSettings.addRainOverlay()) {
