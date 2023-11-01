@@ -13,6 +13,10 @@ if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
 endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+endif()
+
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.9.2")
@@ -51,47 +55,29 @@ add_definitions(-D_USE_MATH_DEFINES -D_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATI
 add_executable(meteordemod 
     main.cpp
     imageproc/spreadimage.cpp
-    imageproc/spreadimage.h
     imageproc/threatimage.cpp
-    imageproc/threatimage.h
-    decoder/bitio.cpp
-    decoder/bitio.h
     decoder/correlation.cpp
-    decoder/correlation.h
-    decoder/meteorimage.cpp
-    decoder/meteorimage.h
-    decoder/packetparser.cpp
-    decoder/packetparser.h
     decoder/reedsolomon.cpp
-    decoder/reedsolomon.h
     decoder/viterbi.cpp
-    decoder/viterbi.h
     decoder/deinterleaver.cpp
     decoder/meteordecoder.cpp
-    decoder/meteordecoder.h
+    decoder/protocol/ccsds.cpp
+    decoder/protocol/vcdu.cpp
+    decoder/protocol/lrpt/decoder.cpp
+    decoder/protocol/lrpt/msumr/segment.cpp
+    decoder/protocol/lrpt/msumr/bitio.cpp
+    decoder/protocol/lrpt/msumr/image.cpp
     common/settings.cpp
-    common/settings.h
-    common/version.h
     tools/matrix.cpp
-    tools/matrix.h
     tools/tlereader.cpp
-    tools/tlereader.h
     tools/vector.cpp
-    tools/vector.h
     tools/pixelgeolocationcalculator.cpp
-    tools/pixelgeolocationcalculator.h
     tools/databuffer.cpp
-    tools/databuffer.h
     tools/iniparser.cpp
-    tools/iniparser.h
     tools/threadpool.cpp
-    tools/threadpool.h
     GIS/shapereader.cpp
-    GIS/shapereader.h
     GIS/shaperenderer.cpp
-    GIS/shaperenderer.h
     GIS/dbfilereader.cpp
-    GIS/dbfilereader.h
     DSP/meteordemodulator.cpp
     DSP/agc.cpp
     DSP/pll.cpp
