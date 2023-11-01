@@ -58,7 +58,7 @@ size_t MeteorDecoder::decode(uint8_t* softBits, size_t length, std::function<voi
             }
 
             std::cout << "SyncWordFound:" << syncWordFound << " | Decoded Packets:" << decodedPacketCounter << " | Current Pos:" << (correlationResult.pos + processedBits) << " | Phase:" << phaseShift << " | synch:" << std::hex
-                      << last_sync_ << " | RS: (" << std::dec << rsResult[0] << ", " << rsResult[1] << ", " << rsResult[2] << ", " << rsResult[3] << ")"
+                      << last_sync_ << " | BER: " << mViterbi.getLastBER() << " | RS: (" << std::dec << rsResult[0] << ", " << rsResult[1] << ", " << rsResult[2] << ", " << rsResult[3] << ")"
                       << "\t\t\r";
 
             packetOk = (rsResult[0] != -1) && (rsResult[1] != -1) && (rsResult[2] != -1) && (rsResult[3] != -1);
