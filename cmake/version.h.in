@@ -1,0 +1,3 @@
+#define VERSION_MAJOR @meteordemod_VERSION_MAJOR@
+#define VERSION_MINOR @meteordemod_VERSION_MINOR@
+#define VERSION_FIX @meteordemod_VERSION_PATCH@

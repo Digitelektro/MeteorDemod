@@ -2,7 +2,15 @@ cmake_minimum_required(VERSION 3.5)
 
 include(ExternalProject)
 
-project(Meteordemod LANGUAGES CXX)
+project(meteordemod
+    VERSION 2.6.0
+    LANGUAGES CXX
+)
+
+configure_file(cmake/version.h.in version.h)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DVERSION_BUILD=${VERSION_BUILD_NUMBER}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVERSION_BUILD=${VERSION_BUILD_NUMBER}")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -104,6 +112,10 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/external/libcorrect/include
 )
 
+target_include_directories(meteordemod PUBLIC
+    "${PROJECT_BINARY_DIR}"
+)
+
 add_dependencies(meteordemod sgp4)
 add_dependencies(meteordemod libcorrect)    
 
@@ -136,9 +148,6 @@ if(UNIX AND NOT APPLE)
     find_file (DEBIAN_FOUND debian_version debconf.conf PATHS /etc)
     if (DEBIAN_FOUND)
         SET(CPACK_GENERATOR "DEB")
-        SET(CPACK_PACKAGE_VERSION_MAJOR "2")
-        SET(CPACK_PACKAGE_VERSION_MINOR "5")
-        SET(CPACK_PACKAGE_VERSION_PATCH "7")
         SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Digitelektro")
         SET(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/Digitelektro/MeteorDemod")
         SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Russian Meteor M2 weather satellite data decoder")
