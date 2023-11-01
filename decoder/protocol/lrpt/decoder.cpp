@@ -114,7 +114,7 @@ void Decoder::parse70(const CCSDS& ccsds) {
         mFirstHeightAtTimeStamp = getLastY();
     }
 
-    std::cout << "Onboard time: " << h << ":" << m << ":" << s << "." << ms << std::endl;
+    // std::cout << "Onboard time: " << h << ":" << m << ":" << s << "." << ms << std::endl;
 }
 
 } // namespace lrpt
