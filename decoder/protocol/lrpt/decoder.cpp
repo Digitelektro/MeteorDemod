@@ -33,7 +33,7 @@ void Decoder::process(const uint8_t* cadu) {
                     // Current frame doesn't have header
                     mCcsdsPayload.insert(mCcsdsPayload.end(), cadu, cadu + cPDUDataSize);
                 } else {
-                    mCcsdsPayload.insert(mCcsdsPayload.end(), cadu, cadu + firstHeaderPointer + 1);
+                    mCcsdsPayload.insert(mCcsdsPayload.end(), cadu, cadu + firstHeaderPointer);
                     parsePartial(mCcsdsPayload.data(), mCcsdsPayload.size());
                     mCcsdsPayload.clear();
                 }

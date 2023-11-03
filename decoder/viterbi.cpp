@@ -44,7 +44,7 @@ void Viterbi::calculateBer(const uint8_t* original, const uint8_t* reEncoded, ss
         }
     }
 
-    if(errors == 0) {
+    if(total == 0) {
         mLastBER = 0.0f;
     } else {
         mLastBER = (errors / total);
