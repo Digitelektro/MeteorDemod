@@ -24,5 +24,15 @@ void ReedSolomon::interleave(uint8_t* output, int pos, int n) {
 }
 
 int ReedSolomon::decode() {
-    return correct_reed_solomon_decode(mpReedSolomon, mWorkBuffer, sizeof(mWorkBuffer), mResultBuffer);
+    int result = correct_reed_solomon_decode(mpReedSolomon, mWorkBuffer, sizeof(mWorkBuffer), mResultBuffer);
+    if(result != -1) {
+        result = 0;
+        for(int i = 0; i < 223; i++) {
+            if(mWorkBuffer[i] != mResultBuffer[i]) {
+                result++;
+            }
+        }
+    }
+
+    return result;
 }
