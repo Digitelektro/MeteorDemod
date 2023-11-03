@@ -1,41 +1,36 @@
-#ifndef METEORIMAGE_H
-#define METEORIMAGE_H
+#pragma once
 
 #include <array>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <vector>
 
+#include "segment.h"
 #include "threatimage.h"
 
-// Based on: https://github.com/artlav/meteor_decoder/blob/master/met_jpg.pas
+namespace decoder {
+namespace protocol {
+namespace lrpt {
+namespace msumr {
+
+class Image {
+    struct ac_table_rec {
+        int run;
+        int size;
+        int len;
+        uint32_t mask;
+        uint32_t code;
+    };
 
 
-#ifdef __GNUC__
-#define PACK(__Declaration__) __Declaration__ __attribute__((__packed__))
-#endif
-
-#ifdef _MSC_VER
-#define PACK(__Declaration__) __pragma(pack(push, 1)) __Declaration__ __pragma(pack(pop))
-#endif
-
-struct ac_table_rec {
-    int run;
-    int size;
-    int len;
-    uint32_t mask;
-    uint32_t code;
-};
-
-class MeteorImage {
   public:
     enum APIDs { APID64 = 64, APID65, APID66, APID67, APID68, APID69 };
 
   public:
-    MeteorImage();
-    virtual ~MeteorImage();
+    Image();
+    virtual ~Image();
 
-    cv::Mat getRGBImage(APIDs redAPID, APIDs greenAPID, APIDs blueAPID, bool fillBlackLines = true);
+    cv::Mat getRGBImage(APIDs redAPID, APIDs greenAPID, APIDs blueAPID, bool fillBlackLines = true, bool invertR = false, bool invertG = false, bool invertB = false);
     cv::Mat getChannelImage(APIDs APID, bool fillBlackLines = true);
 
   public:
@@ -59,6 +54,7 @@ class MeteorImage {
     }
 
   protected:
+    void decode(uint16_t apid, uint16_t packetCount, const Segment& segment);
     void decMCUs(const uint8_t* packet, int len, int apd, int pck_cnt, int mcu_id, uint8_t q);
 
     int getLastY() const {
@@ -94,6 +90,14 @@ class MeteorImage {
     std::array<ac_table_rec, 162> mAcTable{};
     std::array<std::array<float, 8>, 8> mCosine{};
     std::array<float, 8> mAlpha;
+
+  private:
+    static constexpr uint16_t cMCUPerPacket = 14;
+    static constexpr uint16_t cMCUPerLine = 196;
 };
 
-#endif // METEORIMAGE_H
+
+} // namespace msumr
+} // namespace lrpt
+} // namespace protocol
+} // namespace decoder

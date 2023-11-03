@@ -1,4 +1,4 @@
-#include "meteorimage.h"
+#include "image.h"
 
 #include <cmath>
 #include <iostream>
@@ -7,8 +7,10 @@
 
 #include "bitio.h"
 
-const uint MCU_PER_PACKET = 14;
-const uint MCU_PER_LINE = 196;
+namespace decoder {
+namespace protocol {
+namespace lrpt {
+namespace msumr {
 
 const std::array<uint8_t, 64> STANDARD_QUANTIZATION_TABLE{16, 11, 10, 16, 24, 40,  51,  61, 12, 12, 14, 19, 26, 58,  60,  55, 14, 13, 16, 24, 40,  57,  69,  56,  14, 17, 22, 29, 51,  87,  80,  62,
                                                           18, 22, 37, 56, 68, 109, 103, 77, 24, 35, 55, 64, 81, 104, 113, 92, 49, 64, 78, 87, 103, 121, 120, 101, 72, 92, 95, 98, 112, 100, 103, 99};
@@ -25,7 +27,7 @@ const std::array<uint8_t, 178> T_AC_0{0,   2,   1,   3,   3,   2,   4,   3,   5,
 const std::array<int, 12> DC_CAT_OFF{2, 3, 3, 3, 3, 3, 4, 5, 6, 7, 8, 9};
 
 
-MeteorImage::MeteorImage()
+Image::Image()
     : mIsChannel64Available(false)
     , mIsChannel65Available(false)
     , mIsChannel66Available(false)
@@ -39,23 +41,18 @@ MeteorImage::MeteorImage()
     initCos();
 }
 
-void MeteorImage::initCos() {
+void Image::initCos() {
     for(int y = 0; y < 8; y++) {
         for(int x = 0; x < 8; x++) {
             mCosine[y][x] = cos(M_PI / 16 * (2 * y + 1) * x);
         }
     }
     for(int x = 0; x < 8; x++) {
-        if(x == 0)
-            mAlpha[x] = 1 / sqrt(2);
-        else
-            mAlpha[x] = 1;
+        mAlpha[x] = (x == 0) ? 1.0f / std::sqrt(2.0f) : 1.0f;
     }
-
-    // for (auto x : cosine_) for (auto y: x) std::cout << std::dec << y << ' ';
 }
 
-void MeteorImage::initHuffmanTable() {
+void Image::initHuffmanTable() {
     std::array<uint8_t, 65536> v{};
     std::array<uint16_t, 17> min_code{}, maj_code{};
 
@@ -106,7 +103,7 @@ void MeteorImage::initHuffmanTable() {
     }
 }
 
-int MeteorImage::getDcReal(uint16_t word) {
+int Image::getDcReal(uint16_t word) {
     switch(word >> 14) {
         case 0:
             return 0;
@@ -140,7 +137,7 @@ int MeteorImage::getDcReal(uint16_t word) {
     return -1;
 }
 
-int MeteorImage::getAcReal(uint16_t word) {
+int Image::getAcReal(uint16_t word) {
     for(int i = 0; i < 162; i++) {
         if(((word >> (16 - mAcTable[i].len)) & mAcTable[i].mask) == mAcTable[i].code) {
             return i;
@@ -149,21 +146,21 @@ int MeteorImage::getAcReal(uint16_t word) {
     return -1;
 }
 
-MeteorImage::~MeteorImage() {}
+Image::~Image() {}
 
-cv::Mat MeteorImage::getChannelImage(APIDs channelID, bool fillBlackLines) {
+cv::Mat Image::getChannelImage(APIDs channelID, bool fillBlackLines) {
     if(mChannels.size() == 0) {
         return cv::Mat();
     }
 
-    const int width = 8 * MCU_PER_LINE;
+    const int width = 8 * cMCUPerLine;
     const int height = mCurY + 8;
 
     cv::Mat image = cv::Mat(height, width, CV_8UC3);
 
     for(int y = 0; y < image.rows; y++) {
         for(int x = 0; x < image.cols; x++) {
-            uint off = x + y * MCU_PER_LINE * 8;
+            uint off = x + y * cMCUPerLine * 8;
 
             cv::Vec3b& color = image.at<cv::Vec3b>(y, x);
 
@@ -181,23 +178,23 @@ cv::Mat MeteorImage::getChannelImage(APIDs channelID, bool fillBlackLines) {
     return image;
 }
 
-cv::Mat MeteorImage::getRGBImage(APIDs redAPID, APIDs greenAPID, APIDs blueAPID, bool fillBlackLines) {
+cv::Mat Image::getRGBImage(APIDs redAPID, APIDs greenAPID, APIDs blueAPID, bool fillBlackLines, bool invertR, bool invertG, bool invertB) {
     if(mChannels.size() == 0) {
         return cv::Mat();
     }
 
-    int width = 8 * MCU_PER_LINE;
+    int width = 8 * cMCUPerLine;
     int height = mCurY + 8;
     cv::Mat image = cv::Mat(height, width, CV_8UC3);
 
     for(int y = 0; y < image.rows; y++) {
         for(int x = 0; x < image.cols; x++) {
-            uint off = x + y * MCU_PER_LINE * 8;
+            uint off = x + y * cMCUPerLine * 8;
             cv::Vec3b& color = image.at<cv::Vec3b>(cv::Point(x, y));
 
-            color[0] = mChannels[off][blueAPID - 64];
-            color[1] = mChannels[off][greenAPID - 64];
-            color[2] = mChannels[off][redAPID - 64];
+            color[0] = invertB ? ~mChannels[off][blueAPID - 64] : mChannels[off][blueAPID - 64];
+            color[1] = invertG ? ~mChannels[off][greenAPID - 64] : mChannels[off][greenAPID - 64];
+            color[2] = invertR ? ~mChannels[off][redAPID - 64] : mChannels[off][redAPID - 64];
         }
     }
 
@@ -209,62 +206,63 @@ cv::Mat MeteorImage::getRGBImage(APIDs redAPID, APIDs greenAPID, APIDs blueAPID,
     return image;
 }
 
-bool MeteorImage::progressImage(int apd, int mcu_id, int pck_cnt) {
-    if(apd == 0 || apd == 70)
+bool Image::progressImage(int apd, int mcu_id, int pck_cnt) {
+    if(apd == 0 || apd == 70) {
         return false;
+    }
 
     if(mLastMCU == -1) {
-        if(mcu_id != 0)
+        if(mcu_id != 0) {
             return false;
+        }
         mPrevPacket = pck_cnt;
         mFirstPacket = pck_cnt;
-        if(apd == 65)
+        if(apd == 65) {
             mFirstPacket -= 14;
-        if(apd == 66)
+        }
+        if(apd == 66) {
             mFirstPacket -= 28;
-        if(apd == 68)
+        }
+        if(apd == 68) {
             mFirstPacket -= 28;
+        }
         mLastMCU = 0;
         mCurY = -1;
     }
 
-    if(pck_cnt < mPrevPacket)
+    if(pck_cnt < mPrevPacket) {
         mFirstPacket -= 16384;
+    }
     mPrevPacket = pck_cnt;
 
     mCurY = 8 * ((pck_cnt - mFirstPacket) / (14 + 14 + 14 + 1));
     if(mCurY > mLastY) {
-        mChannels.resize(MCU_PER_LINE * 8 * (mCurY + 8));
+        mChannels.resize(cMCUPerLine * 8 * (mCurY + 8));
     }
     mLastY = mCurY;
 
     return true;
 }
 
-void MeteorImage::fillDqtByQ(std::array<int, 64>& dqt, int q) {
+void Image::fillDqtByQ(std::array<int, 64>& dqt, int q) {
     float f;
-    if(q > 20 && q < 50)
-        f = 5000. / q;
-    else
-        f = 200. - 2 * q;
+    f = (q > 20 && q < 50) ? 5000.0 / q : 200.0 - 2.0 * q;
 
     for(int i = 0; i < 64; i++) {
         dqt[i] = (int)round(f / 100. * STANDARD_QUANTIZATION_TABLE[i]);
-        if(dqt[i] < 1)
+        if(dqt[i] < 1) {
             dqt[i] = 1;
+        }
     }
 }
 
-int MeteorImage::mapRange(int cat, int vl) {
+int Image::mapRange(int cat, int vl) {
     int maxval = (1 << cat) - 1;
     bool sig = (vl >> (cat - 1)) != 0;
-    if(sig)
-        return vl;
-    else
-        return vl - maxval;
+    return sig ? vl : vl - maxval;
 }
 
-void MeteorImage::filtIdct8x8(std::array<float, 64>& res, std::array<float, 64>& inp) {
+void Image::filtIdct8x8(std::array<float, 64>& res, std::array<float, 64>& inp) {
     for(int y = 0; y < 8; y++) {
         for(int x = 0; x < 8; x++) {
             float s = 0;
@@ -279,16 +277,18 @@ void MeteorImage::filtIdct8x8(std::array<float, 64>& res, std::array<float, 64>&
     }
 }
 
-void MeteorImage::fillPix(std::array<float, 64>& img_dct, int apd, int mcu_id, int m) {
+void Image::fillPix(std::array<float, 64>& img_dct, int apd, int mcu_id, int m) {
     for(int i = 0; i < 64; i++) {
-        int t = round(img_dct[i] + 128);
-        if(t < 0)
+        int t = std::round(img_dct[i] + 128.0f);
+        if(t < 0) {
             t = 0;
-        if(t > 255)
+        }
+        if(t > 255) {
             t = 255;
+        }
         int x = (mcu_id + m) * 8 + i % 8;
         int y = mCurY + i / 8;
-        uint off = x + y * MCU_PER_LINE * 8;
+        uint off = x + y * cMCUPerLine * 8;
 
         switch(apd) {
             case 64:
@@ -316,53 +316,53 @@ void MeteorImage::fillPix(std::array<float, 64>& img_dct, int apd, int mcu_id, i
     }
 }
 
-void MeteorImage::decMCUs(const uint8_t* packet, int len, int apd, int pck_cnt, int mcu_id, uint8_t q) {
-    BitIOConst b(packet);
+void Image::decode(uint16_t apid, uint16_t packetCount, const Segment& segment) {
+    BitIOConst bitIO(segment.getPayloadData(), segment.getPayloadSize());
 
-    if(!progressImage(apd, mcu_id, pck_cnt)) {
+    if(!progressImage(apid, segment.getID(), packetCount)) {
         return;
     }
 
-    if(apd == APIDs::APID64) {
+    if(apid == APIDs::APID64) {
         mIsChannel64Available = true;
     }
-    if(apd == APIDs::APID65) {
+    if(apid == APIDs::APID65) {
         mIsChannel65Available = true;
     }
-    if(apd == APIDs::APID66) {
+    if(apid == APIDs::APID66) {
         mIsChannel66Available = true;
     }
-    if(apd == APIDs::APID67) {
+    if(apid == APIDs::APID67) {
         mIsChannel67Available = true;
     }
-    if(apd == APIDs::APID68) {
+    if(apid == APIDs::APID68) {
         mIsChannel68Available = true;
     }
-    if(apd == APIDs::APID69) {
+    if(apid == APIDs::APID69) {
         mIsChannel69Available = true;
     }
 
     std::array<int, 64> dqt{};
     std::array<float, 64> zdct{}, dct{}, img_dct{};
-    fillDqtByQ(dqt, q);
+    fillDqtByQ(dqt, segment.getQF());
 
-    float prev_dc = 0;
+    float prevDC = 0;
     int m = 0;
-    while(m < MCU_PER_PACKET) {
-        int dc_cat = mDcLookup[b.peekBits(16)];
+    while(m < cMCUPerPacket) {
+        int dc_cat = mDcLookup[bitIO.peekBits(16)];
         if(dc_cat == -1) {
             std::cerr << "Bad DC Huffman code!" << std::endl;
             return;
         }
-        b.advanceBits(DC_CAT_OFF[dc_cat]);
-        uint32_t n = b.fetchBits(dc_cat);
+        bitIO.advanceBits(DC_CAT_OFF[dc_cat]);
+        uint32_t n = bitIO.fetchBits(dc_cat);
 
-        zdct[0] = mapRange(dc_cat, n) + prev_dc;
-        prev_dc = zdct[0];
+        zdct[0] = mapRange(dc_cat, n) + prevDC;
+        prevDC = zdct[0];
 
         int k = 1;
         while(k < 64) {
-            int ac = mAcLookup[b.peekBits(16)];
+            int ac = mAcLookup[bitIO.peekBits(16)];
             if(ac == -1) {
                 std::cerr << "Bad AC Huffman code!" << std::endl;
                 return;
@@ -370,7 +370,7 @@ void MeteorImage::decMCUs(const uint8_t* packet, int len, int apd, int pck_cnt, 
             int ac_len = mAcTable[ac].len;
             int ac_size = mAcTable[ac].size;
             int ac_run = mAcTable[ac].run;
-            b.advanceBits(ac_len);
+            bitIO.advanceBits(ac_len);
 
             if(ac_run == 0 && ac_size == 0) {
                 for(int i = k; i < 64; i++) {
@@ -385,7 +385,7 @@ void MeteorImage::decMCUs(const uint8_t* packet, int len, int apd, int pck_cnt, 
             }
 
             if(ac_size != 0) {
-                uint16_t n = b.fetchBits(ac_size);
+                uint16_t n = bitIO.fetchBits(ac_size);
                 zdct[k] = mapRange(ac_size, n);
                 k++;
             } else if(ac_run == 15) {
@@ -399,8 +399,13 @@ void MeteorImage::decMCUs(const uint8_t* packet, int len, int apd, int pck_cnt, 
         }
 
         filtIdct8x8(img_dct, dct);
-        fillPix(img_dct, apd, mcu_id, m);
+        fillPix(img_dct, apid, segment.getID(), m);
 
         m++;
     }
 }
+
+} // namespace msumr
+} // namespace lrpt
+} // namespace protocol
+} // namespace decoder

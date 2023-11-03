@@ -158,6 +158,24 @@ cv::Mat ThreatImage::sharpen(const cv::Mat& image) {
     return result;
 }
 
+cv::Mat ThreatImage::equalize(const cv::Mat& image) {
+    cv::Mat ycrcb;
+
+    cv::cvtColor(image, ycrcb, cv::COLOR_BGR2YCrCb);
+
+    std::vector<cv::Mat> channels;
+    cv::split(ycrcb, channels);
+
+    cv::equalizeHist(channels[0], channels[0]);
+
+    cv::Mat result;
+    cv::merge(channels, ycrcb);
+
+    cv::cvtColor(ycrcb, result, cv::COLOR_YCrCb2BGR);
+
+    return result;
+}
+
 cv::Mat ThreatImage::contrast(const cv::Mat& image, double contrast, double brightness) {
     cv::Mat result;
     image.convertTo(result, image.type(), contrast, brightness);

@@ -130,9 +130,9 @@ class Settings {
         ini::extract(mIniParser.sections[getSateliteName()]["Yaw"], yaw, 0.0f);
         return yaw;
     }
-    int getTimeOffsetSec() {
-        int timeOffset;
-        ini::extract(mIniParser.sections["Program"]["TimeOffset"], timeOffset, 0);
+    float getTimeOffsetMs() {
+        float timeOffset;
+        ini::extract(mIniParser.sections[getSateliteName()]["TimeOffset"], timeOffset, 0.0f);
         return timeOffset;
     }
 
@@ -172,6 +172,9 @@ class Settings {
     }
     bool generateComposite221() const {
         return mGenerateComposite221;
+    }
+    bool generateComposite224() const {
+        return mGenerateComposite224;
     }
     bool generateComposite68() const {
         return mGenerateComposite68;
@@ -313,6 +316,7 @@ class Settings {
     bool mGenerateComposite321;
     bool mGenerateComposite125;
     bool mGenerateComposite221;
+    bool mGenerateComposite224;
     bool mGenerateComposite68;
     bool mGenerateCompositeThermal;
     bool mGenerateComposite68Rain;
