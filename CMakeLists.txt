@@ -52,6 +52,7 @@ ExternalProject_Add(libcorrect
 )
 
 find_package(OpenCV)
+find_package(OpenCL)
 
 link_directories(
     ${CMAKE_BINARY_DIR}/sgp4-build/libsgp4
@@ -64,6 +65,8 @@ add_executable(meteordemod
     main.cpp
     imageproc/spreadimage.cpp
     imageproc/threatimage.cpp
+    imageproc/projectimage.cpp
+    imageproc/tps.cpp
     decoder/correlation.cpp
     decoder/reedsolomon.cpp
     decoder/viterbi.cpp
@@ -83,6 +86,7 @@ add_executable(meteordemod
     tools/databuffer.cpp
     tools/iniparser.cpp
     tools/threadpool.cpp
+    tools/opencl.cpp
     GIS/shapereader.cpp
     GIS/shaperenderer.cpp
     GIS/dbfilereader.cpp
@@ -119,6 +123,10 @@ target_include_directories(meteordemod PUBLIC
 add_dependencies(meteordemod sgp4)
 add_dependencies(meteordemod libcorrect)    
 
+if(OpenCL_FOUND)
+    target_compile_definitions(meteordemod PUBLIC OPENCL_FOUND=1)
+endif()
+
 if(WIN32)
     target_link_libraries(meteordemod
         ${OpenCV_LIBS}
@@ -131,6 +139,7 @@ else()
         sgp4.a
         correct.a
         stdc++fs
+        ${OpenCL_LIBRARIES}
     )
 endif()
 

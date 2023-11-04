@@ -15,6 +15,7 @@
 #include "GIS/shaperenderer.h"
 #include "meteordecoder.h"
 #include "pixelgeolocationcalculator.h"
+#include "projectimage.h"
 #include "protocol/lrpt/decoder.h"
 #include "settings.h"
 #include "spreadimage.h"
@@ -148,7 +149,7 @@ int main(int argc, char* argv[]) {
                 caduFileStream.close();
             }
         }
-    } catch(std::exception ex) {
+    } catch(const std::exception& ex) {
         std::cout << ex.what() << std::endl;
     }
 
@@ -387,6 +388,7 @@ int main(int argc, char* argv[]) {
             << std::setw(2) << passStart.Second() << " UTC";
         std::string dateStr = oss.str();
 
+#if 0
         std::list<ImageForSpread>::const_iterator it;
         for(it = imagesToSpread.begin(); it != imagesToSpread.end(); ++it) {
             std::string fileName = (*it).fileNameBase + fileNameDate + "." + mSettings.getOutputFormat();
@@ -438,8 +440,47 @@ int main(int argc, char* argv[]) {
         mThreadPool.waitForAllJobsDone();
         std::cout << "Generate images done" << std::endl;
         imagesToSpread.clear();
-    }
+#else
+        ProjectImage rectifier(ProjectImage::Projection::Rectify, calc, mSettings.getProjectionScale());
+        ProjectImage mercatorProjector(ProjectImage::Projection::Mercator, calc, mSettings.getProjectionScale());
+        ProjectImage equdistantProjector(ProjectImage::Projection::Equidistant, calc, mSettings.getProjectionScale());
 
+        if(mSettings.spreadImage()) {
+            rectifier.calculateTransformation(imagesToSpread.front().image.size());
+        }
+
+        if(mSettings.mercatorProjection()) {
+            std::cout << "Calculate Mercator TPS" << std::endl;
+            mercatorProjector.calculateTransformation(imagesToSpread.front().image.size());
+            std::cout << "Calculate Mercator TPS Done" << std::endl;
+        }
+
+        if(mSettings.equadistantProjection()) {
+            std::cout << "Calculate Equidistant TPS" << std::endl;
+            equdistantProjector.calculateTransformation(imagesToSpread.front().image.size());
+            std::cout << "Calculate Equidistant Done" << std::endl;
+        }
+        std::list<ImageForSpread>::const_iterator it;
+        for(const auto& img : imagesToSpread) {
+            std::string fileName = img.fileNameBase + fileNameDate + "." + mSettings.getOutputFormat();
+
+            if(mSettings.spreadImage()) {
+                cv::Mat spreaded = rectifier.project(img.image);
+                saveImage(mSettings.getOutputPath() + std::string("spread_") + fileName, spreaded);
+            }
+
+            if(mSettings.mercatorProjection()) {
+                cv::Mat mercator = mercatorProjector.project(img.image);
+                saveImage(mSettings.getOutputPath() + std::string("mercator_") + fileName, mercator);
+            }
+
+            if(mSettings.equadistantProjection()) {
+                cv::Mat equidistant = equdistantProjector.project(img.image);
+                saveImage(mSettings.getOutputPath() + std::string("equidistant_") + fileName, equidistant);
+            }
+        }
+#endif
+    }
     std::cout << "Generate composite images" << std::endl;
     std::time_t now = std::time(nullptr);
     std::stringstream compositeFileNameDateSS;
