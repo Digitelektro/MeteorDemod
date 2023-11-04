@@ -41,7 +41,7 @@ std::vector<Context::Device> Context::getDevices(cl_device_type deviceType) {
                         continue;
                     }
 
-                    devices.emplace_back(Device{static_cast<uint>(p), deviceIDs[d], deviceType, std::string(&deviceName[0], &deviceName[deviceNameLen]), workGroupSize, maxComputeUnits});
+                    devices.emplace_back(Device{platformsIDs[p], deviceIDs[d], deviceType, std::string(&deviceName[0], &deviceName[deviceNameLen]), workGroupSize, maxComputeUnits});
                 }
             }
         }
@@ -65,7 +65,7 @@ void Context::init() {
     }
 }
 
-cl_program Context::buildKernel(const std::string& path, const std::string& name) {
+cl_program Context::buildKernel(const std::string& path) {
     std::ifstream ifStream(path);
     std::string kernelSrc(std::istreambuf_iterator<char>{ifStream}, {});
 
@@ -89,7 +89,7 @@ cl_program Context::buildKernel(const std::string& path, const std::string& name
     return program;
 }
 
-cl_program Context::buildKernel(const char* kernelSrc, size_t srcLen, const std::string& name) {
+cl_program Context::buildKernel(const char* kernelSrc, size_t srcLen) {
     cl_int err = 0;
     char errorMessage[10000];
     size_t errorMessgeLen = 0;

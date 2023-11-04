@@ -19,7 +19,7 @@ class Context {
 
   public:
     struct Device {
-        uint platformID;
+        cl_platform_id platformID;
         cl_device_id deviceID;
         cl_device_type type;
         std::string name;
@@ -39,8 +39,8 @@ class Context {
     ~Context();
 
     void init();
-    cl_program buildKernel(const std::string& path, const std::string& name);
-    cl_program buildKernel(const char* kernelSrc, size_t srcLen, const std::string& name);
+    cl_program buildKernel(const std::string& path);
+    cl_program buildKernel(const char* kernelSrc, size_t srcLen);
 
     size_t getWorkGroupSize() const {
         return mDevice.workGroupSize;
@@ -64,7 +64,7 @@ class Program {
     explicit Program(std::shared_ptr<Context> context, const std::string& path, const std::string& name)
         : mContext(context) {
         cl_int err = 0;
-        mProgram = context->buildKernel(path, name);
+        mProgram = context->buildKernel(path);
 
         mQueue = clCreateCommandQueueWithProperties(mContext->mContext, mContext->mDevice.deviceID, 0, &err);
         if(err != CL_SUCCESS) {
@@ -79,7 +79,7 @@ class Program {
     explicit Program(std::shared_ptr<Context> context, const char* kernelSrc, size_t srcLen, const std::string& name)
         : mContext(context) {
         cl_int err = 0;
-        mProgram = context->buildKernel(kernelSrc, srcLen, name);
+        mProgram = context->buildKernel(kernelSrc, srcLen);
 
         mQueue = clCreateCommandQueueWithProperties(mContext->mContext, mContext->mDevice.deviceID, 0, &err);
         if(err != CL_SUCCESS) {
@@ -107,7 +107,7 @@ class Program {
     }
 
     template <typename T>
-    inline void createBuffer(cl_mem_flags flags, int length, uint index) {
+    inline void createBuffer(cl_mem_flags flags, size_t length, int index) {
         cl_int err = 0;
         cl_mem buffer = clCreateBuffer(mContext->mContext, flags, sizeof(T) * length, NULL, &err);
         if(err != CL_SUCCESS) {
@@ -122,7 +122,7 @@ class Program {
     }
 
     template <typename T>
-    inline void enqueueWriteBuffer(const T* params, int length, int paramIndex) {
+    inline void enqueueWriteBuffer(const T* params, size_t length, size_t paramIndex) {
         cl_int err = 0;
         err = clEnqueueWriteBuffer(mQueue, mBuffers[paramIndex], CL_TRUE, 0, sizeof(T) * length, params, 0, NULL, NULL);
         if(err != CL_SUCCESS) {
@@ -131,7 +131,7 @@ class Program {
     }
 
     template <typename T>
-    inline void enqueueReadBuffer(T* params, int length, int paramIndex) {
+    inline void enqueueReadBuffer(T* params, size_t length, size_t paramIndex) {
         cl_int err = 0;
         err = clEnqueueReadBuffer(mQueue, mBuffers[paramIndex], true, 0, sizeof(T) * length, params, 0, NULL, NULL);
         if(err != CL_SUCCESS) {
@@ -140,7 +140,7 @@ class Program {
     }
 
     template <typename T>
-    inline void setKernelArg(T arg, uint index) {
+    inline void setKernelArg(T arg, cl_uint index) {
         cl_int err = 0;
         clSetKernelArg(mKernel, index, sizeof(T), &arg);
         if(err != CL_SUCCESS) {

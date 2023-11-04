@@ -23,7 +23,7 @@ ProjectImage::ProjectImage(Projection projection, const PixelGeolocationCalculat
     , mScale(scale)
     , mEarthRadius(earthRadius)
     , mAltitude(altitude)
-    , mTransformer(cv::createThinPlateSplineShapeTransformer2(Settings::getInstance().getResourcesPath() + "kernels/tps2.cl")) {
+    , mTransformer(cv::createThinPlateSplineShapeTransformer2(Settings::getInstance().getResourcesPath() + "kernels/tps.cl")) {
 
     mTheta = 0.5 * SWATH / earthRadius;                                        // Maximum half-Angle subtended by Swath from Earth's centre
     mHalfChord = static_cast<int>(earthRadius * std::sin(mTheta));             // Maximum Length of chord subtended at Centre of Earth
