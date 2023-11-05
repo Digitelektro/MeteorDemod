@@ -106,7 +106,6 @@ add_executable(meteordemod
 
 include_directories(
     ${OpenCV_INCLUDE_DIRS}
-    ${OpenCL_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/imageproc
     ${CMAKE_SOURCE_DIR}/decoder
@@ -126,6 +125,8 @@ add_dependencies(meteordemod libcorrect)
 
 if(OpenCL_FOUND)
     target_compile_definitions(meteordemod PUBLIC OPENCL_FOUND=1)
+    include_directories(${OpenCL_INCLUDE_DIRS})
+    target_link_libraries(meteordemod ${OpenCL_LIBRARIES})
 endif()
 
 if(WIN32)
@@ -133,7 +134,6 @@ if(WIN32)
         ${OpenCV_LIBS}
         sgp4.lib
         correct.lib
-        ${OpenCL_LIBRARIES}
     )
 else()
     target_link_libraries(meteordemod
@@ -141,7 +141,6 @@ else()
         sgp4.a
         correct.a
         stdc++fs
-        ${OpenCL_LIBRARIES}
     )
 endif()
 
