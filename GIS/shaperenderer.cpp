@@ -45,6 +45,37 @@ void GIS::ShapeRenderer::drawShape(const cv::Mat& src, Transform_t transform) {
                 }
             }
         }
+    } else if(getShapeType() == ShapeReader::ShapeType::stPolygon) {
+        auto recordIterator = getRecordIterator();
+
+        if(recordIterator) {
+            for(recordIterator->begin(); *recordIterator != recordIterator->end(); ++(*recordIterator)) {
+                auto polyLineIterator = getPolyLineIterator(*recordIterator);
+
+                if(polyLineIterator) {
+                    bool isFirst = true;
+                    ShapeReader::Point first;
+                    std::vector<cv::Point> polyLines;
+                    for(polyLineIterator->begin(); *polyLineIterator != polyLineIterator->end(); ++(*polyLineIterator)) {
+                        if(!isFirst && (first == polyLineIterator->point)) {
+                            if(polyLines.size() > 1) {
+                                cv::polylines(src, polyLines, true, mColor, mThicknes);
+                            }
+                            isFirst = true;
+                            polyLines.clear();
+                            continue;
+                        }
+                        if(isFirst) {
+                            first = polyLineIterator->point;
+                            isFirst = false;
+                        }
+                        if(transform(polyLineIterator->point.y, polyLineIterator->point.x)) {
+                            polyLines.push_back(cv::Point2d(polyLineIterator->point.y, polyLineIterator->point.x));
+                        }
+                    }
+                }
+            }
+        }
     } else if(getShapeType() == ShapeReader::ShapeType::stPoint) {
         auto recordIterator = getRecordIterator();
 

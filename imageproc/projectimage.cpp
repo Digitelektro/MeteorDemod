@@ -196,14 +196,14 @@ void ProjectImage::drawMapOverlay(cv::Mat& image) {
     graticules.setThickness(settings.getShapeGraticulesThickness());
     graticules.drawShape(image, std::bind(&ProjectImage::transform, this, std::placeholders::_1, std::placeholders::_2));
 
-    GIS::ShapeRenderer coastLines(settings.getResourcesPath() + settings.getShapeCoastLinesFile(), cv::Scalar(settings.getShapeCoastLinesColor().B, settings.getShapeCoastLinesColor().G, settings.getShapeCoastLinesColor().R));
-    coastLines.setThickness(settings.getShapeCoastLinesThickness());
-    coastLines.drawShape(image, std::bind(&ProjectImage::transform, this, std::placeholders::_1, std::placeholders::_2));
-
     GIS::ShapeRenderer countryBorders(settings.getResourcesPath() + settings.getShapeBoundaryLinesFile(),
                                       cv::Scalar(settings.getShapeBoundaryLinesColor().B, settings.getShapeBoundaryLinesColor().G, settings.getShapeBoundaryLinesColor().R));
     countryBorders.setThickness(settings.getShapeBoundaryLinesThickness());
     countryBorders.drawShape(image, std::bind(&ProjectImage::transform, this, std::placeholders::_1, std::placeholders::_2));
+
+    GIS::ShapeRenderer coastLines(settings.getResourcesPath() + settings.getShapeCoastLinesFile(), cv::Scalar(settings.getShapeCoastLinesColor().B, settings.getShapeCoastLinesColor().G, settings.getShapeCoastLinesColor().R));
+    coastLines.setThickness(settings.getShapeCoastLinesThickness());
+    coastLines.drawShape(image, std::bind(&ProjectImage::transform, this, std::placeholders::_1, std::placeholders::_2));
 
     GIS::ShapeRenderer cities(settings.getResourcesPath() + settings.getShapePopulatedPlacesFile(),
                               cv::Scalar(settings.getShapePopulatedPlacesColor().B, settings.getShapePopulatedPlacesColor().G, settings.getShapePopulatedPlacesColor().R));
