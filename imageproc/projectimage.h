@@ -12,18 +12,22 @@ class ProjectImage {
   public:
     enum Projection { Equidistant, Mercator, Rectify };
 
+  public:
+    static std::list<ProjectImage> createCompositeProjector(Projection projection, const std::list<PixelGeolocationCalculator>& gcpCalclulators, float scale, int earthRadius = 6378, int altitude = 825);
+
+  public:
     ProjectImage(Projection projection, const PixelGeolocationCalculator& geolocationCalculator, float scale, int earthRadius = 6378, int altitude = 825);
 
     void calculateTransformation(const cv::Size& imageSize);
     cv::Mat project(const cv::Mat& image);
 
   private:
+    void calculateImageBoundaries();
     void rectify(const cv::Size& imageSize);
     void drawMapOverlay(cv::Mat& image);
     cv::MarkerTypes stringToMarkerType(const std::string& markerType);
     bool transform(double& x, double& y);
     bool equidistantCheck(float latitude, float longitude, float centerLatitude, float centerLongitude);
-
 
   protected:
     Projection mProjection;
@@ -42,6 +46,7 @@ class ProjectImage {
     int mHeight;
     int mXStart;
     int mYStart;
+    bool mBoundariesCalcNeeded = true;
     cv::Mat mMapX;
     cv::Mat mMapY;
 

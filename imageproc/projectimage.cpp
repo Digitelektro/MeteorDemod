@@ -17,6 +17,78 @@ std::map<std::string, cv::MarkerTypes> ProjectImage::MarkerLookup{{"STAR", cv::M
                                                                   {"TRIANGLE_DOWN", cv::MARKER_TRIANGLE_DOWN},
                                                                   {"TILTED_CROSS", cv::MARKER_TILTED_CROSS}};
 
+std::list<ProjectImage> ProjectImage::createCompositeProjector(Projection projection, const std::list<PixelGeolocationCalculator>& gcpCalclulators, float scale, int earthRadius, int altitude) {
+    float MinX = std::numeric_limits<float>::max();
+    float MinY = std::numeric_limits<float>::max();
+    float MaxX = std::numeric_limits<float>::min();
+    float MaxY = std::numeric_limits<float>::min();
+    float corner;
+
+    Vector3 centerVector;
+    for(const auto& c : gcpCalclulators) {
+        centerVector += Vector3(c.getCenterCoordinate());
+    }
+    CoordGeodetic center = centerVector.toCoordinate();
+
+    if(projection == Projection::Equidistant) {
+        for(const auto& gcpCalc : gcpCalclulators) {
+            auto topLeft = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(gcpCalc.getCoordinateTopLeft(), center, gcpCalc.getSatelliteHeight(), scale);
+            auto topRight = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(gcpCalc.getCoordinateTopRight(), center, gcpCalc.getSatelliteHeight(), scale);
+            auto bottomLeft = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(gcpCalc.getCoordinateBottomLeft(), center, gcpCalc.getSatelliteHeight(), scale);
+            auto bottomRight = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(gcpCalc.getCoordinateBottomRight(), center, gcpCalc.getSatelliteHeight(), scale);
+
+            corner = std::min({topLeft.x, topRight.x, bottomLeft.x, bottomRight.x});
+            MinX = corner < MinX ? corner : MinX;
+
+            corner = std::min({topLeft.y, topRight.y, bottomLeft.y, bottomRight.y});
+            MinY = corner < MinY ? corner : MinY;
+
+            corner = std::max({topLeft.x, topRight.x, bottomLeft.x, bottomRight.x});
+            MaxX = corner > MaxX ? corner : MaxX;
+
+            corner = std::max({topLeft.y, topRight.y, bottomLeft.y, bottomRight.y});
+            MaxY = corner > MaxY ? corner : MaxY;
+        }
+    } else if(projection == Projection::Mercator) {
+        for(const auto& gcpCalc : gcpCalclulators) {
+            PixelGeolocationCalculator::CartesianCoordinateF topLeft = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(gcpCalc.getCoordinateTopLeft(), gcpCalc.getSatelliteHeight(), scale);
+            PixelGeolocationCalculator::CartesianCoordinateF topRight = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(gcpCalc.getCoordinateTopRight(), gcpCalc.getSatelliteHeight(), scale);
+            PixelGeolocationCalculator::CartesianCoordinateF bottomLeft = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(gcpCalc.getCoordinateBottomLeft(), gcpCalc.getSatelliteHeight(), scale);
+            PixelGeolocationCalculator::CartesianCoordinateF bottomRight = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(gcpCalc.getCoordinateBottomRight(), gcpCalc.getSatelliteHeight(), scale);
+
+            corner = std::min({topLeft.x, topRight.x, bottomLeft.x, bottomRight.x});
+            MinX = corner < MinX ? corner : MinX;
+
+            corner = std::min({topLeft.y, topRight.y, bottomLeft.y, bottomRight.y});
+            MinY = corner < MinY ? corner : MinY;
+
+            corner = std::max({topLeft.x, topRight.x, bottomLeft.x, bottomRight.x});
+            MaxX = corner > MaxX ? corner : MaxX;
+
+            corner = std::max({topLeft.y, topRight.y, bottomLeft.y, bottomRight.y});
+            MaxY = corner > MaxY ? corner : MaxY;
+        }
+    }
+
+    int width = static_cast<int>(std::abs(MaxX - MinX));
+    int height = static_cast<int>(std::abs(MaxY - MinY));
+    float xStart = std::min(MinX, MaxX);
+    float yStart = std::min(MinY, MaxY);
+
+    std::list<ProjectImage> projectors;
+    for(const auto& gcpCalc : gcpCalclulators) {
+        ProjectImage projector(projection, gcpCalc, scale, earthRadius, altitude);
+        projector.mWidth = width;
+        projector.mHeight = height;
+        projector.mXStart = xStart;
+        projector.mYStart = yStart;
+        projector.mCenterCoordinate = center;
+        projector.mBoundariesCalcNeeded = false;
+        projectors.emplace_back(projector);
+    }
+    return projectors;
+}
+
 ProjectImage::ProjectImage(Projection projection, const PixelGeolocationCalculator& geolocationCalculator, float scale, int earthRadius, int altitude)
     : mProjection(projection)
     , mGeolocationCalculator(geolocationCalculator)
@@ -33,47 +105,12 @@ ProjectImage::ProjectImage(Projection projection, const PixelGeolocationCalculat
 }
 
 void ProjectImage::calculateTransformation(const cv::Size& imageSize) {
-    float minX;
-    float minY;
-    float maxX;
-    float maxY;
-
-    mCenterCoordinate = mGeolocationCalculator.getCenterCoordinate();
-
-    if(mProjection == Projection::Equidistant || mProjection == Projection::Rectify) {
-        auto topLeft = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(mGeolocationCalculator.getCoordinateTopLeft(), mCenterCoordinate, mGeolocationCalculator.getSatelliteHeight(), mScale);
-        auto topRight = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(mGeolocationCalculator.getCoordinateTopRight(), mCenterCoordinate, mGeolocationCalculator.getSatelliteHeight(), mScale);
-        auto bottomLeft = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(mGeolocationCalculator.getCoordinateBottomLeft(), mCenterCoordinate, mGeolocationCalculator.getSatelliteHeight(), mScale);
-        auto bottomRight = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(mGeolocationCalculator.getCoordinateBottomRight(), mCenterCoordinate, mGeolocationCalculator.getSatelliteHeight(), mScale);
-
-        minX = std::min({topLeft.x, topRight.x, bottomLeft.x, bottomRight.x});
-        minY = std::min({topLeft.y, topRight.y, bottomLeft.y, bottomRight.y});
-        maxX = std::max({topLeft.x, topRight.x, bottomLeft.x, bottomRight.x});
-        maxY = std::max({topLeft.y, topRight.y, bottomLeft.y, bottomRight.y});
-    } else if(mProjection == Projection::Mercator) {
-        auto topLeft = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(mGeolocationCalculator.getCoordinateTopLeft(), mGeolocationCalculator.getSatelliteHeight(), mScale);
-        auto topRight = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(mGeolocationCalculator.getCoordinateTopRight(), mGeolocationCalculator.getSatelliteHeight(), mScale);
-        auto bottomLeft = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(mGeolocationCalculator.getCoordinateBottomLeft(), mGeolocationCalculator.getSatelliteHeight(), mScale);
-        auto bottomRight = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(mGeolocationCalculator.getCoordinateBottomRight(), mGeolocationCalculator.getSatelliteHeight(), mScale);
-
-        minX = std::min({topLeft.x, topRight.x, bottomLeft.x, bottomRight.x});
-        minY = std::min({topLeft.y, topRight.y, bottomLeft.y, bottomRight.y});
-        maxX = std::max({topLeft.x, topRight.x, bottomLeft.x, bottomRight.x});
-        maxY = std::max({topLeft.y, topRight.y, bottomLeft.y, bottomRight.y});
-    } else {
+    if(mBoundariesCalcNeeded) {
+        calculateImageBoundaries();
     }
 
-    mWidth = static_cast<int>(std::abs(maxX - minX));
-    mHeight = static_cast<int>(std::abs(maxY - minY));
-    mXStart = static_cast<int>(std::min(minX, maxX));
-    mYStart = static_cast<int>(std::min(minY, maxY));
-
-
-    int imageWithGeorefHeight = mGeolocationCalculator.getGeorefMaxImageHeight() < imageSize.height ? mGeolocationCalculator.getGeorefMaxImageHeight() : imageSize.height;
-
     std::vector<cv::Point2f> sourcePoints, targetPoints;
-
-    for(int y = 0; y < imageWithGeorefHeight; y += 100) {
+    for(int y = 0; y < imageSize.height; y += 100) {
         for(int x = 0; x < imageSize.width; x += 100) {
             if(mProjection == Projection::Equidistant || mProjection == Projection::Rectify) {
                 const auto p1 = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(mGeolocationCalculator.getCoordinateAt(x, y), mCenterCoordinate, mGeolocationCalculator.getSatelliteHeight(), mScale);
@@ -137,6 +174,43 @@ cv::Mat ProjectImage::project(const cv::Mat& image) {
     drawMapOverlay(newImage);
 
     return newImage;
+}
+
+void ProjectImage::calculateImageBoundaries() {
+    float minX;
+    float minY;
+    float maxX;
+    float maxY;
+
+    mCenterCoordinate = mGeolocationCalculator.getCenterCoordinate();
+
+    if(mProjection == Projection::Equidistant || mProjection == Projection::Rectify) {
+        auto topLeft = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(mGeolocationCalculator.getCoordinateTopLeft(), mCenterCoordinate, mGeolocationCalculator.getSatelliteHeight(), mScale);
+        auto topRight = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(mGeolocationCalculator.getCoordinateTopRight(), mCenterCoordinate, mGeolocationCalculator.getSatelliteHeight(), mScale);
+        auto bottomLeft = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(mGeolocationCalculator.getCoordinateBottomLeft(), mCenterCoordinate, mGeolocationCalculator.getSatelliteHeight(), mScale);
+        auto bottomRight = PixelGeolocationCalculator::coordinateToAzimuthalEquidistantProjection<float>(mGeolocationCalculator.getCoordinateBottomRight(), mCenterCoordinate, mGeolocationCalculator.getSatelliteHeight(), mScale);
+
+        minX = std::min({topLeft.x, topRight.x, bottomLeft.x, bottomRight.x});
+        minY = std::min({topLeft.y, topRight.y, bottomLeft.y, bottomRight.y});
+        maxX = std::max({topLeft.x, topRight.x, bottomLeft.x, bottomRight.x});
+        maxY = std::max({topLeft.y, topRight.y, bottomLeft.y, bottomRight.y});
+    } else if(mProjection == Projection::Mercator) {
+        auto topLeft = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(mGeolocationCalculator.getCoordinateTopLeft(), mGeolocationCalculator.getSatelliteHeight(), mScale);
+        auto topRight = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(mGeolocationCalculator.getCoordinateTopRight(), mGeolocationCalculator.getSatelliteHeight(), mScale);
+        auto bottomLeft = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(mGeolocationCalculator.getCoordinateBottomLeft(), mGeolocationCalculator.getSatelliteHeight(), mScale);
+        auto bottomRight = PixelGeolocationCalculator::coordinateToMercatorProjection<float>(mGeolocationCalculator.getCoordinateBottomRight(), mGeolocationCalculator.getSatelliteHeight(), mScale);
+
+        minX = std::min({topLeft.x, topRight.x, bottomLeft.x, bottomRight.x});
+        minY = std::min({topLeft.y, topRight.y, bottomLeft.y, bottomRight.y});
+        maxX = std::max({topLeft.x, topRight.x, bottomLeft.x, bottomRight.x});
+        maxY = std::max({topLeft.y, topRight.y, bottomLeft.y, bottomRight.y});
+    } else {
+    }
+
+    mWidth = static_cast<int>(std::abs(maxX - minX));
+    mHeight = static_cast<int>(std::abs(maxY - minY));
+    mXStart = static_cast<int>(std::min(minX, maxX));
+    mYStart = static_cast<int>(std::min(minY, maxY));
 }
 
 void ProjectImage::rectify(const cv::Size& imageSize) {

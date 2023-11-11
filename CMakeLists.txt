@@ -63,9 +63,9 @@ add_definitions(-D_USE_MATH_DEFINES -D_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATI
 
 add_executable(meteordemod 
     main.cpp
-    imageproc/spreadimage.cpp
     imageproc/threatimage.cpp
     imageproc/projectimage.cpp
+    imageproc/blendimages.cpp
     imageproc/tps.cpp
     decoder/correlation.cpp
     decoder/reedsolomon.cpp
