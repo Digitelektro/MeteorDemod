@@ -49,6 +49,7 @@ class ProjectImage {
     bool mBoundariesCalcNeeded = true;
     cv::Mat mMapX;
     cv::Mat mMapY;
+    bool mFlip = false;
 
     cv::Ptr<cv::ThinPlateSplineShapeTransformer> mTransformer;
 

@@ -234,6 +234,8 @@ void ProjectImage::rectify(const cv::Size& imageSize) {
     mMapX = cv::Mat(mHeight, mWidth, CV_32FC1);
     mMapY = cv::Mat(mHeight, mWidth, CV_32FC1);
 
+    mFlip = mGeolocationCalculator.isNorthBoundPass();
+
     i = 0;
     ni = 0;
     while(i < mNewImageHalfWidth) {
@@ -253,10 +255,10 @@ void ProjectImage::rectify(const cv::Size& imageSize) {
 
         for(int y = 0; y < mHeight; y++) {
             for(int x = 0; x < DupPix; x++) {
-                mMapX.at<float>(y, mNewImageHalfWidth + i - 1 + x) = mOriginalImageHalfWidth + k - 1;
-                mMapX.at<float>(y, mNewImageHalfWidth - i - x) = mOriginalImageHalfWidth - k;
-                mMapY.at<float>(y, mNewImageHalfWidth + i - 1 + x) = y;
-                mMapY.at<float>(y, mNewImageHalfWidth - i - x) = y;
+                mMapX.at<float>(y, mFlip ? mWidth - (mNewImageHalfWidth + i - 1 + x) : mNewImageHalfWidth + i - 1 + x) = mOriginalImageHalfWidth + k - 1;
+                mMapX.at<float>(y, mFlip ? mWidth - (mNewImageHalfWidth - i - x) : mNewImageHalfWidth - i - x) = mOriginalImageHalfWidth - k;
+                mMapY.at<float>(y, mNewImageHalfWidth + i - 1 + x) = mFlip ? (mHeight - y) : y;
+                mMapY.at<float>(y, mNewImageHalfWidth - i - x) = mFlip ? (mHeight - y) : y;
             }
         }
         i += DupPix;
@@ -341,19 +343,20 @@ bool ProjectImage::transform(double& x, double& y) {
         if(dst[0].x < 0 || dst[0].x > mOriginalImageHalfWidth * 2) {
             valid = false;
         }
+
         if(dst[0].x >= mOriginalImageHalfWidth) {
             int k = std::floor(dst[0].x) - mOriginalImageHalfWidth;
             double phi = std::asin(static_cast<double>(k) / mOriginalImageHalfWidth * std::sin(mScanAngle));
             double original = std::tan(phi) * (mAltitude + mInc) / mHalfChord * mNewImageHalfWidth;
-            x = mNewImageHalfWidth + original;
+            x = mFlip ? mWidth - (mNewImageHalfWidth + original) : mNewImageHalfWidth + original;
         } else {
             int k = mOriginalImageHalfWidth - std::floor(dst[0].x);
             double phi = std::asin(static_cast<double>(k) / mOriginalImageHalfWidth * std::sin(mScanAngle));
             double original = std::tan(phi) * (mAltitude + mInc) / mHalfChord * mNewImageHalfWidth;
-            x = mNewImageHalfWidth - original;
+            x = mFlip ? mWidth - (mNewImageHalfWidth - original) : mNewImageHalfWidth - original;
         }
 
-        y = dst[0].y;
+        y = mFlip ? mHeight - dst[0].y : dst[0].y;
     }
     return valid;
 }

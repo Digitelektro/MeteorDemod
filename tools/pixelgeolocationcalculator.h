@@ -59,6 +59,8 @@ class PixelGeolocationCalculator {
     CoordGeodetic getCoordinateBottomLeft() const;
     CoordGeodetic getCoordinateBottomRight() const;
 
+    bool isNorthBoundPass() const;
+
     inline int getEarthRadius() const {
         return mEarthradius;
     }

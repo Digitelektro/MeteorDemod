@@ -75,6 +75,12 @@ CoordGeodetic PixelGeolocationCalculator::getCoordinateBottomRight() const {
     return getCoordinateAt(mImageWidth, mImageHeight);
 }
 
+bool PixelGeolocationCalculator::isNorthBoundPass() const {
+    auto coord1 = getCoordinateAt(0, 0);
+    auto coord2 = getCoordinateAt(0, 100);
+    return (coord1.latitude < coord2.latitude);
+}
+
 Vector PixelGeolocationCalculator::raytraceToEarth(const Vector& position, double roll, double pitch, double yaw) const {
     double a = 6371.0087714;
     double b = 6371.0087714;
