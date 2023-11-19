@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "meteordemod"
-#define MyAppVersion "2.5.5"
+#define MyAppVersion "2.6.2"
 #define MyAppPublisher "Digitelektro"
 #define MyAppURL "https://github.com/Digitelektro/MeteorDemod"
 #define MyAppExeName "meteordemod.exe"

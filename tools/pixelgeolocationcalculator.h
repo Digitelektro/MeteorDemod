@@ -39,43 +39,27 @@ class PixelGeolocationCalculator {
     PixelGeolocationCalculator();
 
   public:
-    static PixelGeolocationCalculator load(const std::string& path);
+    PixelGeolocationCalculator(const TleReader::TLE& tle,
+                               const DateTime& passStart,
+                               const TimeSpan& passLength,
+                               double scanAngle,
+                               double roll,
+                               double pitch,
+                               double yaw,
+                               int imageWidth,
+                               int imageHeight,
+                               int earthRadius = 6378,
+                               int satelliteAltitude = 825);
 
-  public:
-    PixelGeolocationCalculator(const TleReader::TLE& tle, const DateTime& passStart, const TimeSpan& passLength, double scanAngle, double roll, double pitch, double yaw, int earthRadius = 6378, int satelliteAltitude = 825);
 
-    void calcPixelCoordinates();
+    const CoordGeodetic& getCenterCoordinate() const;
+    CoordGeodetic getCoordinateAt(unsigned int x, unsigned int y) const;
+    CoordGeodetic getCoordinateTopLeft() const;
+    CoordGeodetic getCoordinateTopRight() const;
+    CoordGeodetic getCoordinateBottomLeft() const;
+    CoordGeodetic getCoordinateBottomRight() const;
 
-    void save(const std::string& path);
-
-  public:
-    int getGeorefMaxImageHeight() const {
-        return (mCoordinates.size() / 158) * 10;
-    }
-
-    const CoordGeodetic& getCenterCoordinate() const {
-        return mCoordinates[mCoordinates.size() / 2 + 79];
-    }
-
-    inline const CoordGeodetic& getCoordinateAt(unsigned int x, unsigned int y) const {
-        return mCoordinates[((x / 10)) + ((y / 10) * 158)];
-    }
-
-    inline const CoordGeodetic& getCoordinateTopLeft() const {
-        return mCoordinates[0];
-    }
-
-    inline const CoordGeodetic& getCoordinateTopRight() const {
-        return mCoordinates[157];
-    }
-
-    inline const CoordGeodetic& getCoordinateBottomLeft() const {
-        return mCoordinates[mCoordinates.size() - 158];
-    }
-
-    inline const CoordGeodetic& getCoordinateBottomRight() const {
-        return mCoordinates[mCoordinates.size() - 1];
-    }
+    bool isNorthBoundPass() const;
 
     inline int getEarthRadius() const {
         return mEarthradius;
@@ -144,9 +128,9 @@ class PixelGeolocationCalculator {
 
   private:
     void calculateCartesionCoordinates();
-    Vector los_to_earth(const Vector& position, double roll, double pitch, double yaw);
-    double calculateBearingAngle(const CoordGeodetic& start, const CoordGeodetic& end);
-    Matrix4x4 lookAt(const Vector3& position, const Vector3& target, const Vector3& up);
+    Vector raytraceToEarth(const Vector& position, double roll, double pitch, double yaw) const;
+    static double calculateBearingAngle(const CoordGeodetic& start, const CoordGeodetic& end);
+    static Matrix4x4 lookAt(const Vector3& position, const Vector3& target, const Vector3& up);
 
     static inline double degreeToRadian(double degree) {
         return (M_PI * degree / 180.0);
@@ -165,11 +149,15 @@ class PixelGeolocationCalculator {
     SGP4 mSgp4;
     DateTime mPassStart;
     TimeSpan mPassLength;
-    double mScanAngle, mRoll, mPitch, mYaw;
+    double mScanAngle;
+    double mRollOffset;
+    double mPitchOffset;
+    double mYawOffset;
+    int mImageWidth;
+    int mImageHeight;
     int mEarthradius;
     int mSatelliteAltitude;
-    std::vector<CoordGeodetic> mCoordinates;
-
+    CoordGeodetic mCenterCoordinate;
 
     static constexpr double PIXELTIME_MINUTES = 0.02564876089324618736383442265795; // Just a rough calculation for every 10 pixel in minutes
     static constexpr double PIXELTIME_MS = 154.0;

@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -170,6 +171,10 @@ class ShapeReader {
             pointBuffer.valueAtIndex(index, y, LittleEndian);
         }
 
+        bool operator==(const Point& rhs) {
+            return (std::abs(x - rhs.x) <= std::numeric_limits<double>::epsilon()) && (std::abs(y - rhs.y) <= std::numeric_limits<double>::epsilon());
+        }
+
         double x;
         double y;
     };
@@ -234,6 +239,19 @@ class ShapeReader {
                 point = Point();
                 return *this;
             }
+        }
+        PolyLineIterator operator++(int) {
+            auto temp = *this;
+            if(mNumberOfPoint < mPolyLineHeader.numberOfpoints) {
+                DataBuffer pointBuffer(16);
+                mInputStream.read(reinterpret_cast<char*>(pointBuffer.buffer()), pointBuffer.size());
+                point = Point(pointBuffer);
+                mNumberOfPoint++;
+            } else {
+                mNumberOfPoint = 0;
+                point = Point();
+            }
+            return temp;
         }
 
         PolyLineIterator begin() {
