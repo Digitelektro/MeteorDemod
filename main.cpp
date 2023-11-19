@@ -239,10 +239,10 @@ int main(int argc, char* argv[]) {
             irImage = ThreatImage::gamma(irImage, 1.4);
             irImage = ThreatImage::contrast(irImage, 1.3, -40);
             irImage = ThreatImage::sharpen(irImage);
-            imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
+            imagesToSpread.push_back(ImageForSpread(irImage, "68_"));
 
             if(mSettings.addRainOverlay()) {
-                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(irImage, rainOverlay), "rain_IR_"));
+                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(irImage, rainOverlay), "rain_68_"));
             }
 
         } else if(mLrptDecoder.isChannel64Available() && mLrptDecoder.isChannel65Available() && mLrptDecoder.isChannel67Available()) {
@@ -264,10 +264,10 @@ int main(int argc, char* argv[]) {
             imagesToSpread.push_back(ImageForSpread(thermalImage, "thermal_"));
 
             irImage = ThreatImage::invertIR(irImage);
-            imagesToSpread.push_back(ImageForSpread(irImage, "IR_"));
+            imagesToSpread.push_back(ImageForSpread(irImage, "67_"));
 
             if(mSettings.addRainOverlay()) {
-                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(irImage, rainOverlay), "rain_IR_"));
+                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(irImage, rainOverlay), "rain_67_"));
             }
             cv::Mat image221 = mLrptDecoder.getRGBImage(APID::APID65, APID::APID65, APID::APID64, mSettings.fillBackLines());
             cv::Mat image224 = mLrptDecoder.getRGBImage(APID::APID65, APID::APID65, APID::APID67, mSettings.fillBackLines());
@@ -340,12 +340,12 @@ int main(int argc, char* argv[]) {
             ch68 = ThreatImage::gamma(ch68, 1.4);
             ch68 = ThreatImage::contrast(ch68, 1.3, -40);
             ch68 = ThreatImage::sharpen(ch68);
-            imagesToSpread.push_back(ImageForSpread(ch68, "IR_"));
+            imagesToSpread.push_back(ImageForSpread(ch68, "68_"));
 
             if(mSettings.addRainOverlay()) {
                 cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
                 cv::Mat rainOverlay = ThreatImage::irToRain(ch68, rainRef);
-                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(ch68, rainOverlay), "rain_IR_"));
+                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(ch68, rainOverlay), "rain_68_"));
             }
 
         } else if(mLrptDecoder.isChannel64Available() && mLrptDecoder.isChannel65Available()) {
@@ -372,14 +372,14 @@ int main(int argc, char* argv[]) {
             if(mSettings.addRainOverlay()) {
                 cv::Mat rainRef = cv::imread(mSettings.getResourcesPath() + "rain.bmp");
                 cv::Mat rainOverlay = ThreatImage::irToRain(ch68, rainRef);
-                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(ch68, rainOverlay), "rain_IR_"));
+                imagesToSpread.push_back(ImageForSpread(ThreatImage::addRainOverlay(ch68, rainOverlay), "rain_68_"));
             }
 
             ch68 = ThreatImage::invertIR(ch68);
             ch68 = ThreatImage::gamma(ch68, 1.4);
             ch68 = ThreatImage::contrast(ch68, 1.3, -40);
             ch68 = ThreatImage::sharpen(ch68);
-            imagesToSpread.push_back(ImageForSpread(ch68, "IR_"));
+            imagesToSpread.push_back(ImageForSpread(ch68, "68_"));
 
             cv::Mat thermalRef = cv::imread(mSettings.getResourcesPath() + "thermal_ref.bmp");
             cv::Mat thermalImage = ThreatImage::irToTemperature(ch68, thermalRef);
