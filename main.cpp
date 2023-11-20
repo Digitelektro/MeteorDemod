@@ -432,6 +432,7 @@ int main(int argc, char* argv[]) {
 
             if(mSettings.spreadImage()) {
                 cv::Mat spreaded = rectifier.project(img.image);
+                ThreatImage::drawWatermark(spreaded, dateStr);
                 const std::string filePath = mSettings.getOutputPath() + std::string("spread_") + fileName;
                 std::cout << "Saving " << filePath << std::endl;
                 saveImage(filePath, spreaded);
@@ -439,6 +440,7 @@ int main(int argc, char* argv[]) {
 
             if(mSettings.mercatorProjection()) {
                 cv::Mat mercator = mercatorProjector.project(img.image);
+                ThreatImage::drawWatermark(mercator, dateStr);
                 const std::string filePath = mSettings.getOutputPath() + std::string("mercator_") + fileName;
                 std::cout << "Saving " << filePath << std::endl;
                 saveImage(filePath, mercator);
@@ -446,6 +448,7 @@ int main(int argc, char* argv[]) {
 
             if(mSettings.equadistantProjection()) {
                 cv::Mat equidistant = equdistantProjector.project(img.image);
+                ThreatImage::drawWatermark(equidistant, dateStr);
                 const std::string filePath = mSettings.getOutputPath() + std::string("equidistant_") + fileName;
                 std::cout << "Saving " << filePath << std::endl;
                 saveImage(filePath, equidistant);
