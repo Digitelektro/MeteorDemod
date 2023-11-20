@@ -874,11 +874,15 @@ ImageSearchResult searchForImages() {
         return result;
     }
 
+    std::map<time_t, fs::directory_entry> entriesSortByTime;
     for(const auto& entry : fs::directory_iterator(mSettings.getOutputPath())) {
         auto ftime = fs::last_write_time(entry);
         std::time_t cftime = std::chrono::system_clock::to_time_t((ftime));
-        std::time_t fileCreatedSec = now - cftime;
+        entriesSortByTime[cftime] = entry;
+    }
 
+    for(const auto& [timeStamp, entry] : entriesSortByTime) {
+        std::time_t fileCreatedSec = now - timeStamp;
         if(entry.path().extension() == ".dat" && fileCreatedSec < (mSettings.getCompositeMaxAgeHours() * 3600)) {
             std::string folder = entry.path().parent_path().generic_string();
             std::string gcpFileName = entry.path().filename().generic_string();
@@ -921,7 +925,7 @@ ImageSearchResult searchForImages() {
                 result.imageSizes.emplace_back(img.size());
                 std::ifstream datFileStream(entry.path().generic_string());
                 if(!datFileStream) {
-                    break;
+                    continue;
                 }
                 std::string line1, line2;
                 datFileStream >> line1;
