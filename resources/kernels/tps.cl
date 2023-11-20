@@ -14,7 +14,7 @@ inline float pow2(const float x) {
     return x * x;
 }
 
-inline float distance(const float x1, const float y1, const float x2, const float y2) {
+inline float dist(const float x1, const float y1, const float x2, const float y2) {
     float norm = pow2(x1 - x2) + pow2(y1 - y2);
     if(norm < 0) {
         norm = 0;
@@ -45,7 +45,7 @@ void kernel apply(global const float* shapeRef, global const float* tpsParameter
             float nonrigid = 0;
 
             for(int j = 0; j < shapeRefRows; j++) {
-                nonrigid += tpsParameters[j * 2 + i] * distance(shapeRef[j * 2], shapeRef[j * 2 + 1], point[x * 2], point[x * 2 + 1]);
+                nonrigid += tpsParameters[j * 2 + i] * dist(shapeRef[j * 2], shapeRef[j * 2 + 1], point[x * 2], point[x * 2 + 1]);
             }
             if(i == 0) {
                 out[x * 2] = affine + nonrigid;
