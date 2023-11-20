@@ -878,7 +878,10 @@ ImageSearchResult searchForImages() {
     for(const auto& entry : fs::directory_iterator(mSettings.getOutputPath())) {
         auto ftime = fs::last_write_time(entry);
         std::time_t cftime = std::chrono::system_clock::to_time_t((ftime));
-        entriesSortByTime[cftime] = entry;
+        if(entry.path().extension() == ".dat") {
+            entriesSortByTime[cftime] = entry;
+            std::cout << "Enty" << entry << ", time=" << cftime << std::endl;
+        }
     }
 
     for(const auto& [timeStamp, entry] : entriesSortByTime) {
