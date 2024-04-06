@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 include(ExternalProject)
 
 project(meteordemod
-    VERSION 2.6.3
+    VERSION 2.6.5
     LANGUAGES CXX
 )
 

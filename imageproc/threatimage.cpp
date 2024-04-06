@@ -4,6 +4,7 @@
 #include <opencv2/imgcodecs.hpp>
 
 #include "settings.h"
+#include "version.h"
 
 std::map<std::string, ThreatImage::WatermarkPosition> ThreatImage::WatermarkPositionLookup{
     {"top_left", WatermarkPosition::TOP_LEFT},
@@ -182,13 +183,14 @@ cv::Mat ThreatImage::contrast(const cv::Mat& image, double contrast, double brig
     return result;
 }
 
-void ThreatImage::drawWatermark(cv::Mat image, const std::string& date) {
+void ThreatImage::drawWatermark(cv::Mat image, const std::string& date, const std::string& satelliteName) {
     int x = 0;
     int y = 0;
     Settings& settings = Settings::getInstance();
     double fontScale = cv::getFontScaleFromHeight(cv::FONT_ITALIC, settings.getWaterMarkSize() * settings.getProjectionScale(), settings.getWaterMarkLineWidth());
 
     std::string watermarkText = settings.getWaterMarkText();
+    const std::string versionStr = std::to_string(VERSION_MAJOR) + "." + std::to_string(VERSION_MINOR) + "." + std::to_string(VERSION_FIX);
 
     WatermarkPosition position = TOP_CENTER;
     auto itr = WatermarkPositionLookup.find(settings.getWaterMarkPlace());
@@ -197,6 +199,8 @@ void ThreatImage::drawWatermark(cv::Mat image, const std::string& date) {
     }
 
     replaceAll(watermarkText, "%date%", date);
+    replaceAll(watermarkText, "%sat%", satelliteName);
+    replaceAll(watermarkText, "%version%", versionStr);
     replaceAll(watermarkText, "\\n", "\n");
 
     size_t lineCount = std::count(watermarkText.begin(), watermarkText.end(), '\n') + 1;

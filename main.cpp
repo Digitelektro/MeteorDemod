@@ -35,6 +35,7 @@ struct ImageForSpread {
 };
 
 struct ImageSearchResult {
+    std::string satelliteName;
     std::list<PixelGeolocationCalculator> geolocationCalculators;
     std::list<cv::Size> imageSizes;
     std::list<cv::Mat> images221;
@@ -175,8 +176,9 @@ int main(int argc, char* argv[]) {
         TimeSpan passStartTime = mLrptDecoder.getFirstTimeStamp();
         TimeSpan passLength = mLrptDecoder.getLastTimeStamp() - passStartTime;
 
-        passStartTime = passStartTime.Add(TimeSpan(0, 0, 0, 0, static_cast<int>(mSettings.getTimeOffsetMs() * 1000)));
-        passLength = passLength.Add(TimeSpan(0, 0, 0, 0, static_cast<int>(mSettings.getTimeOffsetMs() * 1000)));
+        float timeOffset = mSettings.getProjectionSetting(mSettings.getSateliteName()).timeOffsetMs;
+        passStartTime = passStartTime.Add(TimeSpan(0, 0, 0, 0, static_cast<int>(timeOffset * 1000)));
+        passLength = passLength.Add(TimeSpan(0, 0, 0, 0, static_cast<int>(timeOffset * 1000)));
 
         passDate = passDate.AddHours(3); // Convert UTC 0 to Moscow time zone (UTC + 3)
 
@@ -190,6 +192,7 @@ int main(int argc, char* argv[]) {
 
         std::ofstream datFileStream(mSettings.getOutputPath() + fileNameDate + ".dat");
         if(datFileStream) {
+            datFileStream << mSettings.getSateliteName() << std::endl;
             datFileStream << std::to_string(passStart.Ticks()) << std::endl;
             datFileStream << std::to_string(passLength.Ticks()) << std::endl;
             datFileStream.close();
@@ -393,18 +396,20 @@ int main(int argc, char* argv[]) {
         TleReader reader(mSettings.getTlePath());
         TleReader::TLE tle;
         reader.processFile();
-        if(!reader.getTLE(mSettings.getSatNameInTLE(), tle)) {
+        auto projectionSetting = mSettings.getProjectionSetting(mSettings.getSateliteName());
+        if(!reader.getTLE(projectionSetting.satelliteNameInTLE, tle)) {
             std::cout << "TLE data not found in TLE file, unable to create projected images..." << std::endl;
             return -1;
         }
 
         PixelGeolocationCalculator calc(
-            tle, passStart, passLength, mSettings.getScanAngle(), mSettings.getRoll(), mSettings.getPitch(), mSettings.getYaw(), imagesToSpread.front().image.size().width, imagesToSpread.front().image.size().height);
+            tle, passStart, passLength, projectionSetting.scanAngle, projectionSetting.roll, projectionSetting.pitch, projectionSetting.yaw, imagesToSpread.front().image.size().width, imagesToSpread.front().image.size().height);
 
         std::ostringstream oss;
         oss << std::setfill('0') << std::setw(2) << passStart.Day() << "/" << std::setw(2) << passStart.Month() << "/" << passStart.Year() << " " << std::setw(2) << passStart.Hour() << ":" << std::setw(2) << passStart.Minute() << ":"
             << std::setw(2) << passStart.Second() << " UTC";
         std::string dateStr = oss.str();
+        std::string satelliteName = decoder::protocol::lrpt::Decoder::serialNumberToSatName(mLrptDecoder.getSerialNumber());
 
 
         ProjectImage rectifier(ProjectImage::Projection::Rectify, calc, mSettings.getProjectionScale());
@@ -432,6 +437,7 @@ int main(int argc, char* argv[]) {
 
             if(mSettings.spreadImage()) {
                 cv::Mat spreaded = rectifier.project(img.image);
+                ThreatImage::drawWatermark(spreaded, dateStr, satelliteName);
                 const std::string filePath = mSettings.getOutputPath() + std::string("spread_") + fileName;
                 std::cout << "Saving " << filePath << std::endl;
                 saveImage(filePath, spreaded);
@@ -439,6 +445,7 @@ int main(int argc, char* argv[]) {
 
             if(mSettings.mercatorProjection()) {
                 cv::Mat mercator = mercatorProjector.project(img.image);
+                ThreatImage::drawWatermark(mercator, dateStr, satelliteName);
                 const std::string filePath = mSettings.getOutputPath() + std::string("mercator_") + fileName;
                 std::cout << "Saving " << filePath << std::endl;
                 saveImage(filePath, mercator);
@@ -446,6 +453,7 @@ int main(int argc, char* argv[]) {
 
             if(mSettings.equadistantProjection()) {
                 cv::Mat equidistant = equdistantProjector.project(img.image);
+                ThreatImage::drawWatermark(equidistant, dateStr, satelliteName);
                 const std::string filePath = mSettings.getOutputPath() + std::string("equidistant_") + fileName;
                 std::cout << "Saving " << filePath << std::endl;
                 saveImage(filePath, equidistant);
@@ -499,7 +507,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_221_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_221_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -512,7 +520,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_221_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_221_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -535,7 +543,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_321_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_321_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -549,7 +557,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_321_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_321_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -566,7 +574,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_125_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_125_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -579,7 +587,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_125_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_125_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -602,7 +610,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_224_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_224_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -615,7 +623,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_224_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_224_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -644,7 +652,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_68_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_68_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -657,7 +665,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_68_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_68_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -681,7 +689,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_67_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_67_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -694,7 +702,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_67_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_67_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -719,7 +727,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_68_thermal_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_68_thermal_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -732,7 +740,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_68_thermal_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_68_thermal_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -753,7 +761,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_67_thermal_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_67_thermal_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -766,7 +774,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_67_thermal_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_67_thermal_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -797,7 +805,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_68_rain_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_68_rain_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -810,7 +818,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_68_rain_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_68_rain_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -834,7 +842,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_67_rain_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "equidistant_" + compositeFileNameDateSS.str() + "_67_rain_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -847,7 +855,7 @@ int main(int argc, char* argv[]) {
                     transformIt++;
                 }
                 cv::Mat composite = BlendImages::merge(imagesToBlend);
-                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_67_rain_composite.jpg";
+                const std::string filePath = mSettings.getOutputPath() + "mercator_" + compositeFileNameDateSS.str() + "_67_rain_composite." + mSettings.getOutputFormat();
                 std::cout << "Saving composite: " << filePath << std::endl;
                 saveImage(filePath, composite);
             }
@@ -867,12 +875,7 @@ ImageSearchResult searchForImages() {
     std::map<std::time_t, std::tuple<std::string, std::string>> map;
 
     TleReader reader(mSettings.getTlePath());
-    TleReader::TLE tle;
     reader.processFile();
-    if(!reader.getTLE(mSettings.getSatNameInTLE(), tle)) {
-        std::cout << "TLE data not found in TLE file, unable to create composite images..." << std::endl;
-        return result;
-    }
 
     std::map<time_t, fs::directory_entry> entriesSortByTime;
     for(const auto& entry : fs::directory_iterator(mSettings.getOutputPath())) {
@@ -880,7 +883,7 @@ ImageSearchResult searchForImages() {
         std::time_t cftime = std::chrono::system_clock::to_time_t((ftime));
         if(entry.path().extension() == ".dat") {
             entriesSortByTime[cftime] = entry;
-            std::cout << "Enty" << entry << ", time=" << cftime << std::endl;
+            // std::cout << "Enty" << entry << ", time=" << cftime << std::endl;
         }
     }
 
@@ -930,15 +933,25 @@ ImageSearchResult searchForImages() {
                 if(!datFileStream) {
                     continue;
                 }
-                std::string line1, line2;
-                datFileStream >> line1;
-                datFileStream >> line2;
+                std::string linePassStart;
+                std::string linePassLength;
+                datFileStream >> result.satelliteName;
+                datFileStream >> linePassStart;
+                datFileStream >> linePassLength;
                 datFileStream.close();
-                int64_t ticks = std::stoll(line1);
+                int64_t ticks = std::stoll(linePassStart);
                 DateTime passStart(ticks);
-                ticks = std::stoll(line2);
+                ticks = std::stoll(linePassLength);
                 TimeSpan passLength(ticks);
-                PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getScanAngle(), mSettings.getRoll(), mSettings.getPitch(), mSettings.getYaw(), img.size().width, img.size().height);
+
+                auto projectionSetting = mSettings.getProjectionSetting(result.satelliteName);
+
+                TleReader::TLE tle;
+                if(!reader.getTLE(projectionSetting.satelliteNameInTLE, tle)) {
+                    std::cout << "TLE data not found in TLE file, unable to create composite images..." << std::endl;
+                    return result;
+                }
+                PixelGeolocationCalculator calc(tle, passStart, passLength, projectionSetting.scanAngle, projectionSetting.roll, projectionSetting.pitch, projectionSetting.yaw, img.size().width, img.size().height);
                 result.geolocationCalculators.emplace_back(calc);
             }
         }
