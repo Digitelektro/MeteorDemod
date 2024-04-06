@@ -21,7 +21,7 @@ class ThreatImage {
 
     // Constrast 0.0-inf, brightnes -225 to 255
     static cv::Mat contrast(const cv::Mat& image, double contrast, double brightness);
-    static void drawWatermark(cv::Mat image, const std::string& date);
+    static void drawWatermark(cv::Mat image, const std::string& date, const std::string& satelliteName);
     static bool isNightPass(const cv::Mat& image, float treshold);
 
   private:
