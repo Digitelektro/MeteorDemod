@@ -9,6 +9,28 @@ namespace decoder {
 namespace protocol {
 namespace lrpt {
 
+std::string Decoder::serialNumberToSatName(uint8_t serialNumber) {
+    switch(serialNumber) {
+        case 1:
+            return "METEOR M2-1";
+            break;
+        case 2:
+            return "METEOR M2-2";
+            break;
+        case 3:
+            return "METEOR M2-3";
+            break;
+        case 4:
+            return "METEOR M2-4";
+            break;
+        case 5:
+            return "METEOR M2-5";
+            break;
+        default:
+            return "METEOR M2";
+    }
+}
+
 void Decoder::process(const uint8_t* cadu) {
     VCDU vcdu(cadu);
 
@@ -105,6 +127,10 @@ void Decoder::parse70(const CCSDS& ccsds) {
     uint16_t m = ccsds.packetData()[17];
     uint16_t s = ccsds.packetData()[18];
     uint16_t ms = static_cast<uint32_t>(ccsds.packetData()[19]) * 4;
+
+    mSerialNumber = ccsds.packetData()[20] >> 4;
+
+    // std::cout << "Serial number : " << (int)mSerialNumber << std::endl;
 
     mLastTimeStamp = TimeSpan(0, h, m, s, ms * 1000);
     mLastHeightAtTimeStamp = getLastY();

@@ -16,6 +16,9 @@ namespace lrpt {
 // http://planet.iitp.ru/retro/index.php?lang=en&page_type=spacecraft&page=meteor_m_n2_structure_2
 class Decoder : public msumr::Image {
   public:
+    static std::string serialNumberToSatName(uint8_t serialNumber);
+
+  public:
     void process(const uint8_t* cadu);
 
   public:
@@ -34,6 +37,10 @@ class Decoder : public msumr::Image {
         return mLastTimeStamp.Add(missingTime);
     }
 
+    uint8_t getSerialNumber() const {
+        return mSerialNumber;
+    }
+
   private:
     uint16_t parsePartial(const uint8_t* data, uint32_t length);
     void processPacket(const CCSDS& ccsds);
@@ -50,6 +57,7 @@ class Decoder : public msumr::Image {
     int mFirstHeightAtTimeStamp = 0;
     int mLastHeightAtTimeStamp = 0;
     bool mFirstTime = true;
+    uint8_t mSerialNumber = 0;
 
   private:
     static constexpr uint8_t cVCIDAVHRR = 5;

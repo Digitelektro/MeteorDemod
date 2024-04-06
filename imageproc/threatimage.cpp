@@ -183,7 +183,7 @@ cv::Mat ThreatImage::contrast(const cv::Mat& image, double contrast, double brig
     return result;
 }
 
-void ThreatImage::drawWatermark(cv::Mat image, const std::string& date) {
+void ThreatImage::drawWatermark(cv::Mat image, const std::string& date, const std::string& satelliteName) {
     int x = 0;
     int y = 0;
     Settings& settings = Settings::getInstance();
@@ -199,6 +199,7 @@ void ThreatImage::drawWatermark(cv::Mat image, const std::string& date) {
     }
 
     replaceAll(watermarkText, "%date%", date);
+    replaceAll(watermarkText, "%sat%", satelliteName);
     replaceAll(watermarkText, "%version%", versionStr);
     replaceAll(watermarkText, "\\n", "\n");
 
