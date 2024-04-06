@@ -35,6 +35,7 @@ struct ImageForSpread {
 };
 
 struct ImageSearchResult {
+    std::string satelliteName;
     std::list<PixelGeolocationCalculator> geolocationCalculators;
     std::list<cv::Size> imageSizes;
     std::list<cv::Mat> images221;
@@ -175,8 +176,9 @@ int main(int argc, char* argv[]) {
         TimeSpan passStartTime = mLrptDecoder.getFirstTimeStamp();
         TimeSpan passLength = mLrptDecoder.getLastTimeStamp() - passStartTime;
 
-        passStartTime = passStartTime.Add(TimeSpan(0, 0, 0, 0, static_cast<int>(mSettings.getTimeOffsetMs() * 1000)));
-        passLength = passLength.Add(TimeSpan(0, 0, 0, 0, static_cast<int>(mSettings.getTimeOffsetMs() * 1000)));
+        float timeOffset = mSettings.getProjectionSetting(mSettings.getSateliteName()).timeOffsetMs;
+        passStartTime = passStartTime.Add(TimeSpan(0, 0, 0, 0, static_cast<int>(timeOffset * 1000)));
+        passLength = passLength.Add(TimeSpan(0, 0, 0, 0, static_cast<int>(timeOffset * 1000)));
 
         passDate = passDate.AddHours(3); // Convert UTC 0 to Moscow time zone (UTC + 3)
 
@@ -190,6 +192,7 @@ int main(int argc, char* argv[]) {
 
         std::ofstream datFileStream(mSettings.getOutputPath() + fileNameDate + ".dat");
         if(datFileStream) {
+            datFileStream << mSettings.getSateliteName() << std::endl;
             datFileStream << std::to_string(passStart.Ticks()) << std::endl;
             datFileStream << std::to_string(passLength.Ticks()) << std::endl;
             datFileStream.close();
@@ -393,13 +396,14 @@ int main(int argc, char* argv[]) {
         TleReader reader(mSettings.getTlePath());
         TleReader::TLE tle;
         reader.processFile();
-        if(!reader.getTLE(mSettings.getSatNameInTLE(), tle)) {
+        auto projectionSetting = mSettings.getProjectionSetting(mSettings.getSateliteName());
+        if(!reader.getTLE(projectionSetting.satelliteNameInTLE, tle)) {
             std::cout << "TLE data not found in TLE file, unable to create projected images..." << std::endl;
             return -1;
         }
 
         PixelGeolocationCalculator calc(
-            tle, passStart, passLength, mSettings.getScanAngle(), mSettings.getRoll(), mSettings.getPitch(), mSettings.getYaw(), imagesToSpread.front().image.size().width, imagesToSpread.front().image.size().height);
+            tle, passStart, passLength, projectionSetting.scanAngle, projectionSetting.roll, projectionSetting.pitch, projectionSetting.yaw, imagesToSpread.front().image.size().width, imagesToSpread.front().image.size().height);
 
         std::ostringstream oss;
         oss << std::setfill('0') << std::setw(2) << passStart.Day() << "/" << std::setw(2) << passStart.Month() << "/" << passStart.Year() << " " << std::setw(2) << passStart.Hour() << ":" << std::setw(2) << passStart.Minute() << ":"
@@ -870,12 +874,7 @@ ImageSearchResult searchForImages() {
     std::map<std::time_t, std::tuple<std::string, std::string>> map;
 
     TleReader reader(mSettings.getTlePath());
-    TleReader::TLE tle;
     reader.processFile();
-    if(!reader.getTLE(mSettings.getSatNameInTLE(), tle)) {
-        std::cout << "TLE data not found in TLE file, unable to create composite images..." << std::endl;
-        return result;
-    }
 
     std::map<time_t, fs::directory_entry> entriesSortByTime;
     for(const auto& entry : fs::directory_iterator(mSettings.getOutputPath())) {
@@ -883,7 +882,7 @@ ImageSearchResult searchForImages() {
         std::time_t cftime = std::chrono::system_clock::to_time_t((ftime));
         if(entry.path().extension() == ".dat") {
             entriesSortByTime[cftime] = entry;
-            std::cout << "Enty" << entry << ", time=" << cftime << std::endl;
+            // std::cout << "Enty" << entry << ", time=" << cftime << std::endl;
         }
     }
 
@@ -933,15 +932,25 @@ ImageSearchResult searchForImages() {
                 if(!datFileStream) {
                     continue;
                 }
-                std::string line1, line2;
-                datFileStream >> line1;
-                datFileStream >> line2;
+                std::string linePassStart;
+                std::string linePassLength;
+                datFileStream >> result.satelliteName;
+                datFileStream >> linePassStart;
+                datFileStream >> linePassLength;
                 datFileStream.close();
-                int64_t ticks = std::stoll(line1);
+                int64_t ticks = std::stoll(linePassStart);
                 DateTime passStart(ticks);
-                ticks = std::stoll(line2);
+                ticks = std::stoll(linePassLength);
                 TimeSpan passLength(ticks);
-                PixelGeolocationCalculator calc(tle, passStart, passLength, mSettings.getScanAngle(), mSettings.getRoll(), mSettings.getPitch(), mSettings.getYaw(), img.size().width, img.size().height);
+
+                auto projectionSetting = mSettings.getProjectionSetting(result.satelliteName);
+
+                TleReader::TLE tle;
+                if(!reader.getTLE(projectionSetting.satelliteNameInTLE, tle)) {
+                    std::cout << "TLE data not found in TLE file, unable to create composite images..." << std::endl;
+                    return result;
+                }
+                PixelGeolocationCalculator calc(tle, passStart, passLength, projectionSetting.scanAngle, projectionSetting.roll, projectionSetting.pitch, projectionSetting.yaw, img.size().width, img.size().height);
                 result.geolocationCalculators.emplace_back(calc);
             }
         }
