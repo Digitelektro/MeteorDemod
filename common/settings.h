@@ -58,6 +58,15 @@ class Settings {
         uint8_t B;
     };
 
+    struct ProjectionSetting {
+        std::string satelliteNameInTLE;
+        float scanAngle;
+        float yaw;
+        float pitch;
+        float roll;
+        float timeOffsetMs;
+    };
+
     friend std::istream& operator>>(std::istream& is, HTMLColor& color) {
         std::string rgb;
         is >> rgb;
@@ -105,35 +114,15 @@ class Settings {
         return mJpegQuality;
     }
 
-    std::string getSatNameInTLE() {
-        std::string name;
-        ini::extract(mIniParser.sections[getSateliteName()]["SatNameInTLE"], name);
-        return name;
-    }
-    float getScanAngle() {
-        float angle;
-        ini::extract(mIniParser.sections[getSateliteName()]["ScanAngle"], angle, 110.8f);
-        return angle;
-    }
-    float getRoll() {
-        float roll;
-        ini::extract(mIniParser.sections[getSateliteName()]["Roll"], roll, 0.0f);
-        return roll;
-    }
-    float getPitch() {
-        float pitch;
-        ini::extract(mIniParser.sections[getSateliteName()]["Pitch"], pitch, 0.0f);
-        return pitch;
-    }
-    float getYaw() {
-        float yaw;
-        ini::extract(mIniParser.sections[getSateliteName()]["Yaw"], yaw, 0.0f);
-        return yaw;
-    }
-    int getTimeOffsetSec() {
-        int timeOffset;
-        ini::extract(mIniParser.sections["Program"]["TimeOffset"], timeOffset, 0);
-        return timeOffset;
+    ProjectionSetting getProjectionSetting(const std::string& satellite) {
+        ProjectionSetting result;
+        ini::extract(mIniParser.sections[satellite]["SatNameInTLE"], result.satelliteNameInTLE);
+        ini::extract(mIniParser.sections[satellite]["ScanAngle"], result.scanAngle, 110.8f);
+        ini::extract(mIniParser.sections[satellite]["Roll"], result.roll, 0.0f);
+        ini::extract(mIniParser.sections[satellite]["Pitch"], result.pitch, 0.0f);
+        ini::extract(mIniParser.sections[satellite]["Yaw"], result.yaw, 0.0f);
+        ini::extract(mIniParser.sections[satellite]["TimeOffset"], result.timeOffsetMs, 0.0f);
+        return result;
     }
 
     bool equadistantProjection() const {
@@ -164,14 +153,17 @@ class Settings {
     bool compositeMercatorProjection() const {
         return mCompositeMercatorProjection;
     }
-    bool generateComposite123() const {
-        return mGenerateComposite123;
+    bool generateComposite321() const {
+        return mGenerateComposite321;
     }
     bool generateComposite125() const {
         return mGenerateComposite125;
     }
     bool generateComposite221() const {
         return mGenerateComposite221;
+    }
+    bool generateComposite224() const {
+        return mGenerateComposite224;
     }
     bool generateComposite68() const {
         return mGenerateComposite68;
@@ -310,9 +302,10 @@ class Settings {
 
     bool mCompositeEquadistantProjection;
     bool mCompositeMercatorProjection;
-    bool mGenerateComposite123;
+    bool mGenerateComposite321;
     bool mGenerateComposite125;
     bool mGenerateComposite221;
+    bool mGenerateComposite224;
     bool mGenerateComposite68;
     bool mGenerateCompositeThermal;
     bool mGenerateComposite68Rain;

@@ -4,14 +4,14 @@
 #include <stdint.h>
 
 #include <cmath>
+#include <functional>
 
 #include "correlation.h"
 #include "deinterleaver.h"
-#include "packetparser.h"
 #include "reedsolomon.h"
 #include "viterbi.h"
 
-class MeteorDecoder : public PacketParser {
+class MeteorDecoder {
   private:
     static constexpr uint8_t PRAND[]
         = {0xff, 0x48, 0x0e, 0xc0, 0x9a, 0x0d, 0x70, 0xbc, 0x8e, 0x2c, 0x93, 0xad, 0xa7, 0xb7, 0x46, 0xce, 0x5a, 0x97, 0x7d, 0xcc, 0x32, 0xa2, 0xbf, 0x3e, 0x0a, 0x10, 0xf1, 0x88, 0x94, 0xcd, 0xea, 0xb1, 0xfe, 0x90, 0x1d, 0x81, 0x34,
@@ -27,7 +27,7 @@ class MeteorDecoder : public PacketParser {
     MeteorDecoder() = delete;
     MeteorDecoder(bool deInterleave, bool oqpsk, bool differentialDecode);
 
-    size_t decode(uint8_t* softBits, size_t length);
+    size_t decode(uint8_t* softBits, size_t length, std::function<void(const uint8_t* cadu, std::size_t size)> callback);
 
   private:
     bool mDeInterleave;

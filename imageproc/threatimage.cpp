@@ -4,6 +4,7 @@
 #include <opencv2/imgcodecs.hpp>
 
 #include "settings.h"
+#include "version.h"
 
 std::map<std::string, ThreatImage::WatermarkPosition> ThreatImage::WatermarkPositionLookup{
     {"top_left", WatermarkPosition::TOP_LEFT},
@@ -158,19 +159,38 @@ cv::Mat ThreatImage::sharpen(const cv::Mat& image) {
     return result;
 }
 
+cv::Mat ThreatImage::equalize(const cv::Mat& image) {
+    cv::Mat ycrcb;
+
+    cv::cvtColor(image, ycrcb, cv::COLOR_BGR2YCrCb);
+
+    std::vector<cv::Mat> channels;
+    cv::split(ycrcb, channels);
+
+    cv::equalizeHist(channels[0], channels[0]);
+
+    cv::Mat result;
+    cv::merge(channels, ycrcb);
+
+    cv::cvtColor(ycrcb, result, cv::COLOR_YCrCb2BGR);
+
+    return result;
+}
+
 cv::Mat ThreatImage::contrast(const cv::Mat& image, double contrast, double brightness) {
     cv::Mat result;
     image.convertTo(result, image.type(), contrast, brightness);
     return result;
 }
 
-void ThreatImage::drawWatermark(cv::Mat image, const std::string& date) {
+void ThreatImage::drawWatermark(cv::Mat image, const std::string& date, const std::string& satelliteName) {
     int x = 0;
     int y = 0;
     Settings& settings = Settings::getInstance();
     double fontScale = cv::getFontScaleFromHeight(cv::FONT_ITALIC, settings.getWaterMarkSize() * settings.getProjectionScale(), settings.getWaterMarkLineWidth());
 
     std::string watermarkText = settings.getWaterMarkText();
+    const std::string versionStr = std::to_string(VERSION_MAJOR) + "." + std::to_string(VERSION_MINOR) + "." + std::to_string(VERSION_FIX);
 
     WatermarkPosition position = TOP_CENTER;
     auto itr = WatermarkPositionLookup.find(settings.getWaterMarkPlace());
@@ -179,6 +199,8 @@ void ThreatImage::drawWatermark(cv::Mat image, const std::string& date) {
     }
 
     replaceAll(watermarkText, "%date%", date);
+    replaceAll(watermarkText, "%sat%", satelliteName);
+    replaceAll(watermarkText, "%version%", versionStr);
     replaceAll(watermarkText, "\\n", "\n");
 
     size_t lineCount = std::count(watermarkText.begin(), watermarkText.end(), '\n') + 1;

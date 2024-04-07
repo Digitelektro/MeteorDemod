@@ -79,9 +79,10 @@ void Settings::parseIni(const std::string& path) {
     ini::extract(mIniParser.sections["Program"]["CompositeProjectionScale"], mCompositeProjectionScale, 0.75f);
     ini::extract(mIniParser.sections["Program"]["CompositeAzimuthalEquidistantProjection"], mCompositeEquadistantProjection, true);
     ini::extract(mIniParser.sections["Program"]["CompositeMercatorProjection"], mCompositeMercatorProjection, false);
-    ini::extract(mIniParser.sections["Program"]["GenerateComposite123"], mGenerateComposite123, true);
+    ini::extract(mIniParser.sections["Program"]["GenerateComposite321"], mGenerateComposite321, true);
     ini::extract(mIniParser.sections["Program"]["GenerateComposite125"], mGenerateComposite125, true);
     ini::extract(mIniParser.sections["Program"]["GenerateComposite221"], mGenerateComposite221, true);
+    ini::extract(mIniParser.sections["Program"]["GenerateComposite224"], mGenerateComposite224, true);
     ini::extract(mIniParser.sections["Program"]["GenerateComposite68"], mGenerateComposite68, true);
     ini::extract(mIniParser.sections["Program"]["GenerateCompositeThermal"], mGenerateCompositeThermal, true);
     ini::extract(mIniParser.sections["Program"]["GenerateComposite68Rain"], mGenerateComposite68Rain, true);
